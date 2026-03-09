@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://public-frontend-cos.metadl.com/mgx/img/favicon_atoms.ico" type="image/x-icon">
-    <title>Student Evaluation System</title>
-    <link rel="stylesheet" href="./css/index.css">
-    <link rel="stylesheet" href="./css/index.css">
+    <title>Faculty Management Evaluation System</title>
+    <link rel="stylesheet" href="./css/common.css">
+    <link rel="stylesheet" href="./css/landing.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
@@ -21,7 +21,7 @@
                 <span class="nav-title">Institute For Business Management</span>
             </a>
             <ul class="nav-links" id="navLinks">
-                <li><a href="./login.html" class="nav-login-btn">Login</a></li>
+                <li><a href="./Door/login.php" class="nav-login-btn">Login</a></li>
             </ul>
             <div class="nav-toggle" id="navToggle">
                 <span></span>
@@ -48,12 +48,7 @@
             <p class="hero-subtitle">
                 Empowering excellence in education through comprehensive student performance tracking, evaluation, and assessment reporting.
             </p>
-            <div class="hero-buttons">
-                <a href="./login.html" class="btn-primary">
-                    <span>Get Started</span>
-                    <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
+           
         </div>
     </section>
 
@@ -72,9 +67,7 @@
         </div>
     </footer>
 
-    <script>
-        // Add refresh button functionality to navbar
-        function addRefreshButton() {
+    <script>    function addRefreshButton() {
             var navLinks = document.getElementById('navLinks');
             if (navLinks) {
                 var refreshLi = document.createElement('li');
@@ -88,18 +81,12 @@
                 navLinks.insertBefore(refreshLi, navLinks.firstChild);
             }
         }
+           if (!sessionStorage.getItem('siteVisited')) {
+            sessionStorage.setItem('siteVisited', 'true');   setTimeout(function() {
+                window.location.reload();
+            }, 500);
+        }
         
-        // Auto-refresh on first visit (first time opening the site)
-        // NOTE: This functionality is disabled as it causes poor user experience
-        // if (!sessionStorage.getItem('siteVisited')) {
-        //     sessionStorage.setItem('siteVisited', 'true');
-        //     // Refresh once on first visit to ensure fresh content
-        //     setTimeout(function() {
-        //         window.location.reload();
-        //     }, 500);
-        // }
-        
-        // Add refresh button when DOM is ready
         document.addEventListener('DOMContentLoaded', addRefreshButton);
     </script>
     <script type="module" src="./js/landing.js"></script>
