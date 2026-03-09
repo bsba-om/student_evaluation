@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://public-frontend-cos.metadl.com/mgx/img/favicon_atoms.ico" type="image/x-icon">
     <title>Login - Faculty Evaluation System</title>
-    <link rel="stylesheet" href="./css/common.css">
-    <link rel="stylesheet" href="./css/login.css">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/login.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
@@ -36,7 +36,7 @@
         <div class="branding-panel">
             <div class="branding-content">
                 <div class="logo-wrapper">
-                    <img src="./media/LOGO.jpg" alt="University Logo" class="logo">
+                    <img src="../media/LOGO.jpg" alt="University Logo" class="logo">
                 </div>
                 <h1 class="university-name">Faculty Management</h1>
                 <h2 class="university-subtitle">Evaluation System</h2>
@@ -64,7 +64,7 @@
 
         <div class="login-panel">
             <div class="login-card">
-                <a href="./index.html" class="back-home">
+                <a href="../index.php" class="back-home">
                     <i class="fas fa-arrow-left"></i>
                     <span>Back to Home</span>
                 </a>
@@ -152,22 +152,6 @@
                     </button>
                 </form>
 
-                <div class="oauth-divider">
-                    <span>or continue with</span>
-                </div>
-                 
-                <div class="google-signin-wrapper">
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-shape="rectangular"
-                         data-theme="outline"
-                         data-text="signin_with"
-                         data-size="large"
-                         data-width="300"
-                         data-logo_alignment="left">
-                    </div>
-                </div>
-
                 <div class="create-account-section" id="createAccountSection" style="display: none;">
                     <div class="create-account-divider">
                         <span>or</span>
@@ -198,7 +182,7 @@
          data-auto_prompt="false">
     </div>
 
-    <script type="module" src="./js/login.js"></script>
+    <script type="module" src="../function/login.js"></script>
 </body>
 
 </html>
