@@ -44,7 +44,7 @@ if ($result) { while ($row = $result->fetch_assoc()) { $dept_performance[] = $ro
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://public-frontend-cos.metadl.com/mgx/img/favicon_atoms.ico" type="image/x-icon">
+    <link rel="icon" href="../../media/LOGO.jpg" type="image/jpeg">
     <title>Program Head Dashboard - Faculty Evaluation System</title>
     <link rel="stylesheet" href="../../css/common.css">
     <link rel="stylesheet" href="./style/dashboard.css">
