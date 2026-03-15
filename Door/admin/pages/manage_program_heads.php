@@ -10,11 +10,19 @@ require_once '../../data/config.php';
 
 $instructors = [];
 $error_message = '';
+$promoted_instructor_id = null;
 
 if ($pdo) {
     try {
         $stmt = $pdo->query("SELECT * FROM instructors ORDER BY id DESC");
         $instructors = $stmt->fetchAll();
+        
+        // Check if there's already a promoted program head
+        $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active' LIMIT 1");
+        $promotion = $stmt->fetch();
+        if ($promotion) {
+            $promoted_instructor_id = $promotion['instructor_id'];
+        }
     } catch (PDOException $e) {
         $error_message = "Database connection failed. Please set up the database using data.sql";
     }
@@ -116,6 +124,15 @@ if ($pdo) {
                             <button class="btn btn-sm" style="background: none; border: none; color: var(--gold); cursor: pointer;" onclick="editInstructor(<?php echo $instructor['id']; ?>)" title="Edit">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            <?php if ($promoted_instructor_id === null): ?>
+                                <button class="btn btn-sm" style="background: none; border: none; color: #10b981; cursor: pointer;" onclick="promoteInstructor(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>')" title="Promote to Program Head">
+                                    <i class="fas fa-user-plus"></i>
+                                </button>
+                            <?php elseif ($promoted_instructor_id == $instructor['id']): ?>
+                                <button class="btn btn-sm" style="background: none; border: none; color: #dc2626; cursor: pointer;" onclick="removePromotion(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>')" title="Remove Promotion">
+                                    <i class="fas fa-user-minus"></i>
+                                </button>
+                            <?php endif; ?>
                             <a href="../../data/admin_process.php?action=remove_instructor&id=<?php echo $instructor['id']; ?>" class="btn btn-sm btn-danger" title="Remove" onclick="return confirm('Are you sure you want to remove this instructor?')">
                                 <i class="fas fa-trash"></i>
                             </a>
@@ -190,6 +207,63 @@ if ($pdo) {
     </div>
 </div>
 
+<!-- Promote Modal -->
+<div class="modal-overlay" id="promoteModal">
+    <div class="modal" style="max-width: 450px;">
+        <div class="modal-header" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 20px; font-weight: 700; color: var(--dark-text);">Promote to Program Head</h3>
+            <button onclick="closePromoteModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--light-text);">&times;</button>
+        </div>
+        <p style="margin-bottom: 20px; color: var(--light-text);">
+            You are about to promote <strong id="promoteInstructorName"></strong> to Program Head. 
+            They will be able to login with the credentials below.
+        </p>
+        <form method="POST" action="../../data/admin_process.php?action=promote_instructor" id="promoteForm">
+            <input type="hidden" name="instructor_id" id="promoteInstructorId">
+            <input type="hidden" name="promote_to" value="program_head">
+            <div class="form-group" style="margin-bottom: 16px;">
+                <label class="form-label">Set Password for Program Head Login</label>
+                <input type="password" class="form-input" name="password" id="promotePassword" placeholder="Enter password" required minlength="6">
+                <small style="color: var(--light-text); font-size: 12px;">This password will be used to login as Program Head</small>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label">Confirm Password</label>
+                <input type="password" class="form-input" name="confirm_password" id="promoteConfirmPassword" placeholder="Confirm password" required>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button type="button" class="btn" style="background: var(--cream); color: var(--dark-text);" onclick="closePromoteModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-user-plus"></i>
+                    Promote to Program Head
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+</style>
+
 <script>
 function filterInstructors() {
     const searchInput = document.getElementById('searchInput').value.toLowerCase();
@@ -233,6 +307,49 @@ function editInstructor(id) {
 function closeEditModal() {
     document.getElementById('editModal').classList.remove('show');
 }
+
+function promoteInstructor(id, name) {
+    document.getElementById('promoteInstructorId').value = id;
+    document.getElementById('promoteInstructorName').textContent = name;
+    document.getElementById('promotePassword').value = '';
+    document.getElementById('promoteConfirmPassword').value = '';
+    document.getElementById('promoteModal').classList.add('show');
+}
+
+function closePromoteModal() {
+    document.getElementById('promoteModal').classList.remove('show');
+}
+
+// Handle promote form submission
+document.getElementById('promoteForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('promotePassword').value;
+    const confirmPassword = document.getElementById('promoteConfirmPassword').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match!');
+        return false;
+    }
+    
+    if (password.length < 6) {
+        e.preventDefault();
+        alert('Password must be at least 6 characters!');
+        return false;
+    }
+});
+
+function removePromotion(id, name) {
+    if (confirm('Are you sure you want to remove the Program Head promotion from ' + name + '?')) {
+        window.location.href = '../../data/admin_process.php?action=remove_promotion&id=' + id;
+    }
+}
+
+// Close modal when clicking outside
+document.getElementById('promoteModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closePromoteModal();
+    }
+});
 
 // Close modal when clicking outside
 document.getElementById('editModal').addEventListener('click', function(e) {

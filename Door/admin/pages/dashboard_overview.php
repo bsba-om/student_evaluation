@@ -14,7 +14,7 @@ if ($pdo) {
         $instructor_count = $result['count'] ?? 0;
         
         // Get recent instructors (last 5)
-        $stmt = $pdo->query("SELECT * FROM instructors ORDER BY created_at DESC LIMIT 5");
+        $stmt = $pdo->query("SELECT * FROM instructors ORDER BY first_name ASC LIMIT 5");
         $recent_instructors = $stmt->fetchAll();
         
     } catch (PDOException $e) {
@@ -50,14 +50,6 @@ if ($pdo) {
     </div>
     
     <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="fas fa-chalkboard-teacher"></i>
-        </div>
-        <div class="stat-value"><?php echo $instructor_count; ?></div>
-        <div class="stat-label">Active Instructors</div>
-    </div>
-    
-    <div class="stat-card">
         <div class="stat-icon green">
             <i class="fas fa-check-circle"></i>
         </div>
@@ -67,10 +59,10 @@ if ($pdo) {
     
     <div class="stat-card">
         <div class="stat-icon purple">
-            <i class="fas fa-building"></i>
+            <i class="fas fa-book"></i>
         </div>
         <div class="stat-value"><?php echo $department_count; ?></div>
-        <div class="stat-label">Departments</div>
+        <div class="stat-label">Courses</div>
     </div>
 </div>
 
@@ -78,8 +70,8 @@ if ($pdo) {
 <div class="card">
     <div class="card-header">
         <h3 class="card-title">
-            <i class="fas fa-clock"></i>
-            Recent Instructor Activity
+            <i class="fas fa-users"></i>
+            Instructor List
         </h3>
     </div>
     <div class="card-body">
@@ -122,9 +114,6 @@ if ($pdo) {
                     <td>
                         <a href="dashboard.php?page=manage_program_heads" class="btn btn-sm" style="background: none; border: none; color: var(--gold); cursor: pointer;">
                             <i class="fas fa-eye"></i>
-                        </a>
-                        <a href="../../data/admin_process.php?action=remove_instructor&id=<?php echo $instructor['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this instructor?')">
-                            <i class="fas fa-trash"></i>
                         </a>
                     </td>
                 </tr>

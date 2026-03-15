@@ -320,6 +320,16 @@ if ($action === 'add_instructor') {
                 exit;
             }
 
+            // Check if there's already a program_head promotion
+            if ($promote_to === 'program_head') {
+                $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+                $existing = $stmt->fetch();
+                if ($existing && $existing['instructor_id'] != $instructor_id) {
+                    header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Another instructor is already promoted to Program Head. Remove their promotion first.'));
+                    exit;
+                }
+            }
+
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
             if ($promote_to === 'program_head') {
@@ -364,6 +374,40 @@ if ($action === 'add_instructor') {
         }
     } else {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted successfully! (Demo Mode)'));
+    }
+    exit;
+
+} elseif ($action === 'remove_promotion') {
+    $instructor_id = $_GET['id'] ?? 0;
+
+    if (empty($instructor_id)) {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Invalid instructor ID'));
+        exit;
+    }
+
+    if ($pdo) {
+        try {
+            // Update promotion status to revoked
+            $stmt = $pdo->prepare("UPDATE admin_promotions SET status = 'revoked' WHERE instructor_id = ? AND promoted_to = 'program_head' AND status = 'active'");
+            $stmt->execute([$instructor_id]);
+
+            // Get instructor email to remove from program_heads
+            $stmt = $pdo->prepare("SELECT email FROM instructors WHERE id = ?");
+            $stmt->execute([$instructor_id]);
+            $instructor = $stmt->fetch();
+
+            if ($instructor) {
+                // Remove from program_heads
+                $stmt = $pdo->prepare("DELETE FROM program_heads WHERE email = ?");
+                $stmt->execute([$instructor['email']]);
+            }
+
+            header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Program Head promotion removed successfully!'));
+        } catch (PDOException $e) {
+            header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Failed to remove promotion'));
+        }
+    } else {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Promotion removed successfully! (Demo Mode)'));
     }
     exit;
 
