@@ -12,6 +12,8 @@ $instructors = [];
 $error_message = '';
 $promoted_instructor_id = null;
 $promoted_ids = [];
+$program_head_emails = [];
+$current_program_head = null;
 
 if ($pdo) {
     try {
@@ -21,8 +23,8 @@ if ($pdo) {
         // Get all promoted instructor IDs - try admin_promotions table
         try {
             $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
-            $promotions = $stmt->fetchAll();
-            $promoted_ids = array_column($promotions, 'instructor_id');
+            $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
         } catch (PDOException $e) {
             // Table might not exist, try to create it
             try {
@@ -34,19 +36,32 @@ if ($pdo) {
                     promotion_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     status ENUM('active', 'revoked') DEFAULT 'active'
                 )");
-                // Retry query
                 $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
-                $promotions = $stmt->fetchAll();
-                $promoted_ids = array_column($promotions, 'instructor_id');
+                $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
             } catch (PDOException $e2) {
-                // Still failed, leave as empty array
                 $promoted_ids = [];
             }
         }
         
-        // Check if there's already a promoted program head
         if (!empty($promoted_ids)) {
             $promoted_instructor_id = $promoted_ids[0];
+        }
+
+        // Also fetch Program Head emails (source of truth for Program Head login)
+        try {
+            $stmt = $pdo->query("SELECT email FROM program_heads");
+            $program_head_emails = array_map('strtolower', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+        } catch (PDOException $e) {
+            $program_head_emails = [];
+        }
+
+        // Fetch current Program Head details (there must be only one)
+        try {
+            $stmt = $pdo->query("SELECT first_name, last_name, email, department FROM program_heads ORDER BY id DESC LIMIT 1");
+            $current_program_head = $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        } catch (PDOException $e) {
+            $current_program_head = null;
         }
     } catch (PDOException $e) {
         $error_message = "Database error: " . $e->getMessage();
@@ -78,10 +93,42 @@ if ($pdo) {
     </div>
 </div>
 
-<?php if ($error_message): ?>
+<?php
+$url_error = isset($_GET['error']) ? trim($_GET['error']) : '';
+$url_success = isset($_GET['success']) ? trim($_GET['success']) : '';
+?>
+<?php if ($error_message || $url_error): ?>
 <div class="alert alert-error">
     <i class="fas fa-exclamation-circle"></i>
-    <span><?php echo htmlspecialchars($error_message); ?></span>
+    <span><?php echo htmlspecialchars($error_message ?: $url_error); ?></span>
+</div>
+<?php endif; ?>
+<?php if ($url_success): ?>
+<div class="alert alert-success">
+    <i class="fas fa-check-circle"></i>
+    <span><?php echo htmlspecialchars($url_success); ?></span>
+</div>
+<?php endif; ?>
+<?php if (!empty($promoted_ids) || !empty($program_head_emails)): ?>
+<div class="alert alert-info" style="background: rgba(59, 130, 246, 0.1); color: #1d4ed8; border: 1px solid rgba(59, 130, 246, 0.3);">
+    <i class="fas fa-thumbtack"></i>
+    <span>
+        <strong>Current Program Head:</strong>
+        <?php if ($current_program_head): ?>
+            <?php
+                $ph_name = trim(($current_program_head['first_name'] ?? '') . ' ' . ($current_program_head['last_name'] ?? ''));
+                $ph_email = trim($current_program_head['email'] ?? '');
+                $ph_dept = trim($current_program_head['department'] ?? '');
+            ?>
+            <?php echo htmlspecialchars($ph_name ?: 'Program Head'); ?>
+            <?php if ($ph_dept): ?> — <strong>Program/Department:</strong> <?php echo htmlspecialchars($ph_dept); ?><?php endif; ?>
+            <?php if ($ph_email): ?> — <strong>Email:</strong> <?php echo htmlspecialchars($ph_email); ?><?php endif; ?>
+        <?php else: ?>
+            Program Head is set (details unavailable).
+        <?php endif; ?>
+        <br>
+        <strong>Only one Program Head at a time.</strong> To change Program Head, remove the current Program Head first (Actions → Remove as Program Head), then promote another instructor.
+    </span>
 </div>
 <?php endif; ?>
 
@@ -90,7 +137,7 @@ if ($pdo) {
     <div class="card-header">
         <h3 class="card-title">
             <i class="fas fa-users"></i>
-            All Instructors (<?php echo count($instructors); ?>)
+            All Instructors (<span id="instructorCount"><?php echo count($instructors); ?></span>)
         </h3>
     </div>
     <div class="card-body">
@@ -116,6 +163,13 @@ if ($pdo) {
             <tbody id="instructorsTableBody">
                 <?php foreach ($instructors as $instructor): ?>
                 <?php 
+                    $instructor_id_int = (int)$instructor['id'];
+                    $position_raw = $instructor['position'] ?? 'Instructor';
+                    $email_raw = strtolower(trim($instructor['email'] ?? ''));
+                    $is_program_head =
+                        in_array($instructor_id_int, $promoted_ids, true) ||
+                        (strcasecmp($position_raw, 'Program Head') === 0) ||
+                        ($email_raw !== '' && in_array($email_raw, $program_head_emails, true));
                     $initials = strtoupper(substr($instructor['first_name'], 0, 1) . (isset($instructor['middle_name']) && $instructor['middle_name'] ? substr($instructor['middle_name'], 0, 1) : '') . substr($instructor['last_name'], 0, 1));
                     $full_name = $instructor['first_name'] . ' ' . ($instructor['middle_name'] ?? '') . ' ' . $instructor['last_name'] . ($instructor['suffix'] ? ', ' . $instructor['suffix'] : '');
                     $full_name = preg_replace('/\s+/', ' ', trim($full_name));
@@ -135,17 +189,17 @@ if ($pdo) {
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d4a843, #e8c768); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;"><?php echo $initials; ?></div>
                             <div>
                                 <div style="font-weight: 600;"><?php echo htmlspecialchars($full_name); ?></div>
-                                <div style="font-size: 12px; color: #6b7280;"><?php echo in_array($instructor['id'], $promoted_ids) ? 'Program Head' : htmlspecialchars($instructor['position'] ?? 'Instructor'); ?></div>
+                                <div style="font-size: 12px; color: #6b7280;"><?php echo $is_program_head ? 'Program Head' : htmlspecialchars($position_raw ?: 'Instructor'); ?></div>
                             </div>
                         </div>
                     </td>
                     <td><?php echo htmlspecialchars($instructor['email']); ?></td>
                     <td><?php echo htmlspecialchars($instructor['employee_id'] ?? 'N/A'); ?></td>
                     <td><?php echo htmlspecialchars($instructor['department']); ?></td>
-                    <td><?php echo in_array($instructor['id'], $promoted_ids) ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
+                    <td><?php echo $is_program_head ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
                     <td><?php echo $created_date; ?></td>
                     <td>
-                        <button class="actions-btn" onclick="openActionsModal(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>', <?php echo in_array($instructor['id'], $promoted_ids) ? 'true' : 'false'; ?>, <?php echo $promoted_instructor_id === null ? 'true' : ($promoted_instructor_id == $instructor['id'] ? 'true' : 'false'); ?>)" title="Actions">
+                        <button class="actions-btn" onclick="openActionsModal(<?php echo $instructor_id_int; ?>, '<?php echo htmlspecialchars($full_name); ?>', <?php echo $is_program_head ? 'true' : 'false'; ?>, <?php echo $promoted_instructor_id === null ? 'true' : ($promoted_instructor_id === $instructor_id_int ? 'true' : 'false'); ?>)" title="Actions">
                             <i class="fas fa-ellipsis-h"></i>
                         </button>
                     </td>
@@ -226,7 +280,7 @@ if ($pdo) {
             <button onclick="closePromoteModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--light-text);">&times;</button>
         </div>
         <p style="margin-bottom: 20px; color: var(--light-text);">
-            Set a new password for <strong id="promoteInstructorName"></strong> to login as Program Head. They will use the same email but this new password.
+            Set a new password for <strong id="promoteInstructorName"></strong> to log in as <strong>Program Head</strong>. They will use their <strong>same email</strong> with this new password <strong>only when choosing "Program Head"</strong> on the login page. Their instructor login (email + original password) is unchanged.
         </p>
         <form method="POST" action="../../data/admin_process.php?action=promote_instructor" id="promoteForm">
             <input type="hidden" name="instructor_id" id="promoteInstructorId">
@@ -543,6 +597,7 @@ function filterInstructors() {
     const table = document.getElementById('instructorsTable');
     if (!table) return;
     const tr = table.getElementsByTagName('tr');
+    let visibleCount = 0;
 
     for (let i = 1; i < tr.length; i++) {
         const tdName = tr[i].getElementsByTagName('td')[0];
@@ -556,10 +611,14 @@ function filterInstructors() {
             
             const matchesSearch = nameText.toLowerCase().indexOf(searchInput) > -1;
             const matchesDept = deptFilter === '' || deptText.indexOf(deptFilter) > -1;
-            
-            tr[i].style.display = matchesSearch && matchesDept ? '' : 'none';
+            const visible = matchesSearch && matchesDept;
+            tr[i].style.display = visible ? '' : 'none';
+            if (visible) visibleCount++;
         }
     }
+
+    const countEl = document.getElementById('instructorCount');
+    if (countEl) countEl.textContent = visibleCount;
 }
 
 function editInstructor(id) {

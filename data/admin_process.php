@@ -1,4 +1,14 @@
 <?php
+// Start session with consistent cookie path so we can read the admin session
+if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'path' => '/',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+    session_start();
+}
+
 require_once 'config.php';
 
 // Create admin_promotions table if it doesn't exist (for promoting instructors)
@@ -234,15 +244,28 @@ if ($action === 'add_instructor') {
     exit;
 
 } elseif ($action === 'remove_instructor') {
-    $id = $_GET['id'] ?? 0;
+    $id = (int)($_GET['id'] ?? 0);
 
-    if (empty($id)) {
+    if ($id <= 0) {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Invalid instructor ID'));
         exit;
     }
 
     if ($pdo) {
         try {
+            // If this instructor is the current Program Head, remove promotion first (only one program head allowed)
+            $stmt = $pdo->prepare("SELECT email FROM instructors WHERE id = ?");
+            $stmt->execute([$id]);
+            $instructor = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($instructor && !empty($instructor['email'])) {
+                $stmt = $pdo->prepare("SELECT 1 FROM admin_promotions WHERE instructor_id = ? AND promoted_to = 'program_head' AND status = 'active'");
+                $stmt->execute([$id]);
+                if ($stmt->fetch()) {
+                    $pdo->prepare("UPDATE admin_promotions SET status = 'revoked' WHERE instructor_id = ? AND promoted_to = 'program_head' AND status = 'active'")->execute([$id]);
+                    $pdo->prepare("DELETE FROM program_heads WHERE email = ?")->execute([trim($instructor['email'])]);
+                }
+            }
+
             $stmt = $pdo->prepare("DELETE FROM instructors WHERE id = ?");
             $stmt->execute([$id]);
             header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor removed successfully!'));
@@ -363,24 +386,44 @@ if ($action === 'add_instructor') {
             $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
             if ($promote_to === 'program_head') {
-                // Check if already a program_head
+                $email = trim($instructor['email']);
+                // Check if already a program_head (by email - they must use Program Head login)
                 $stmt = $pdo->prepare("SELECT id FROM program_heads WHERE email = ?");
-                $stmt->execute([$instructor['email']]);
+                $stmt->execute([$email]);
                 if ($stmt->fetch()) {
                     header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Instructor is already a Program Head'));
                     exit;
                 }
 
-                // Add to program_heads table
-                $stmt = $pdo->prepare("INSERT INTO program_heads (first_name, last_name, email, password, department) VALUES (?, ?, ?, ?, ?)");
-                $stmt->execute([$instructor['first_name'], $instructor['last_name'], $instructor['email'], $hashed_password, $instructor['department']]);
+                $pdo->beginTransaction();
+                try {
+                    // 1. Add to program_heads so they can login as Program Head (email + new password)
+                    $stmt = $pdo->prepare("INSERT INTO program_heads (first_name, last_name, email, password, department) VALUES (?, ?, ?, ?, ?)");
+                    $stmt->execute([
+                        $instructor['first_name'],
+                        $instructor['last_name'] ?? '',
+                        $email,
+                        $hashed_password,
+                        $instructor['department'] ?? null
+                    ]);
 
-                // Record promotion
-                $promoted_by = $_SESSION['user_id'] ?? 1;
-                $stmt = $pdo->prepare("INSERT INTO admin_promotions (instructor_id, promoted_to, promoted_by) VALUES (?, ?, ?)");
-                $stmt->execute([$instructor_id, 'program_head', $promoted_by]);
+                    // 2. Record promotion so All Instructors table shows Role = Program Head
+                    $promoted_by = (int)($_SESSION['user_id'] ?? 1);
+                    $stmt = $pdo->prepare("INSERT INTO admin_promotions (instructor_id, promoted_to, promoted_by) VALUES (?, 'program_head', ?)");
+                    $stmt->execute([(int)$instructor_id, $promoted_by]);
 
-                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully!'));
+                    // 3. Update instructor position so Role column shows Program Head
+                    $stmt = $pdo->prepare("UPDATE instructors SET position = 'Program Head' WHERE id = ?");
+                    $stmt->execute([(int)$instructor_id]);
+
+                    $pdo->commit();
+                } catch (PDOException $e) {
+                    $pdo->rollBack();
+                    header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Promotion failed: ' . $e->getMessage()));
+                    exit;
+                }
+
+                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully! They can now log in as Program Head with the new password.'));
             } else {
                 // Check if already an admin
                 $stmt = $pdo->prepare("SELECT id FROM admins WHERE email = ?");
@@ -409,28 +452,42 @@ if ($action === 'add_instructor') {
     exit;
 
 } elseif ($action === 'remove_promotion') {
-    $instructor_id = $_GET['id'] ?? 0;
+    $instructor_id = (int)($_GET['id'] ?? 0);
 
-    if (empty($instructor_id)) {
+    if ($instructor_id <= 0) {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Invalid instructor ID'));
         exit;
     }
 
     if ($pdo) {
         try {
-            // Update promotion status to revoked
-            $stmt = $pdo->prepare("UPDATE admin_promotions SET status = 'revoked' WHERE instructor_id = ? AND promoted_to = 'program_head' AND status = 'active'");
-            $stmt->execute([$instructor_id]);
-
-            // Get instructor email to remove from program_heads
             $stmt = $pdo->prepare("SELECT email FROM instructors WHERE id = ?");
             $stmt->execute([$instructor_id]);
-            $instructor = $stmt->fetch();
+            $instructor = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$instructor || empty($instructor['email'])) {
+                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Instructor not found'));
+                exit;
+            }
+            $email = trim($instructor['email']);
 
-            if ($instructor) {
-                // Remove from program_heads
+            $pdo->beginTransaction();
+            try {
+                // 1. Revoke promotion so Role goes back to Instructor in UI
+                $stmt = $pdo->prepare("UPDATE admin_promotions SET status = 'revoked' WHERE instructor_id = ? AND promoted_to = 'program_head' AND status = 'active'");
+                $stmt->execute([$instructor_id]);
+
+                // 2. Remove Program Head login
                 $stmt = $pdo->prepare("DELETE FROM program_heads WHERE email = ?");
-                $stmt->execute([$instructor['email']]);
+                $stmt->execute([$email]);
+
+                // 3. Reset instructor position back to Instructor
+                $stmt = $pdo->prepare("UPDATE instructors SET position = 'Instructor' WHERE id = ?");
+                $stmt->execute([$instructor_id]);
+
+                $pdo->commit();
+            } catch (PDOException $e) {
+                $pdo->rollBack();
+                throw $e;
             }
 
             header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Program Head promotion removed successfully!'));

@@ -14,15 +14,15 @@ if ($pdo) {
         $result = $stmt->fetch();
         $instructor_count = $result['count'] ?? 0;
         
-        // Get recent instructors (last 5)
-        $stmt = $pdo->query("SELECT * FROM instructors ORDER BY first_name ASC LIMIT 5");
+        // Get all instructors for Instructor List table
+        $stmt = $pdo->query("SELECT * FROM instructors ORDER BY first_name ASC");
         $recent_instructors = $stmt->fetchAll();
         
         // Get promoted instructor IDs (Role = Program Head for these)
         try {
             $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
-            $promotions = $stmt->fetchAll();
-            $promoted_ids = array_column($promotions, 'instructor_id');
+            $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
         } catch (PDOException $e) {
             try {
                 $pdo->exec("CREATE TABLE IF NOT EXISTS admin_promotions (
@@ -34,8 +34,8 @@ if ($pdo) {
                     status ENUM('active', 'revoked') DEFAULT 'active'
                 )");
                 $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
-                $promotions = $stmt->fetchAll();
-                $promoted_ids = array_column($promotions, 'instructor_id');
+                $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
             } catch (PDOException $e2) {
                 $promoted_ids = [];
             }
@@ -95,7 +95,7 @@ if ($pdo) {
     <div class="card-header">
         <h3 class="card-title">
             <i class="fas fa-users"></i>
-            Instructor List
+            Instructor List (<?php echo $instructor_count; ?>)
         </h3>
     </div>
     <div class="card-body">
@@ -133,7 +133,7 @@ if ($pdo) {
                         </div>
                     </td>
                     <td><?php echo htmlspecialchars($instructor['department']); ?></td>
-                    <td><?php echo in_array($instructor['id'], $promoted_ids) ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
+                    <td><?php echo in_array((int)$instructor['id'], $promoted_ids, true) ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
                     <td><?php echo $joined_date; ?></td>
                     <td>
                         <a href="dashboard.php?page=manage_program_heads" class="btn btn-sm" style="background: none; border: none; color: var(--gold); cursor: pointer;">

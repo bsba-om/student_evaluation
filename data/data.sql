@@ -42,7 +42,9 @@ CREATE TABLE IF NOT EXISTS departments (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Program Heads Table
+-- Program Heads Table (login as Program Head).
+-- When an instructor is promoted via admin, a row is inserted here with the new password
+-- so they can sign in as Program Head. Remove promotion deletes this row.
 CREATE TABLE IF NOT EXISTS program_heads (
     id INT PRIMARY KEY AUTO_INCREMENT,
     first_name VARCHAR(100) NOT NULL,
@@ -173,7 +175,9 @@ CREATE TABLE IF NOT EXISTS pending_instructors (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Admin Promotions (promote instructor to program_head)
+-- Admin Promotions: tracks which instructors are promoted (UI Role = Program Head).
+-- When status = 'active' and promoted_to = 'program_head', the instructor is shown as Program Head
+-- in All Instructors table. Login as Program Head uses program_heads table (email + password set on promote).
 CREATE TABLE IF NOT EXISTS admin_promotions (
     id INT PRIMARY KEY AUTO_INCREMENT,
     instructor_id INT NOT NULL,
