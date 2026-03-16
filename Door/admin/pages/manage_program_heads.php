@@ -11,20 +11,45 @@ require_once '../../data/config.php';
 $instructors = [];
 $error_message = '';
 $promoted_instructor_id = null;
+$promoted_ids = [];
 
 if ($pdo) {
     try {
         $stmt = $pdo->query("SELECT * FROM instructors ORDER BY id DESC");
         $instructors = $stmt->fetchAll();
         
+        // Get all promoted instructor IDs - try admin_promotions table
+        try {
+            $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+            $promotions = $stmt->fetchAll();
+            $promoted_ids = array_column($promotions, 'instructor_id');
+        } catch (PDOException $e) {
+            // Table might not exist, try to create it
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS admin_promotions (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    instructor_id INT NOT NULL,
+                    promoted_to VARCHAR(50) NOT NULL,
+                    promoted_by INT NOT NULL,
+                    promotion_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status ENUM('active', 'revoked') DEFAULT 'active'
+                )");
+                // Retry query
+                $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+                $promotions = $stmt->fetchAll();
+                $promoted_ids = array_column($promotions, 'instructor_id');
+            } catch (PDOException $e2) {
+                // Still failed, leave as empty array
+                $promoted_ids = [];
+            }
+        }
+        
         // Check if there's already a promoted program head
-        $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active' LIMIT 1");
-        $promotion = $stmt->fetch();
-        if ($promotion) {
-            $promoted_instructor_id = $promotion['instructor_id'];
+        if (!empty($promoted_ids)) {
+            $promoted_instructor_id = $promoted_ids[0];
         }
     } catch (PDOException $e) {
-        $error_message = "Database connection failed. Please set up the database using data.sql";
+        $error_message = "Database error: " . $e->getMessage();
     }
 } else {
     $error_message = "Database connection failed. Please set up the database using data.sql";
@@ -46,8 +71,8 @@ if ($pdo) {
             </select>
             <select class="form-select" style="width: auto; min-width: 140px;">
                 <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
+                <option value="program_head">Program Head</option>
+                <option value="instructor">Instructor</option>
             </select>
         </div>
     </div>
@@ -83,7 +108,7 @@ if ($pdo) {
                     <th>Email</th>
                     <th>Employee ID</th>
                     <th>Department</th>
-                    <th>Status</th>
+                    <th>Role</th>
                     <th>Joined Date</th>
                     <th>Actions</th>
                 </tr>
@@ -110,33 +135,19 @@ if ($pdo) {
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d4a843, #e8c768); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;"><?php echo $initials; ?></div>
                             <div>
                                 <div style="font-weight: 600;"><?php echo htmlspecialchars($full_name); ?></div>
-                                <div style="font-size: 12px; color: #6b7280;"><?php echo htmlspecialchars($instructor['position'] ?? 'Instructor'); ?></div>
+                                <div style="font-size: 12px; color: #6b7280;"><?php echo in_array($instructor['id'], $promoted_ids) ? 'Program Head' : htmlspecialchars($instructor['position'] ?? 'Instructor'); ?></div>
                             </div>
                         </div>
                     </td>
                     <td><?php echo htmlspecialchars($instructor['email']); ?></td>
                     <td><?php echo htmlspecialchars($instructor['employee_id'] ?? 'N/A'); ?></td>
                     <td><?php echo htmlspecialchars($instructor['department']); ?></td>
-                    <td><span class="status-badge active">Active</span></td>
+                    <td><?php echo in_array($instructor['id'], $promoted_ids) ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
                     <td><?php echo $created_date; ?></td>
                     <td>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-sm" style="background: none; border: none; color: var(--gold); cursor: pointer;" onclick="editInstructor(<?php echo $instructor['id']; ?>)" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <?php if ($promoted_instructor_id === null): ?>
-                                <button class="btn btn-sm" style="background: none; border: none; color: #10b981; cursor: pointer;" onclick="promoteInstructor(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>')" title="Promote to Program Head">
-                                    <i class="fas fa-user-plus"></i>
-                                </button>
-                            <?php elseif ($promoted_instructor_id == $instructor['id']): ?>
-                                <button class="btn btn-sm" style="background: none; border: none; color: #dc2626; cursor: pointer;" onclick="removePromotion(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>')" title="Remove Promotion">
-                                    <i class="fas fa-user-minus"></i>
-                                </button>
-                            <?php endif; ?>
-                            <a href="../../data/admin_process.php?action=remove_instructor&id=<?php echo $instructor['id']; ?>" class="btn btn-sm btn-danger" title="Remove" onclick="return confirm('Are you sure you want to remove this instructor?')">
-                                <i class="fas fa-trash"></i>
-                            </a>
-                        </div>
+                        <button class="actions-btn" onclick="openActionsModal(<?php echo $instructor['id']; ?>, '<?php echo htmlspecialchars($full_name); ?>', <?php echo in_array($instructor['id'], $promoted_ids) ? 'true' : 'false'; ?>, <?php echo $promoted_instructor_id === null ? 'true' : ($promoted_instructor_id == $instructor['id'] ? 'true' : 'false'); ?>)" title="Actions">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -215,8 +226,7 @@ if ($pdo) {
             <button onclick="closePromoteModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: var(--light-text);">&times;</button>
         </div>
         <p style="margin-bottom: 20px; color: var(--light-text);">
-            You are about to promote <strong id="promoteInstructorName"></strong> to Program Head. 
-            They will be able to login with the credentials below.
+            Set a new password for <strong id="promoteInstructorName"></strong> to login as Program Head. They will use the same email but this new password.
         </p>
         <form method="POST" action="../../data/admin_process.php?action=promote_instructor" id="promoteForm">
             <input type="hidden" name="instructor_id" id="promoteInstructorId">
@@ -242,6 +252,28 @@ if ($pdo) {
 </div>
 
 <style>
+.actions-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 16px;
+}
+
+.actions-btn:hover {
+    background: linear-gradient(135deg, #d4a843, #e8c768);
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(212, 168, 67, 0.4);
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -264,7 +296,247 @@ if ($pdo) {
 }
 </style>
 
+<!-- Actions Modal -->
+<div class="modal-overlay" id="actionsModal">
+    <div class="modal" style="max-width: 380px; border-radius: 20px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #d4a843, #e8c768); padding: 24px; text-align: center;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                <i class="fas fa-user-cog" style="font-size: 24px; color: #d4a843;"></i>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; color: white; margin: 0;" id="actionsModalTitle">Actions</h3>
+        </div>
+        <div style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+            <button type="button" class="action-btn action-btn-edit" onclick="editInstructorFromModal()">
+                <div class="action-btn-icon"><i class="fas fa-edit"></i></div>
+                <div class="action-btn-text">
+                    <span class="action-btn-title">Edit Instructor</span>
+                    <span class="action-btn-desc">Modify instructor details</span>
+                </div>
+                <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+            </button>
+            <button type="button" class="action-btn" id="promoteBtn">
+                <div class="action-btn-icon" id="promoteIcon"><i class="fas fa-user-plus"></i></div>
+                <div class="action-btn-text">
+                    <span class="action-btn-title" id="promoteBtnText">Promote to Program Head</span>
+                    <span class="action-btn-desc" id="promoteBtnDesc">Grant program head access</span>
+                </div>
+                <i class="fas fa-chevron-right" id="promoteChevron" style="color: #9ca3af;"></i>
+            </button>
+            <a href="#" id="deleteLink" class="action-btn action-btn-delete" onclick="return confirm('Are you sure you want to remove this instructor?')">
+                <div class="action-btn-icon"><i class="fas fa-trash-alt"></i></div>
+                <div class="action-btn-text">
+                    <span class="action-btn-title">Remove Instructor</span>
+                    <span class="action-btn-desc">Delete instructor account</span>
+                </div>
+                <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+            </a>
+        </div>
+        <div style="padding: 0 20px 20px;">
+            <button onclick="closeActionsModal()" class="cancel-btn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 12px;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-btn:hover {
+    background: #f3f4f6;
+    transform: translateX(4px);
+}
+
+.action-btn-edit .action-btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #d4a843, #e8c768);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.action-btn .action-btn-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6366f1, #818cf8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+}
+
+.action-btn-delete .action-btn-icon {
+    background: linear-gradient(135deg, #ef4444, #f87171) !important;
+}
+
+.action-btn-remove .action-btn-icon {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+}
+
+.action-btn-disabled {
+    opacity: 0.7;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.action-btn-text {
+    flex: 1;
+    text-align: left;
+}
+
+.action-btn-title {
+    display: block;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 14px;
+}
+
+.action-btn-desc {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.cancel-btn {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: white;
+    color: #6b7280;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+    background: #f9fafb;
+    color: #1f2937;
+}
+</style>
+
 <script>
+let currentInstructorId = null;
+let currentInstructorName = '';
+let isCurrentlyPromoted = false;
+let canPromote = true;
+
+function openActionsModal(id, name, isPromoted, canPromoteStatus) {
+    currentInstructorId = id;
+    currentInstructorName = name;
+    isCurrentlyPromoted = isPromoted;
+    canPromote = canPromoteStatus;
+    
+    document.getElementById('actionsModalTitle').textContent = name;
+    
+    // Update promote button based on status
+    const promoteBtn = document.getElementById('promoteBtn');
+    const promoteBtnText = document.getElementById('promoteBtnText');
+    const promoteBtnDesc = document.getElementById('promoteBtnDesc');
+    const promoteIcon = document.getElementById('promoteIcon');
+    
+    // Reset button state
+    promoteBtn.disabled = false;
+    promoteBtn.classList.remove('action-btn-remove', 'action-btn-disabled');
+    promoteBtn.style.background = '';
+    document.getElementById('promoteChevron').style.visibility = 'visible';
+    
+    if (isCurrentlyPromoted) {
+        // This instructor IS the current Program Head - show remove option (red)
+        promoteBtn.classList.add('action-btn-remove');
+        promoteBtnText.textContent = 'Remove as Program Head';
+        promoteBtnDesc.textContent = 'Remove Program Head access to promote another';
+        promoteBtn.style.background = 'rgba(220, 38, 38, 0.1)';
+        promoteIcon.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+        promoteIcon.innerHTML = '<i class="fas fa-user-minus"></i>';
+        promoteBtn.onclick = function() { closeActionsModal(); removePromotion(currentInstructorId, currentInstructorName); };
+    } else if (canPromote) {
+        // No Program Head exists - can promote
+        promoteBtnText.textContent = 'Promote to Program Head';
+        promoteBtnDesc.textContent = 'Set new password for Program Head login';
+        promoteBtn.style.background = '#f9fafb';
+        promoteIcon.style.background = 'linear-gradient(135deg, #6366f1, #818cf8)';
+        promoteIcon.innerHTML = '<i class="fas fa-user-plus"></i>';
+        promoteBtn.onclick = function() { closeActionsModal(); showPromoteModal(); };
+    } else {
+        // Another instructor is already Program Head - cannot promote (disabled, lock icon)
+        promoteBtn.classList.add('action-btn-disabled');
+        promoteBtnText.textContent = 'Cannot Promote';
+        promoteBtnDesc.textContent = 'Remove current Program Head first';
+        promoteBtn.style.background = '#f3f4f6';
+        promoteIcon.style.background = '#9ca3af';
+        promoteIcon.innerHTML = '<i class="fas fa-lock"></i>';
+        promoteBtn.disabled = true;
+        promoteBtn.onclick = null;
+        document.getElementById('promoteChevron').style.visibility = 'hidden';
+    }
+    
+    // Update edit and delete links
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    if (row) {
+        // Edit is handled by function
+        // Delete link
+        document.getElementById('deleteLink').href = '../../data/admin_process.php?action=remove_instructor&id=' + id;
+    }
+    
+    document.getElementById('actionsModal').classList.add('show');
+}
+
+function closeActionsModal() {
+    document.getElementById('actionsModal').classList.remove('show');
+}
+
+function editInstructorFromModal() {
+    closeActionsModal();
+    editInstructor(currentInstructorId);
+}
+
+function promoteFromModal() {
+    closeActionsModal();
+    showPromoteModal();
+}
+
+function showPromoteModal() {
+    document.getElementById('promoteInstructorId').value = currentInstructorId;
+    document.getElementById('promoteInstructorName').textContent = currentInstructorName;
+    document.getElementById('promotePassword').value = '';
+    document.getElementById('promoteConfirmPassword').value = '';
+    document.getElementById('promoteModal').classList.add('show');
+}
+
+// Check for success/error messages in URL and show modal
+window.addEventListener('load', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') || urlParams.get('error')) {
+        // Page was redirected back after an action, reload to clear URL params
+        // But first show the message
+    }
+});
+
+// Close modal when clicking outside
+document.getElementById('actionsModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeActionsModal();
+    }
+});
+
 function filterInstructors() {
     const searchInput = document.getElementById('searchInput').value.toLowerCase();
     const deptFilter = document.getElementById('deptFilter').value;
@@ -275,10 +547,12 @@ function filterInstructors() {
     for (let i = 1; i < tr.length; i++) {
         const tdName = tr[i].getElementsByTagName('td')[0];
         const tdDept = tr[i].getElementsByTagName('td')[3];
+        const tdRole = tr[i].getElementsByTagName('td')[4];
         
-        if (tdName && tdDept) {
+        if (tdName && tdDept && tdRole) {
             const nameText = tdName.textContent || tdName.innerText;
             const deptText = tdDept.textContent || tdDept.innerText;
+            const roleText = tdRole.textContent || tdRole.innerText;
             
             const matchesSearch = nameText.toLowerCase().indexOf(searchInput) > -1;
             const matchesDept = deptFilter === '' || deptText.indexOf(deptFilter) > -1;
@@ -324,7 +598,6 @@ function closePromoteModal() {
 document.getElementById('promoteForm').addEventListener('submit', function(e) {
     const password = document.getElementById('promotePassword').value;
     const confirmPassword = document.getElementById('promoteConfirmPassword').value;
-    
     if (password !== confirmPassword) {
         e.preventDefault();
         alert('Passwords do not match!');

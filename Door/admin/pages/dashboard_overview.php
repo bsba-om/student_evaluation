@@ -5,6 +5,7 @@ $instructor_count = 0;
 $department_count = 3;
 $recent_instructors = [];
 $error_message = '';
+$promoted_ids = [];
 
 if ($pdo) {
     try {
@@ -17,6 +18,29 @@ if ($pdo) {
         $stmt = $pdo->query("SELECT * FROM instructors ORDER BY first_name ASC LIMIT 5");
         $recent_instructors = $stmt->fetchAll();
         
+        // Get promoted instructor IDs (Role = Program Head for these)
+        try {
+            $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+            $promotions = $stmt->fetchAll();
+            $promoted_ids = array_column($promotions, 'instructor_id');
+        } catch (PDOException $e) {
+            try {
+                $pdo->exec("CREATE TABLE IF NOT EXISTS admin_promotions (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    instructor_id INT NOT NULL,
+                    promoted_to VARCHAR(50) NOT NULL,
+                    promoted_by INT NOT NULL,
+                    promotion_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    status ENUM('active', 'revoked') DEFAULT 'active'
+                )");
+                $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+                $promotions = $stmt->fetchAll();
+                $promoted_ids = array_column($promotions, 'instructor_id');
+            } catch (PDOException $e2) {
+                $promoted_ids = [];
+            }
+        }
+        
     } catch (PDOException $e) {
         $error_message = "Database connection failed. Please set up the database using data.sql";
     }
@@ -28,7 +52,7 @@ if ($pdo) {
 <div class="page-header">
     <div>
         <h1 class="page-title">Dashboard Overview</h1>
-        <p class="page-subtitle">Welcome back, Administrator!</p>
+        <p class="page-subtitle">Welcome back, Admin!</p>
     </div>
 </div>
 
@@ -87,7 +111,7 @@ if ($pdo) {
                 <tr>
                     <th>Name</th>
                     <th>Department</th>
-                    <th>Status</th>
+                    <th>Role</th>
                     <th>Joined Date</th>
                     <th>Actions</th>
                 </tr>
@@ -109,7 +133,7 @@ if ($pdo) {
                         </div>
                     </td>
                     <td><?php echo htmlspecialchars($instructor['department']); ?></td>
-                    <td><span class="status-badge active">Active</span></td>
+                    <td><?php echo in_array($instructor['id'], $promoted_ids) ? '<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">Program Head</span>' : '<span class="status-badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">Instructor</span>'; ?></td>
                     <td><?php echo $joined_date; ?></td>
                     <td>
                         <a href="dashboard.php?page=manage_program_heads" class="btn btn-sm" style="background: none; border: none; color: var(--gold); cursor: pointer;">

@@ -3,6 +3,7 @@ require_once '../../data/session_security.php';
 check_auth('admin', '../login.php');
 
 $user_name = $_SESSION['user_name'] ?? 'Administrator';
+$user_role = $_SESSION['user_role'] ?? 'admin';
 $current_page = $_GET['page'] ?? 'dashboard';
 
 // Get page content
@@ -807,7 +808,7 @@ if (!file_exists($page_file)) {
                     </div>
                     <div class="user-details">
                         <div class="user-name"><?php echo htmlspecialchars($user_name); ?></div>
-                        <div class="user-role">Administrator</div>
+                        <div class="user-role"><?php echo ucfirst($user_role); ?></div>
                     </div>
                 </div>
                 <a href="../../data/logout.php" class="logout-btn">

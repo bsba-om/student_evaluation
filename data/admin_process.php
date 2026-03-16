@@ -1,59 +1,80 @@
 <?php
 require_once 'config.php';
 
+// Create admin_promotions table if it doesn't exist (for promoting instructors)
+if ($pdo) {
+    try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS admin_promotions (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            instructor_id INT NOT NULL,
+            promoted_to VARCHAR(50) NOT NULL COMMENT 'program_head or admin',
+            promoted_by INT NOT NULL COMMENT 'admin user_id',
+            promotion_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            status ENUM('active', 'revoked') DEFAULT 'active'
+        )");
+    } catch (PDOException $e) {
+        // Table creation failed, continue anyway
+    }
+}
+
 // Handle instructor registration (no auth required)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'register_instructor') {
     header('Content-Type: application/json');
-    
+
     $first_name = trim($_POST['first_name'] ?? '');
     $last_name = trim($_POST['last_name'] ?? '');
+    $middle_name = trim($_POST['middle_name'] ?? '');
+    $suffix = trim($_POST['suffix'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $employee_id = trim($_POST['employee_id'] ?? '');
     $department = trim($_POST['department'] ?? '');
     $password = $_POST['password'] ?? '';
-    
-    // Validation
+
+    // Validation (required: first_name, last_name, email, employee_id, department, password)
     if (empty($first_name) || empty($last_name) || empty($email) || empty($employee_id) || empty($department) || empty($password)) {
-        echo json_encode(['success' => false, 'message' => 'Please fill in all fields']);
+        echo json_encode(['success' => false, 'message' => 'Please fill in all required fields']);
         exit;
     }
-    
+
     if (strlen($password) < 6) {
         echo json_encode(['success' => false, 'message' => 'Password must be at least 6 characters']);
         exit;
     }
-    
-    // Hash password
+
+    // Department must be one of the allowed values (matches instructors table)
+    $allowed_departments = ['Operational Management', 'Financial Management', 'Marketing Management'];
+    if (!in_array($department, $allowed_departments)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid department selected']);
+        exit;
+    }
+
     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-    
+
     if ($pdo) {
         try {
-            // Check if email already exists
             $stmt = $pdo->prepare("SELECT id FROM instructors WHERE email = ?");
             $stmt->execute([$email]);
             if ($stmt->fetch()) {
                 echo json_encode(['success' => false, 'message' => 'Email already registered']);
                 exit;
             }
-            
-            // Check if employee ID already exists
+
             $stmt = $pdo->prepare("SELECT id FROM instructors WHERE employee_id = ?");
             $stmt->execute([$employee_id]);
             if ($stmt->fetch()) {
                 echo json_encode(['success' => false, 'message' => 'Employee ID already registered']);
                 exit;
             }
-            
-            // Insert new instructor
-            $stmt = $pdo->prepare("INSERT INTO instructors (first_name, last_name, email, employee_id, department, password, status) VALUES (?, ?, ?, ?, ?, ?, 'active')");
-            $stmt->execute([$first_name, $last_name, $email, $employee_id, $department, $hashed_password]);
-            
+
+            // Insert into instructors table (columns match data.sql)
+            $stmt = $pdo->prepare("INSERT INTO instructors (first_name, middle_name, last_name, suffix, email, employee_id, department, password, position, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Instructor', 'active')");
+            $stmt->execute([$first_name, $middle_name ?: null, $last_name, $suffix ?: null, $email, $employee_id, $department, $hashed_password]);
+
             echo json_encode(['success' => true, 'message' => 'Registration successful! You can now login.']);
         } catch (PDOException $e) {
             echo json_encode(['success' => false, 'message' => 'Registration failed. Please try again.']);
         }
     } else {
-        // Demo mode - just return success
         echo json_encode(['success' => true, 'message' => 'Registration successful! (Demo Mode)']);
     }
     exit;
@@ -296,10 +317,19 @@ if ($action === 'add_instructor') {
 } elseif ($action === 'promote_instructor') {
     $instructor_id = $_POST['instructor_id'] ?? 0;
     $promote_to = $_POST['promote_to'] ?? ''; // 'program_head' or 'admin'
-    $password = $_POST['password'] ?? ''; // Password for the new account
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
     if (empty($instructor_id) || empty($promote_to) || empty($password)) {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Please fill in all fields'));
+        exit;
+    }
+    if ($password !== $confirm_password) {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Passwords do not match'));
+        exit;
+    }
+    if (strlen($password) < 6) {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Password must be at least 6 characters'));
         exit;
     }
 
@@ -346,8 +376,9 @@ if ($action === 'add_instructor') {
                 $stmt->execute([$instructor['first_name'], $instructor['last_name'], $instructor['email'], $hashed_password, $instructor['department']]);
 
                 // Record promotion
+                $promoted_by = $_SESSION['user_id'] ?? 1;
                 $stmt = $pdo->prepare("INSERT INTO admin_promotions (instructor_id, promoted_to, promoted_by) VALUES (?, ?, ?)");
-                $stmt->execute([$instructor_id, 'program_head', $_SESSION['user_id']]);
+                $stmt->execute([$instructor_id, 'program_head', $promoted_by]);
 
                 header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully!'));
             } else {
@@ -408,6 +439,80 @@ if ($action === 'add_instructor') {
         }
     } else {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Promotion removed successfully! (Demo Mode)'));
+    }
+    exit;
+
+} elseif ($action === 'promote_instructor_simple') {
+    // Simple promotion without password modal - uses default password
+    $instructor_id = $_GET['id'] ?? 0;
+    $promote_to = $_GET['promote_to'] ?? '';
+
+    if (empty($instructor_id) || empty($promote_to)) {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Invalid request'));
+        exit;
+    }
+
+    if ($pdo) {
+        try {
+            // First, create admin_promotions table if it doesn't exist
+            $pdo->exec("CREATE TABLE IF NOT EXISTS admin_promotions (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                instructor_id INT NOT NULL,
+                promoted_to VARCHAR(50) NOT NULL,
+                promoted_by INT NOT NULL,
+                promotion_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                status ENUM('active', 'revoked') DEFAULT 'active'
+            )");
+            
+            // Get instructor details
+            $stmt = $pdo->prepare("SELECT * FROM instructors WHERE id = ?");
+            $stmt->execute([$instructor_id]);
+            $instructor = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$instructor) {
+                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Instructor not found'));
+                exit;
+            }
+
+            // Check if there's already a program_head promotion
+            if ($promote_to === 'program_head') {
+                $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head' AND status = 'active'");
+                $existing = $stmt->fetch();
+                if ($existing && $existing['instructor_id'] != $instructor_id) {
+                    header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Another instructor is already promoted to Program Head. Remove their promotion first.'));
+                    exit;
+                }
+            }
+
+            // Use default password
+            $default_password = 'password123';
+            $hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
+
+            if ($promote_to === 'program_head') {
+                // Check if already a program_head
+                $stmt = $pdo->prepare("SELECT id FROM program_heads WHERE email = ?");
+                $stmt->execute([$instructor['email']]);
+                if ($stmt->fetch()) {
+                    header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Instructor is already a Program Head'));
+                    exit;
+                }
+
+                // Add to program_heads table
+                $stmt = $pdo->prepare("INSERT INTO program_heads (first_name, last_name, email, password, department) VALUES (?, ?, ?, ?, ?)");
+                $stmt->execute([$instructor['first_name'], $instructor['last_name'], $instructor['email'], $hashed_password, $instructor['department']]);
+
+                // Record promotion
+                $promoted_by = $_SESSION['user_id'] ?? 1;
+                $stmt = $pdo->prepare("INSERT INTO admin_promotions (instructor_id, promoted_to, promoted_by) VALUES (?, ?, ?)");
+                $stmt->execute([$instructor_id, 'program_head', $promoted_by]);
+
+                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully! Default password: password123'));
+            }
+        } catch (PDOException $e) {
+            header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Promotion failed: ' . $e->getMessage()));
+        }
+    } else {
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted successfully! (Demo Mode)'));
     }
     exit;
 

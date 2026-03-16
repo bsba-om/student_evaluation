@@ -191,7 +191,6 @@ header("Expires: Sat, 26 Jul 1997 05:00:00 GMT");
                     <p>Demo Credentials:</p>
                     <div style="margin-top: 8px; font-size: 11px; color: #6b7280;">
                         <div style="margin-bottom: 4px;"><strong>Admin:</strong> admin@cjcm.edu / password123</div>
-                        <div style="margin-bottom: 4px;"><strong>Program Head:</strong> head@test.com / password123</div>
                         <div><strong>Instructor:</strong> teacher@test.com / password123</div>
                     </div>
                 </div>
