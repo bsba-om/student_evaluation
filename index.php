@@ -80,7 +80,7 @@ if ($is_logged_in) {
 
     <section class="hero" id="hero">
         <div class="hero-bg">
-            <img src="https://mgx-backend-cdn.metadl.com/generate/images/983975/2026-02-22/6f368e27-8807-44ed-8ad2-dd187dd13629.png" alt="Campus">
+            <img src="./media/BSBA.jpg" alt="Campus">
         </div>
         <div class="hero-overlay"></div>
 
