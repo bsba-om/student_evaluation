@@ -82,7 +82,20 @@ if ($is_logged_in) {
         <div class="hero-bg">
             <img src="./media/BSBA.jpg" alt="Campus">
         </div>
-        <div class="hero-overlay"></div>
+        <div class="hero-overlay">
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+            <span class="firefly"></span>
+        </div>
 
         <div class="particles" id="particles"></div>
 
