@@ -286,6 +286,8 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
+</style>
+
 <!-- Verify Current Account Modal -->
 <div id="verifyModal" class="custom-modal" style="display:none;">
     <div class="modal-backdrop" id="verifyBackdrop"></div>
@@ -318,11 +320,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-content">
         <h3>Update Account</h3>
         <div class="form-group">
-            <label>New Email (optional)</label>
+            <label>New Email</label>
             <input type="email" id="newEmail" placeholder="Enter new email">
         </div>
         <div class="form-group">
-            <label>New Password (optional)</label>
+            <label>New Password</label>
             <div style="position: relative;">
                 <input type="password" id="newPassword" placeholder="At least 6 characters" style="padding-right: 42px;">
                 <button type="button" class="toggle-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--light-text); cursor: pointer; padding: 4px;">
@@ -395,7 +397,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (openBtn) {
         openBtn.addEventListener('click', function() {
             verifyModal.style.display = 'flex';
-            // reset fields
             document.getElementById('verifyPassword').value = '';
             document.getElementById('verifyError').textContent = '';
             currentPassword = '';
@@ -438,7 +439,6 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             if (data.success && data.verified) {
-                // Verification succeeded
                 currentPassword = pwd;
                 verifyModal.style.display = 'none';
                 // Show update modal
@@ -469,29 +469,33 @@ document.addEventListener('DOMContentLoaded', function() {
             errEl.textContent = 'Provide new email or new password';
             return;
         }
+        if (!currentPassword) {
+            errEl.textContent = 'Please verify your account first';
+            return;
+        }
         if (newPwd && newPwd !== confirmPwd) {
             errEl.textContent = 'New passwords do not match';
             return;
         }
-         if (newPwd && newPwd.length < 6) {
-             errEl.textContent = 'New password must be at least 6 characters';
-             return;
-         }
+        if (newPwd && newPwd.length < 6) {
+            errEl.textContent = 'New password must be at least 6 characters';
+            return;
+        }
 
-          fetch('../../data/admin_update_profile.php', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  current_password: currentPassword,
-                  new_email: newEmail,
-                  new_password: newPwd
-              })
-          })
-         .then(r => {
-             if (!r.ok) throw new Error('HTTP ' + r.status);
-             return r.json();
-         })
-         .then(data => {
+        fetch('../../data/admin_update_profile.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                current_password: currentPassword,
+                new_email: newEmail,
+                new_password: newPwd
+            })
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(data => {
             closeAll();
             if (data.success && newEmail) {
                 document.getElementById('adminEmailDisplay').textContent = newEmail;
