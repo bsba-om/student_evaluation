@@ -24,20 +24,21 @@ if (!file_exists($page_file)) {
     <link rel="stylesheet" href="../../css/dashboard.css">
     <style>
         :root {
-            --gold: #d4a843;
-            --gold-light: #e8c768;
-            --gold-dark: #b8922f;
-            --cream: #fef9f3;
-            --white: #ffffff;
-            --dark-text: #1a1a2e;
-            --light-text: #6b7280;
-            --border-light: #e5e7eb;
-            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
-            --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
-            --danger: #dc2626;
-            --success: #16a34a;
-            --warning: #f59e0b;
-            --info: #3b82f6;
+         --gold: #d4a843;
+         --gold-light: #e8c768;
+         --gold-dark: #b8922f;
+         --cream: #fef9f3;
+         --white: #ffffff;
+         --dark-text: #1a1a2e;
+         --light-text: #6b7280;
+         --border-light: #e5e7eb;
+         --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+         --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+         --danger: #dc2626;
+         --success: #16a34a;
+         --warning: #f59e0b;
+         --info: #3b82f6;
+         --purple: #8b5cf6;
         }
 
         * {
@@ -789,16 +790,21 @@ if (!file_exists($page_file)) {
                 </a>
 
                 <div class="menu-section">Management</div>
-                <a href="dashboard.php?page=manage_program_heads" class="menu-item <?php echo $current_page == 'manage_program_heads' || $current_page == 'add_program_head' || $current_page == 'remove_program_head' ? 'active' : ''; ?>">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Program Heads</span>
-                </a>
+                 <a href="dashboard.php?page=manage_program_heads" class="menu-item <?php echo $current_page == 'manage_program_heads' || $current_page == 'add_program_head' || $current_page == 'remove_program_head' ? 'active' : ''; ?>">
+                     <i class="fas fa-user-tie"></i>
+                     <span>Program Heads</span>
+                 </a>
 
-                <div class="menu-section">System</div>
-                <a href="dashboard.php?page=settings" class="menu-item <?php echo $current_page == 'settings' ? 'active' : ''; ?>">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
+                 <a href="dashboard.php?page=system_health" class="menu-item <?php echo $current_page == 'system_health' ? 'active' : ''; ?>">
+                     <i class="fas fa-heartbeat"></i>
+                     <span>System Health</span>
+                 </a>
+
+                 <div class="menu-section">System</div>
+                 <a href="dashboard.php?page=settings" class="menu-item <?php echo $current_page == 'settings' ? 'active' : ''; ?>">
+                     <i class="fas fa-cog"></i>
+                     <span>Settings</span>
+                 </a>
             </nav>
 
             <div class="sidebar-footer">

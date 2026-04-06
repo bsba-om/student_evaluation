@@ -3,41 +3,100 @@ require_once '../../data/session_security.php';
 check_auth('program_head', '../login.php');
 require_once '../../data/config.php';
 
-$user_name = $_SESSION['user_name'] ?? 'John Head';
+$user_name = $_SESSION['user_name'] ?? 'Program Head';
 
-// Fetch stats
+// Fetch stats with error handling
 $total_instructors = 0;
 $completed_evaluations = 0;
 $active_courses = 0;
 $avg_rating = 0;
 
-$sql = "SELECT COUNT(*) as cnt FROM instructors WHERE status = 'active'";
-$result = $conn->query($sql);
-if ($result) { $row = $result->fetch_assoc(); $total_instructors = $row['cnt']; }
+// Get total instructors (active)
+try {
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM instructors");
+    $result = $stmt->fetch();
+    $total_instructors = $result['cnt'] ?? 0;
+} catch (PDOException $e) {
+    $total_instructors = 0;
+}
 
-$sql = "SELECT COUNT(*) as cnt FROM evaluations WHERE status = 'completed'";
-$result = $conn->query($sql);
-if ($result) { $row = $result->fetch_assoc(); $completed_evaluations = $row['cnt']; }
+// Get evaluation stats - check if table exists first
+try {
+    $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
+    if ($stmt->rowCount() > 0) {
+        $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM evaluations WHERE status = 'completed'");
+        $result = $stmt->fetch();
+        $completed_evaluations = $result['cnt'] ?? 0;
+        
+        $stmt = $pdo->query("SELECT COALESCE(AVG(rating),0) as avg_r FROM evaluations");
+        $result = $stmt->fetch();
+        $avg_rating = round($result['avg_r'], 1);
+    }
+} catch (PDOException $e) {
+    $completed_evaluations = 0;
+    $avg_rating = 0;
+}
 
-$sql = "SELECT COUNT(*) as cnt FROM courses WHERE status = 'active'";
-$result = $conn->query($sql);
-if ($result) { $row = $result->fetch_assoc(); $active_courses = $row['cnt']; }
+// Get active courses - check if table exists
+try {
+    $stmt = $pdo->query("SHOW TABLES LIKE 'courses'");
+    if ($stmt->rowCount() > 0) {
+        $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM courses WHERE status = 'active'");
+        $result = $stmt->fetch();
+        $active_courses = $result['cnt'] ?? 0;
+    } else {
+        // Alternative: count majors as courses if courses table doesn't exist
+        $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM majors WHERE is_active = 1");
+        $result = $stmt->fetch();
+        $active_courses = $result['cnt'] ?? 0;
+    }
+} catch (PDOException $e) {
+    $active_courses = 0;
+}
 
-$sql = "SELECT COALESCE(AVG(rating),0) as avg_r FROM evaluations";
-$result = $conn->query($sql);
-if ($result) { $row = $result->fetch_assoc(); $avg_rating = round($row['avg_r'], 1); }
-
-// Fetch recent evaluations
+// Fetch recent evaluations only if table exists
 $recent_evaluations = [];
-$sql = "SELECT CONCAT(i.first_name, ' ', i.last_name) as instructor_name, c.course_name, e.rating, e.evaluation_date FROM evaluations e JOIN instructors i ON e.instructor_id = i.id JOIN courses c ON e.course_id = c.id ORDER BY e.evaluation_date DESC LIMIT 3";
-$result = $conn->query($sql);
-if ($result) { while ($row = $result->fetch_assoc()) { $recent_evaluations[] = $row; } }
+try {
+    $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
+    if ($stmt->rowCount() > 0) {
+        $sql = "SELECT 
+            CONCAT(i.first_name, ' ', i.last_name) as instructor_name, 
+            c.course_name, 
+            e.rating, 
+            e.evaluation_date 
+            FROM evaluations e 
+            JOIN instructors i ON e.instructor_id = i.id 
+            JOIN courses c ON e.course_id = c.id 
+            ORDER BY e.evaluation_date DESC 
+            LIMIT 3";
+        $stmt = $pdo->query($sql);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $recent_evaluations[] = $row;
+        }
+    }
+} catch (PDOException $e) {
+    $recent_evaluations = [];
+}
 
-// Fetch department performance
+// Fetch department performance only if evaluations table exists
 $dept_performance = [];
-$sql = "SELECT e.department, COALESCE(AVG(e.rating),0) as avg_rating FROM evaluations e GROUP BY e.department ORDER BY avg_rating DESC";
-$result = $conn->query($sql);
-if ($result) { while ($row = $result->fetch_assoc()) { $dept_performance[] = $row; } }
+try {
+    $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
+    if ($stmt->rowCount() > 0) {
+        $sql = "SELECT 
+            COALESCE(e.department, 'General') as department, 
+            COALESCE(AVG(e.rating),0) as avg_rating 
+            FROM evaluations e 
+            GROUP BY e.department 
+            ORDER BY avg_rating DESC";
+        $stmt = $pdo->query($sql);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $dept_performance[] = $row;
+        }
+    }
+} catch (PDOException $e) {
+    $dept_performance = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
