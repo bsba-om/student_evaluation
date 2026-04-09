@@ -1688,14 +1688,14 @@ function getGradient($student) {
                         <i class="fas fa-list"></i>
                     </button>
                 </div>
-            </div>
-
-            <!-- Bulk Actions Bar -->
-            <div class="bulk-actions-bar" style="display: flex; align-items: center; gap: 18px; margin: 20px 24px; padding: 16px 20px; background: linear-gradient(135deg, #fefce8, #fef9c3); border-radius: 14px; border: 1px solid #fef08a; flex-wrap: wrap;">
-                <input type="checkbox" id="selectAll" style="width: 20px; height: 20px; accent-color: #d4a843; margin-right: 8px; cursor: pointer;" onchange="toggleSelectAll()">
-                <label for="selectAll" style="font-weight: 700; color: #a16207; margin-right: 18px; cursor:pointer; font-size: 14px;">Select All</label>
-                <span id="selectionCount" style="font-size: 14px; color: #713f12; font-weight: 600; margin-right: 18px; background: #fef08a; padding: 4px 12px; border-radius: 20px;">0 selected</span>
-                <button id="assignTaskBtn" class="btn btn-secondary" style="padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; background: linear-gradient(135deg, #d4a843, #e8c768); color: white; border: none; box-shadow: 0 4px 12px rgba(212, 168, 67, 0.3);" onclick="openAssignTaskModal()" disabled>Assign Task</button>
+                <div class="bulk-actions-bar" style="display: flex; align-items: center; justify-content: center; gap: 18px; padding: 12px 16px; background: linear-gradient(135deg, #fefce8, #fef9c3); border-radius: 12px; border: 1px solid #fef08a; flex-wrap: wrap; width: 100%; margin-top: 12px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="selectAll" style="width: 20px; height: 20px; accent-color: #d4a843; cursor: pointer;" onchange="toggleSelectAll()">
+                        <label for="selectAll" style="font-weight: 600; color: #a16207; cursor:pointer; font-size: 13px;">Select All</label>
+                    </div>
+                    <span id="selectionCount" style="font-size: 13px; color: #713f12; font-weight: 600; background: #fef08a; padding: 4px 12px; border-radius: 20px;">0 selected</span>
+                    <button id="assignTaskBtn" class="btn btn-secondary" style="padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; background: linear-gradient(135deg, #d4a843, #e8c768); color: white; border: none;" onclick="openAssignTaskModal()" disabled>Assign Task</button>
+                </div>
             </div>
 
                   <!-- Students List - Card Grid -->
@@ -1704,7 +1704,7 @@ function getGradient($student) {
                       <div class="year-sections">
                           <div class="year-section" data-year="all">
                               <div class="year-section-header" onclick="filterByYear('all')">
-                                  <i class="fas fa-users"></i> All Students
+                                  <i class="fas fa-layer-group"></i> All
                                   <span class="year-count" id="count-all">(0)</span>
                               </div>
                           </div>
@@ -1959,65 +1959,60 @@ function getGradient($student) {
   <!-- Toast Container -->
      <div class="toast-container" id="toastContainer"></div>
 
-     <script>
-         let allStudents = <?php echo json_encode($students); ?>;
-         let currentView = 'grid';
-         let selectedStudents = new Set();
-         
-          function isCardVisible(card) {
-              // Check if card is actually visible (not display:none, not hidden by parent)
-              return !!(card.offsetParent || card.offsetWidth || card.offsetHeight || card.getClientRects().length);
-          }
+      <script>
+          let allStudents = <?php echo json_encode($students); ?>;
+          let currentView = 'grid';
+          let selectedStudents = new Set();
+          let selectedYear = 'all';
           
-          function updateSelection() {
-              const allCheckboxes = document.querySelectorAll('.student-checkbox');
-              const selectAllCheckbox = document.getElementById('selectAll');
-              const countSpan = document.getElementById('selectionCount');
-              const assignBtn = document.getElementById('assignTaskBtn');
-              
-              let visibleCount = 0;
-              let visibleChecked = 0;
-              
-              selectedStudents.clear();
-              allCheckboxes.forEach(cb => {
-                  const card = cb.closest('.student-card-horizontal');
-                  const isVisible = card && isCardVisible(card);
-                  
-                  if (cb.checked) {
-                      selectedStudents.add(cb.value);
-                      if (isVisible) visibleChecked++;
-                  }
-                  if (isVisible) visibleCount++;
-              });
-              
-              const totalSelected = selectedStudents.size;
-              countSpan.textContent = `${totalSelected} selected`;
-              
-              assignBtn.disabled = totalSelected === 0;
-              
-              if (visibleCount === 0) {
-                  selectAllCheckbox.checked = false;
-                  selectAllCheckbox.indeterminate = false;
-              } else if (visibleChecked === visibleCount) {
-                  selectAllCheckbox.checked = true;
-                  selectAllCheckbox.indeterminate = false;
-              } else if (visibleChecked > 0) {
-                  selectAllCheckbox.checked = false;
-                  selectAllCheckbox.indeterminate = true;
-              } else {
-                  selectAllCheckbox.checked = false;
-                  selectAllCheckbox.indeterminate = false;
-              }
-          }
+           function isCardVisible(card) {
+               return !!(card.offsetParent || card.offsetWidth || card.offsetHeight || card.getClientRects().length);
+           }
+           
+           function updateSelection() {
+               const allCheckboxes = document.querySelectorAll('.student-checkbox');
+               const selectAllCheckbox = document.getElementById('selectAll');
+               const countSpan = document.getElementById('selectionCount');
+               const assignBtn = document.getElementById('assignTaskBtn');
+               
+               let checkedCount = 0;
+               let visibleCount = 0;
+               
+               selectedStudents.clear();
+               allCheckboxes.forEach(cb => {
+                   const card = cb.closest('.student-card-horizontal');
+                   // Only count visible checkboxes
+                   if (card && card.style.display !== 'none') {
+                       visibleCount++;
+                       if (cb.checked) {
+                           selectedStudents.add(cb.value);
+                           checkedCount++;
+                       }
+                   }
+               });
+               
+               countSpan.textContent = `${checkedCount} selected`;
+               assignBtn.disabled = checkedCount === 0;
+               
+               // Update selectAll checkbox based on visible checkboxes
+               if (visibleCount === 0) {
+                   selectAllCheckbox.checked = false;
+               } else if (checkedCount === visibleCount) {
+                   selectAllCheckbox.checked = true;
+               } else {
+                   selectAllCheckbox.checked = false;
+               }
+           }
           
           function toggleSelectAll() {
               const selectAllCheckbox = document.getElementById('selectAll');
               const allCheckboxes = document.querySelectorAll('.student-checkbox');
-              const shouldSelect = !selectAllCheckbox.checked || selectAllCheckbox.indeterminate;
+              const shouldSelect = selectAllCheckbox.checked;
               
+              // Only select/deselect checkboxes for the selected year
               allCheckboxes.forEach(cb => {
                   const card = cb.closest('.student-card-horizontal');
-                  if (card && isCardVisible(card)) {
+                  if (card && card.style.display !== 'none') {
                       cb.checked = shouldSelect;
                   }
               });
@@ -2070,6 +2065,7 @@ function getGradient($student) {
         function filterByYear(year) {
             // Convert year to string for comparison
             const yearStr = String(year);
+            selectedYear = yearStr; // Track selected year
             
             // Update active state on year sections
             document.querySelectorAll('.year-section').forEach(section => {
@@ -2099,6 +2095,10 @@ function getGradient($student) {
                     card.style.display = 'none';
                 }
             });
+            
+            // Reset selectAll checkbox when changing year
+            const selectAllCheckbox = document.getElementById('selectAll');
+            selectAllCheckbox.checked = false;
             
             updateSelection();
         }
@@ -2652,21 +2652,15 @@ function getGradient($student) {
             document.getElementById('studentDetailModal').style.display = 'flex';
         }
 
-        document.getElementById('studentDetailModal').addEventListener('click', function(e) {
-            if (e.target === this) closeModal();
-        });
+            document.getElementById('studentDetailModal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
+            });
 
-         // Initialize
-         document.addEventListener('DOMContentLoaded', function() {
-             filterStudents();
-             updateSelection();
+         <?php if ($show_role_modal): ?>
+         window.addEventListener('DOMContentLoaded', function() {
+             showToast('Access restricted. Redirecting...', 'error');
+             setTimeout(() => window.location.href = '../../../Door/login.php', 2000);
          });
-
-        <?php if ($show_role_modal): ?>
-        window.addEventListener('DOMContentLoaded', function() {
-            showToast('Access restricted. Redirecting...', 'error');
-            setTimeout(() => window.location.href = '../../../Door/login.php', 2000);
-        });
         <?php endif; ?>
     </script>
 </body>
