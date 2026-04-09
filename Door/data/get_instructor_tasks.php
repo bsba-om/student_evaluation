@@ -38,14 +38,7 @@ try {
         LEFT JOIN task_assignments ta ON t.id = ta.task_id
         WHERE t.instructor_id = ?
         GROUP BY t.id
-        ORDER BY 
-            CASE t.priority 
-                WHEN 'high' THEN 1
-                WHEN 'medium' THEN 2
-                WHEN 'low' THEN 3
-            END,
-            t.due_date ASC,
-            t.created_at DESC
+        ORDER BY t.created_at DESC
     ");
     
     $stmt->execute([$instructor_id]);

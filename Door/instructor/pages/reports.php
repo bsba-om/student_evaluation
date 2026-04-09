@@ -64,6 +64,42 @@ $mock_data = [
         ['label' => '4th Year', 'count' => 1, 'color' => '#f59e0b']
     ]
 ];
+
+$assigned_mentees = [];
+$mentee_count = 0;
+$new_mentees = [];
+$last_viewed = null;
+
+if (!$show_role_modal && $pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT m.*, s.major_id, s.year_level, maj.display_name as major_name 
+                               FROM mentees m 
+                               LEFT JOIN students s ON m.student_id = s.id 
+                               LEFT JOIN majors maj ON s.major_id = maj.id 
+                               WHERE m.mentor_id = ? 
+                               ORDER BY m.created_at DESC");
+        $stmt->execute([$instructor_id]);
+        $assigned_mentees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $mentee_count = count($assigned_mentees);
+        
+        $last_viewed = isset($_SESSION['last_mentee_view']) ? $_SESSION['last_mentee_view'] : null;
+        
+        foreach ($assigned_mentees as $mentee) {
+            if ($last_viewed && strtotime($mentee['created_at']) > strtotime($last_viewed)) {
+                $new_mentees[] = $mentee;
+            } elseif (!$last_viewed && strtotime($mentee['created_at']) > strtotime('-24 hours')) {
+                $new_mentees[] = $mentee;
+            }
+        }
+        
+        if ($mentee_count > 0 && !isset($_SESSION['last_mentee_view'])) {
+            $_SESSION['last_mentee_view'] = date('Y-m-d H:i:s');
+        }
+    } catch (PDOException $e) {
+        $assigned_mentees = [];
+        $mentee_count = 0;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -694,6 +730,97 @@ $mock_data = [
                 </div>
             </div>
 
+            <!-- Mentee Information Report Section -->
+            <?php if ($mentee_count > 0): ?>
+            <div class="mentee-report-section" style="margin-bottom: 32px;">
+                <?php if (!empty($new_mentees)): ?>
+                <div class="new-mentee-notification" style="background: linear-gradient(135deg, #059669, #34d399); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
+                    <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <i class="fas fa-user-plus" style="font-size: 20px;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">
+                            New Mentee<?php echo count($new_mentees) > 1 ? 's' : ''; ?> Assigned!
+                        </div>
+                        <div style="font-size: 14px; opacity: 0.95;">
+                            <?php if (count($new_mentees) == 1): ?>
+                                <strong><?php echo htmlspecialchars(trim($new_mentees[0]['first_name'] . ' ' . $new_mentees[0]['last_name'])); ?></strong> has been assigned to you by the Program Head.
+                            <?php else: ?>
+                                <strong><?php echo count($new_mentees); ?></strong> students have been assigned to you: 
+                                <?php 
+                                $names = [];
+                                foreach ($new_mentees as $nm) {
+                                    $names[] = htmlspecialchars(trim($nm['first_name'] . ' ' . $nm['last_name']));
+                                }
+                                echo implode(', ', $names);
+                                ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <?php endif; ?>
+                
+                <div class="generator-header" style="margin-bottom: 20px;">
+                    <i class="fas fa-user-graduate" style="font-size: 28px; color: var(--gold);"></i>
+                    <h2 style="margin: 0; font-size: 22px; color: var(--dark-text);">My Mentees</h2>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px;">
+                    <?php foreach ($assigned_mentees as $mentee): 
+                        $fullName = htmlspecialchars(trim(($mentee['first_name'] ?? '') . ' ' . ($mentee['last_name'] ?? '')));
+                        $initials = strtoupper(substr($mentee['first_name'] ?? '', 0, 1) . substr($mentee['last_name'] ?? '', 0, 1));
+                        $assignedDate = !empty($mentee['created_at']) ? date('M j, Y', strtotime($mentee['created_at'])) : '-';
+                    ?>
+                    <div style="background: white; border-radius: 12px; padding: 14px; border: 1px solid var(--border-light); box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--gold-light)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'" onmouseout="this.style.borderColor='var(--border-light)'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.06)'">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0;">
+                                <?php echo $initials; ?>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 13px; font-weight: 700; color: var(--dark-text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?php echo $fullName; ?>
+                                </div>
+                                <div style="font-size: 11px; color: var(--light-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    <?php echo htmlspecialchars($mentee['email'] ?? ''); ?>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+                            <?php if (!empty($mentee['major_name'])): ?>
+                            <span style="padding: 2px 8px; background: rgba(212, 168, 67, 0.12); color: #9a7b0a; border-radius: 12px; font-size: 10px; font-weight: 600;">
+                                <?php echo htmlspecialchars($mentee['major_name']); ?>
+                            </span>
+                            <?php endif; ?>
+                            <?php if (!empty($mentee['year_level'])): ?>
+                            <span style="padding: 2px 8px; background: rgba(59, 130, 246, 0.12); color: #2563eb; border-radius: 12px; font-size: 10px; font-weight: 600;">
+                                <?php echo htmlspecialchars($mentee['year_level']); ?>
+                            </span>
+                            <?php endif; ?>
+                        </div>
+                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light);">
+                            <span style="font-size: 10px; color: var(--light-text);">
+                                <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
+                                <?php echo $assignedDate; ?>
+                            </span>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <div style="margin-top: 16px; font-size: 14px; color: var(--light-text); text-align: center;">
+                    <strong><?php echo $mentee_count; ?></strong> mentee<?php echo $mentee_count != 1 ? 's' : ''; ?> assigned to you
+                </div>
+            </div>
+            <?php elseif (!$show_role_modal): ?>
+            <div class="mentee-report-section" style="margin-bottom: 32px; padding: 40px; background: white; border-radius: 16px; border: 1px solid var(--border-light); text-align: center;">
+                <i class="fas fa-user-slash" style="font-size: 48px; color: var(--gold-light); opacity: 0.5; margin-bottom: 16px;"></i>
+                <h3 style="margin: 0 0 8px 0; font-size: 18px; color: var(--dark-text);">No Mentees Assigned</h3>
+                <p style="margin: 0; font-size: 14px; color: var(--light-text);">No students have been assigned to you yet. Contact the Program Head for mentee assignments.</p>
+            </div>
+            <?php endif; ?>
+
             <!-- Report Generator -->
             <div class="generator-section" id="generatorSection" style="display: none;">
                 <div class="generator-header">
@@ -909,6 +1036,42 @@ $mock_data = [
                 if (data.success) {
                     showToast(data.liked ? 'Added to favorites' : 'Removed from favorites', 'success');
                 }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('../../../data/update_mentee_view.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
+        });
+
+        function downloadMenteeReport() {
+            fetch('../../../data/download_mentee_report.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'instructor_id=' + encodeURIComponent(<?php echo $instructor_id; ?>)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Download failed');
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const date = new Date().toISOString().split('T')[0];
+                a.download = `mentee_report_${date}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showToast('Mentee report downloaded successfully!', 'success');
+            })
+            .catch(err => {
+                showToast('Failed to download report: ' + err.message, 'error');
             });
         }
     </script>

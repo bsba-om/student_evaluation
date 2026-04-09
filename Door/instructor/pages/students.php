@@ -335,12 +335,19 @@ function getGradient($student) {
              border-color: var(--gold);
          }
          
-         .btn-bulk-action:disabled {
-             opacity: 0.5;
-             cursor: not-allowed;
-         }
-        
-        .search-wrapper {
+          .btn-bulk-action:disabled {
+              opacity: 0.7;
+              cursor: not-allowed;
+              background: #9ca3af !important;
+              color: white !important;
+          }
+
+          button:disabled {
+              opacity: 0.7 !important;
+              cursor: not-allowed !important;
+          }
+         
+         .search-wrapper {
             flex: 1;
             min-width: 250px;
             position: relative;
@@ -1702,6 +1709,16 @@ function getGradient($student) {
                 </div>
             </div>
 
+            <style>
+                #assignTaskBtn[disabled] {
+                    opacity: 1 !important;
+                    background: #78716c !important;
+                    color: white !important;
+                    cursor: not-allowed !important;
+                    box-shadow: none !important;
+                }
+            </style>
+
                   <!-- Students List - Card Grid -->
                   <div class="students-horizontal-container" style="padding: 16px 24px; max-height: 500px; overflow-y: auto;">
                       <!-- Year Section Headers -->
@@ -1944,19 +1961,19 @@ function getGradient($student) {
                   <i class="fas fa-tasks"></i> My Assigned Tasks
               </h3>
           </div>
-          <div class="modal-body" style="padding: 24px;">
-              <div id="tasksLoading" style="text-align: center; padding: 40px; display: none;">
-                  <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--gold);"></i>
-                  <p style="margin-top: 12px; color: var(--light-text);">Loading tasks...</p>
-              </div>
-              <div id="tasksContainer" style="display: none;">
-                  <!-- Tasks will be loaded here -->
-              </div>
-              <div id="noTasksMessage" style="text-align: center; padding: 60px 20px; color: var(--light-text); display: none;">
-                  <i class="fas fa-clipboard-list" style="font-size: 56px; color: var(--gold-light); margin-bottom: 16px; opacity: 0.6;"></i>
-                  <p>You haven't assigned any tasks yet.</p>
-              </div>
-          </div>
+           <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto;">
+               <div id="tasksLoading" style="text-align: center; padding: 40px; display: none;">
+                   <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--gold);"></i>
+                   <p style="margin-top: 12px; color: var(--light-text);">Loading tasks...</p>
+               </div>
+               <div id="tasksContainer" style="display: none;">
+                   <!-- Tasks will be loaded here -->
+               </div>
+               <div id="noTasksMessage" style="text-align: center; padding: 60px 20px; color: var(--light-text); display: none;">
+                   <i class="fas fa-clipboard-list" style="font-size: 56px; color: var(--gold-light); margin-bottom: 16px; opacity: 0.6;"></i>
+                   <p>You haven't assigned any tasks yet.</p>
+               </div>
+           </div>
       </div>
   </div>
   
@@ -2413,7 +2430,8 @@ function getGradient($student) {
                                 ${soloTasks.length}
                             </span>
                         </h4>
-                        <div style="display: grid; gap: 12px;">
+                        <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                            <div style="display: grid; gap: 12px;">
                 `;
                 
                 soloTasks.forEach(task => {
@@ -2467,6 +2485,7 @@ function getGradient($student) {
                 });
                 
                 html += `
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2482,8 +2501,9 @@ function getGradient($student) {
                                 ${groupTasks.length}
                             </span>
                         </h4>
-                        <div style="display: grid; gap: 12px;">
-                `;
+                        <div style="max-height: 400px; overflow-y: auto; padding-right: 8px;">
+                            <div style="display: grid; gap: 12px;">
+                    `;
                 
                 groupTasks.forEach(task => {
                     const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date';
@@ -2555,6 +2575,7 @@ function getGradient($student) {
                 html += `
                         </div>
                     </div>
+                    </div>
                 `;
             }
             
@@ -2562,7 +2583,8 @@ function getGradient($student) {
                 </div>
             `;
             
-            container.innerHTML = html;
+            // Add scrollbar styling
+            container.innerHTML = '<style>#tasksContainer ::-webkit-scrollbar{width:6px}#tasksContainer ::-webkit-scrollbar-track{background:#f3f4f6;border-radius:3px}#tasksContainer ::-webkit-scrollbar-thumb{background:#d4a843;border-radius:3px}</style>' + html;
         }
         
         function escapeHtml(text) {
