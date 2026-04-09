@@ -760,6 +760,60 @@ function getGradient($student) {
             border-radius: 4px;
         }
         
+        .year-sections {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .year-section {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .year-section > .year-section-header {
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid transparent;
+        }
+        
+        .year-section > .year-section-header:hover {
+            background: linear-gradient(135deg, #e5e7eb, #d1d5db);
+            transform: translateY(-2px);
+        }
+        
+        .year-section.active > .year-section-header {
+            background: linear-gradient(135deg, #d4a843, #e8c768);
+            color: white;
+            border-color: #b8922f;
+            box-shadow: 0 4px 12px rgba(212, 168, 67, 0.3);
+        }
+        
+        .year-section-header .year-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: #6b7280;
+            margin-left: auto;
+        }
+        
+        .year-section.active .year-section-header .year-count {
+            color: rgba(255,255,255,0.9);
+        }
+        
+        .year-section.hidden {
+            display: none;
+        }
+        
         .student-card-horizontal .student-avatar {
             width: 48px;
             height: 48px;
@@ -1625,14 +1679,6 @@ function getGradient($student) {
                             </option>
                         <?php endforeach; ?>
                     </select>
-                    <select class="filter-select" id="yearFilter" style="border: 2px solid #e5e7eb; padding: 10px 16px;">
-                        <option value="">All Years</option>
-                        <?php foreach ($stats['by_year'] as $year): ?>
-                            <option value="<?php echo htmlspecialchars($year['year_level']); ?>">
-                                <?php echo htmlspecialchars($year['year_level']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
                 </div>
                 <div class="view-toggle">
                     <button class="view-btn active" onclick="setView('grid')" title="Grid View" style="border: 2px solid #e5e7eb;">
@@ -1652,17 +1698,42 @@ function getGradient($student) {
                 <button id="assignTaskBtn" class="btn btn-secondary" style="padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; background: linear-gradient(135deg, #d4a843, #e8c768); color: white; border: none; box-shadow: 0 4px 12px rgba(212, 168, 67, 0.3);" onclick="openAssignTaskModal()" disabled>Assign Task</button>
             </div>
 
-            <!-- Year Level Tabs -->
-            <div class="year-tabs" style="display: flex; gap: 10px; padding: 16px 24px; background: white; border-radius: 12px; margin: 0 24px 16px; border: 1px solid #e5e7eb; overflow-x: auto;">
-                <button class="year-tab active" data-year="all" onclick="filterByYear('all', this)" style="padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e7eb; background: linear-gradient(135deg, #d4a843, #e8c768); color: white; font-weight: 600; cursor: pointer; white-space: nowrap;">All Years</button>
-                <button class="year-tab" data-year="1" onclick="filterByYear('1', this)" style="padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e7eb; background: white; color: #374151; font-weight: 500; cursor: pointer; white-space: nowrap;">1st Year</button>
-                <button class="year-tab" data-year="2" onclick="filterByYear('2', this)" style="padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e7eb; background: white; color: #374151; font-weight: 500; cursor: pointer; white-space: nowrap;">2nd Year</button>
-                <button class="year-tab" data-year="3" onclick="filterByYear('3', this)" style="padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e7eb; background: white; color: #374151; font-weight: 500; cursor: pointer; white-space: nowrap;">3rd Year</button>
-                <button class="year-tab" data-year="4" onclick="filterByYear('4', this)" style="padding: 10px 20px; border-radius: 20px; border: 2px solid #e5e7eb; background: white; color: #374151; font-weight: 500; cursor: pointer; white-space: nowrap;">4th Year</button>
-            </div>
-
                   <!-- Students List - Card Grid -->
                   <div class="students-horizontal-container" style="padding: 16px 24px; max-height: 500px; overflow-y: auto;">
+                      <!-- Year Section Headers -->
+                      <div class="year-sections">
+                          <div class="year-section" data-year="all">
+                              <div class="year-section-header" onclick="filterByYear('all')">
+                                  <i class="fas fa-users"></i> All Students
+                                  <span class="year-count" id="count-all">(0)</span>
+                              </div>
+                          </div>
+                          <div class="year-section" data-year="1">
+                              <div class="year-section-header" onclick="filterByYear('1')">
+                                  <i class="fas fa-graduation-cap"></i> 1st Year
+                                  <span class="year-count" id="count-1">(0)</span>
+                              </div>
+                          </div>
+                          <div class="year-section" data-year="2">
+                              <div class="year-section-header" onclick="filterByYear('2')">
+                                  <i class="fas fa-graduation-cap"></i> 2nd Year
+                                  <span class="year-count" id="count-2">(0)</span>
+                              </div>
+                          </div>
+                          <div class="year-section" data-year="3">
+                              <div class="year-section-header" onclick="filterByYear('3')">
+                                  <i class="fas fa-graduation-cap"></i> 3rd Year
+                                  <span class="year-count" id="count-3">(0)</span>
+                              </div>
+                          </div>
+                          <div class="year-section" data-year="4">
+                              <div class="year-section-header" onclick="filterByYear('4')">
+                                  <i class="fas fa-graduation-cap"></i> 4th Year
+                                  <span class="year-count" id="count-4">(0)</span>
+                              </div>
+                          </div>
+                      </div>
+                      
                       <div class="all-students-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
                       <?php foreach ($students as $student): 
                          $fullName = getFullName($student);
@@ -1974,7 +2045,6 @@ function getGradient($student) {
         function filterStudents() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const majorFilter = document.getElementById('majorFilter').value.toLowerCase();
-            const yearFilter = document.getElementById('yearFilter').value.toLowerCase();
             
             const cards = document.querySelectorAll('.student-card-horizontal');
             
@@ -1983,13 +2053,11 @@ function getGradient($student) {
                  const email = card.dataset.email || '';
                  const studentId = card.dataset.studentId || '';
                  const major = card.dataset.major || '';
-                 const year = card.dataset.year || '';
                  
                  const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm) || studentId.includes(searchTerm);
                  const matchesMajor = !majorFilter || major === majorFilter;
-                 const matchesYear = !yearFilter || year === yearFilter;
                  
-                 if (matchesSearch && matchesMajor && matchesYear) {
+                 if (matchesSearch && matchesMajor) {
                      card.style.display = '';
                  } else {
                      card.style.display = 'none';
@@ -1999,26 +2067,73 @@ function getGradient($student) {
               updateSelection();
         }
         
-        function filterByYear(year, element) {
-            document.querySelectorAll('.year-tab').forEach(tab => {
-                tab.classList.remove('active');
-                tab.style.background = 'white';
-                tab.style.color = '#374151';
-            });
-            element.classList.add('active');
-            element.style.background = 'linear-gradient(135deg, #d4a843, #e8c768)';
-            element.style.color = 'white';
+        function filterByYear(year) {
+            // Convert year to string for comparison
+            const yearStr = String(year);
             
+            // Update active state on year sections
+            document.querySelectorAll('.year-section').forEach(section => {
+                section.classList.remove('active');
+                if (yearStr === 'all' || section.dataset.year === yearStr) {
+                    section.classList.add('active');
+                }
+            });
+            
+            // Show/hide student cards based on year
             const cards = document.querySelectorAll('.student-card-horizontal');
+            
+            let visibleCount = 0;
             cards.forEach(card => {
-                if (year === 'all' || card.dataset.year === year) {
+                // Get year from dataset - can be string or number
+                let cardYear = card.dataset.year;
+                if (!cardYear) cardYear = '';
+                cardYear = String(cardYear).trim();
+                
+                // Also try to parse as number for comparison
+                const cardYearNum = parseInt(cardYear);
+                
+                if (yearStr === 'all' || cardYear === yearStr || cardYearNum === parseInt(yearStr)) {
                     card.style.display = '';
+                    visibleCount++;
                 } else {
                     card.style.display = 'none';
                 }
             });
+            
             updateSelection();
         }
+        
+        function updateYearCounts() {
+            const cards = document.querySelectorAll('.student-card-horizontal');
+            const counts = {all: cards.length, 1: 0, 2: 0, 3: 0, 4: 0};
+            
+            cards.forEach(card => {
+                let year = String(card.dataset.year || '').trim();
+                const yearNum = parseInt(year);
+                
+                if (year && !isNaN(yearNum) && counts[yearNum] !== undefined) {
+                    counts[yearNum]++;
+                }
+            });
+            
+            for (let y = 1; y <= 4; y++) {
+                const countEl = document.getElementById('count-' + y);
+                if (countEl) {
+                    countEl.textContent = '(' + counts[y] + ')';
+                }
+            }
+            
+            const countAllEl = document.getElementById('count-all');
+            if (countAllEl) {
+                countAllEl.textContent = '(' + cards.length + ')';
+            }
+        }
+        
+        // Initialize counts on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateYearCounts();
+            filterByYear('all');
+        });
         
         function showMoreStudents(year) {
             // Not needed in new layout - all students are visible
@@ -2027,7 +2142,6 @@ function getGradient($student) {
 
         document.getElementById('searchInput').addEventListener('keyup', filterStudents);
         document.getElementById('majorFilter').addEventListener('change', filterStudents);
-        document.getElementById('yearFilter').addEventListener('change', filterStudents);
 
          function setView(view) {
              currentView = view;
