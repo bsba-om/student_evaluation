@@ -1,3 +1,206 @@
+.student-card-list {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 22px;
+    padding: 22px 28px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(212, 168, 67, 0.10), 0 1.5px 6px rgba(0,0,0,0.04);
+    border: 1.5px solid #f0e6c8;
+    margin-bottom: 12px;
+    transition: box-shadow 0.2s, transform 0.2s;
+    position: relative;
+}
+.student-card-list:hover {
+    box-shadow: 0 12px 40px rgba(212, 168, 67, 0.18), 0 2px 8px rgba(0,0,0,0.08);
+    transform: translateY(-2px) scale(1.012);
+    border-color: #e8c768;
+}
+.student-avatar {
+    min-width: 64px;
+    min-height: 64px;
+    width: 64px;
+    height: 64px;
+    font-size: 24px;
+    border-radius: 14px;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(212, 168, 67, 0.10);
+}
+.list-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.list-info h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #2d2d2d;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.list-info h3 span {
+    font-size: 13px;
+    color: #b8860b;
+    font-weight: 600;
+}
+.list-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    margin-bottom: 2px;
+}
+.list-meta span {
+    color: #888;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    background: #f5e8c8;
+    color: #b8860b;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-top: 4px;
+}
+.student-actions-list {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+.btn-secondary {
+    background: linear-gradient(90deg, #fffbe6 60%, #f8f6f0 100%);
+    color: #b8860b;
+    border: 1.5px solid #e8c768;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(212, 168, 67, 0.08);
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+.btn-secondary:hover {
+    background: #fffbe6;
+    color: #d4a843;
+    box-shadow: 0 4px 16px rgba(212, 168, 67, 0.16);
+}
+/* --- Enhanced Styles for Students Page --- */
+.main-content {
+    background: linear-gradient(135deg, #f8f6f0 0%, #fffbe6 100%);
+    padding: 32px 24px 32px 24px;
+    min-height: 100vh;
+}
+
+.students-container, .view-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    margin-top: 24px;
+}
+
+.student-card-list, .student-header {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 32px rgba(212, 168, 67, 0.10), 0 1.5px 6px rgba(0,0,0,0.04);
+    padding: 28px 22px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transition: box-shadow 0.2s, transform 0.2s;
+    border: 1.5px solid #f0e6c8;
+    position: relative;
+}
+.student-card-list:hover, .student-header:hover {
+    box-shadow: 0 12px 40px rgba(212, 168, 67, 0.18), 0 2px 8px rgba(0,0,0,0.08);
+    transform: translateY(-2px) scale(1.012);
+    border-color: #e8c768;
+}
+
+.student-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 22px;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(212, 168, 67, 0.10);
+}
+
+.list-info h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #2d2d2d;
+}
+.list-meta span {
+    display: inline-block;
+    margin-right: 14px;
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    background: #f5e8c8;
+    color: #b8860b;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 8px;
+    margin-top: 4px;
+}
+.student-actions-list, .student-actions-grid {
+    margin-top: 18px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+}
+.btn-secondary {
+    background: linear-gradient(90deg, #fffbe6 60%, #f8f6f0 100%);
+    color: #b8860b;
+    border: 1.5px solid #e8c768;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(212, 168, 67, 0.08);
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.btn-secondary:hover {
+    background: #fffbe6;
+    color: #d4a843;
+    box-shadow: 0 4px 16px rgba(212, 168, 67, 0.16);
+}
+
+@media (max-width: 900px) {
+    .main-content {
+        padding: 18px 4vw 18px 4vw;
+    }
+    .students-container, .view-list {
+        grid-template-columns: 1fr;
+    }
+}
+/* Hide horizontal scrollbar for sidebar menu panel */
+.sidebar {
+    overflow-x: hidden !important;
+}
+/* Hide horizontal scrollbar and prevent horizontal overflow */
+html, body, .dashboard-page, .main-content {
+    overflow-x: hidden !important;
+}
 /* ========================================
    Dashboard Styles - Gold/White Theme
    Faculty Evaluation System

@@ -132,6 +132,40 @@ CREATE TABLE IF NOT EXISTS students (
      FOREIGN KEY (mentor_id) REFERENCES instructors(id) ON DELETE CASCADE ON UPDATE CASCADE,
      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ 
+ -- Tasks Table (instructor assignments to mentees)
+ CREATE TABLE IF NOT EXISTS tasks (
+     id INT PRIMARY KEY AUTO_INCREMENT,
+     title VARCHAR(200) NOT NULL,
+     description TEXT,
+     instructor_id INT NOT NULL,
+     priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+     due_date DATE,
+     status ENUM('active', 'completed', 'cancelled') DEFAULT 'active',
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+     INDEX idx_instructor_id (instructor_id),
+     INDEX idx_status (status),
+     INDEX idx_due_date (due_date),
+     FOREIGN KEY (instructor_id) REFERENCES instructors(id) ON DELETE CASCADE ON UPDATE CASCADE
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ 
+ -- Task Assignments Table (links tasks to mentees)
+ CREATE TABLE IF NOT EXISTS task_assignments (
+     id INT PRIMARY KEY AUTO_INCREMENT,
+     task_id INT NOT NULL,
+     mentee_id INT NOT NULL,
+     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     status ENUM('pending', 'in_progress', 'completed') DEFAULT 'pending',
+     completion_date DATE NULL,
+     notes TEXT,
+     INDEX idx_task_id (task_id),
+     INDEX idx_mentee_id (mentee_id),
+     INDEX idx_status (status),
+     FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
+     FOREIGN KEY (mentee_id) REFERENCES mentees(id) ON DELETE CASCADE ON UPDATE CASCADE,
+     UNIQUE KEY uk_task_mentee (task_id, mentee_id)
+ ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
  -- Reports Table
 CREATE TABLE IF NOT EXISTS reports (

@@ -6,8 +6,105 @@ require_once '../../data/config.php';
 $instructor_id = $_SESSION['user_id'] ?? 1;
 $user_name = $_SESSION['user_name'] ?? 'Jane Teacher';
 
-// Fetch stats
-// ...existing code...
+// Initialize variables
+$course_count = 0;
+$student_count = 0;
+$avg_rating = 0;
+$new_feedback = 0;
+$recent_evaluations = [];
+$recent_feedback = [];
+
+if ($pdo) {
+    try {
+        // Get course count from instructor_courses
+        $stmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM instructor_courses WHERE instructor_id = ?");
+        $stmt->execute([$instructor_id]);
+        $result = $stmt->fetch();
+        $course_count = $result['cnt'] ?? 0;
+    } catch (PDOException $e) {
+        $course_count = 0;
+    }
+
+    try {
+        // Get total students across instructor's courses
+        $sql = "SELECT COUNT(DISTINCT s.id) as cnt 
+                FROM students s 
+                JOIN courses c ON s.course_code = c.course_code 
+                JOIN instructor_courses ic ON c.id = ic.course_id 
+                WHERE ic.instructor_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        $result = $stmt->fetch();
+        $student_count = $result['cnt'] ?? 0;
+    } catch (PDOException $e) {
+        $student_count = 0;
+    }
+
+    try {
+        // Get average rating from evaluations
+        $sql = "SELECT COALESCE(AVG(rating),0) as avg_r FROM evaluations WHERE instructor_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        $result = $stmt->fetch();
+        $avg_rating = round($result['avg_r'], 1);
+    } catch (PDOException $e) {
+        $avg_rating = 0;
+    }
+
+    try {
+        // Get count of new feedback (if there is a 'status' column, count pending feedback)
+        // For now assume evaluations with status 'new' or just count of feedback entries without a status is zero
+        // We'll leave as 0 or could count from evaluations if a 'is_read' column exists; unknown.
+        $new_feedback = 0;
+    } catch (PDOException $e) {
+        $new_feedback = 0;
+    }
+
+    try {
+        // Recent evaluations: course-based summary
+        $sql = "SELECT c.course_name, COUNT(e.id) as student_count, AVG(e.rating) as avg_rating, MAX(e.evaluation_date) as evaluation_date
+                FROM courses c
+                JOIN evaluations e ON c.id = e.course_id
+                WHERE e.instructor_id = ?
+                GROUP BY c.id
+                ORDER BY evaluation_date DESC
+                LIMIT 3";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        while ($row = $stmt->fetch()) {
+            $recent_evaluations[] = [
+                'course_name' => $row['course_name'],
+                'student_count' => $row['student_count'],
+                'rating' => round($row['avg_rating'], 1),
+                'evaluation_date' => $row['evaluation_date']
+            ];
+        }
+    } catch (PDOException $e) {
+        $recent_evaluations = [];
+    }
+
+    try {
+        // Recent feedback: assume evaluations have a 'comments' column
+        $sql = "SELECT c.course_name, e.comments as feedback_text, e.rating, e.evaluation_date as feedback_date
+                FROM evaluations e
+                JOIN courses c ON e.course_id = c.id
+                WHERE e.instructor_id = ? AND e.comments IS NOT NULL AND e.comments != ''
+                ORDER BY e.evaluation_date DESC
+                LIMIT 3";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        while ($row = $stmt->fetch()) {
+            $recent_feedback[] = [
+                'course_name' => $row['course_name'],
+                'feedback_text' => $row['feedback_text'],
+                'rating' => $row['rating'],
+                'feedback_date' => $row['feedback_date']
+            ];
+        }
+    } catch (PDOException $e) {
+        $recent_feedback = [];
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +126,6 @@ $user_name = $_SESSION['user_name'] ?? 'Jane Teacher';
             <img src="../../media/LOGO.jpg" alt="Logo" class="sidebar-logo" style="width: 70px; height: 70px; border-radius: 16px; object-fit: cover; border: 3px solid white; background: white; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
             <div class="sidebar-brand">
                 <span class="sidebar-brand-name">IBM</span>
-                <span class="sidebar-brand-sub">Evaluation System</span>
             </div>
         </div>
         
@@ -43,37 +139,29 @@ $user_name = $_SESSION['user_name'] ?? 'Jane Teacher';
             </div>
         </div>
         
-        <nav class="sidebar-nav">
-            <div class="sidebar-nav-label">Menu</div>
-            <a href="dashboard.php" class="sidebar-nav-item active">
-                <i class="fas fa-chart-pie"></i>
-                <span>Overview</span>
-            </a>
-            <a href="pages/evaluations.php" class="sidebar-nav-item">
-                <i class="fas fa-clipboard-check"></i>
-                <span>My Evaluations</span>
-            </a>
-            <a href="pages/courses.php" class="sidebar-nav-item">
-                <i class="fas fa-book"></i>
-                <span>My Courses</span>
-            </a>
-            <a href="pages/students.php" class="sidebar-nav-item">
-                <i class="fas fa-user-graduate"></i>
-                <span>Students</span>
-            </a>
-            <a href="pages/feedback.php" class="sidebar-nav-item">
-                <i class="fas fa-comment-dots"></i>
-                <span>Feedback</span>
-            </a>
-            <a href="pages/reports.php" class="sidebar-nav-item">
-                <i class="fas fa-file-alt"></i>
-                <span>Reports</span>
-            </a>
-            <a href="pages/profile.php" class="sidebar-nav-item">
-                <i class="fas fa-user"></i>
-                <span>Profile</span>
-            </a>
-        </nav>
+         <nav class="sidebar-nav">
+             <div class="sidebar-nav-label">Menu</div>
+             <a href="dashboard.php" class="sidebar-nav-item active">
+                 <i class="fas fa-chart-pie"></i>
+                 <span>Overview</span>
+             </a>
+             <a href="pages/students.php" class="sidebar-nav-item">
+                 <i class="fas fa-user-graduate"></i>
+                 <span>Students mentees</span>
+             </a>
+             <a href="pages/feedback.php" class="sidebar-nav-item">
+                 <i class="fas fa-comment-dots"></i>
+                 <span>Feedback</span>
+             </a>
+             <a href="pages/reports.php" class="sidebar-nav-item">
+                 <i class="fas fa-file-alt"></i>
+                 <span>Reports</span>
+             </a>
+             <a href="pages/profile.php" class="sidebar-nav-item">
+                 <i class="fas fa-user"></i>
+                 <span>Profile</span>
+             </a>
+         </nav>
     </aside>
 
     <!-- Main Content -->

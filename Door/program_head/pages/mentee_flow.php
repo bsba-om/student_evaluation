@@ -54,195 +54,192 @@ if (!$show_role_modal) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MenteeFlow - Program Head Dashboard</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>MenteeFlow - Program Head</title>
     <link rel="stylesheet" href="../../../css/common.css">
     <link rel="stylesheet" href="../style/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        :root { 
-            --gold: #B8860B; 
-            --gold-light: #D4A843; 
-            --gold-dark: #8B6914; 
+        :root {
+            --gold: #B8860B;
+            --gold-light: #D4A843;
+            --gold-dark: #8B6914;
             --gold-lighter: #F5E6B8;
-            --cream: #f7f5ef; 
-            --cream-light: #f0ebe3; 
-            --white: #ffffff; 
-            --dark-text: #1f1f1f; 
-            --dark-text-2: #2d3748; 
-            --light-text: #666666; 
-            --light-text-2: #a0aec0; 
-            --border-light: #d4cfc5; 
-            --border-soft: #e8e4da; 
-            --success: #059669; 
-            --success-light: #c6f6d5; 
-            --info: #0284c7; 
-            --info-light: #bae6fd; 
+            --cream: #f7f5ef;
+            --white: #ffffff;
+            --dark-text: #1f1f1f;
+            --light-text: #666666;
+            --border-light: #d4cfc5;
+            --success: #059669;
+            --success-light: #c6f6d5;
             --danger: #dc2626;
             --danger-light: #fee2e2;
+            --info: #0284c7;
+            --info-light: #bae6fd;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            color: var(--dark-text); 
-            overflow-x: hidden;
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--dark-text);
             background: var(--cream);
         }
-        .page-container { 
-            padding: 32px; 
-            max-width: 1600px;
+        .page-container {
+            padding: 20px;
+            max-width: 1400px;
             margin: 0 auto;
         }
-        .welcome-banner { 
-            background: linear-gradient(160deg, #6b5a00 0%, var(--gold-light) 40%, var(--gold-dark) 100%); 
-            border-radius: 20px; 
-            padding: 36px 44px; 
-            color: var(--white); 
-            margin-bottom: 32px; 
-            box-shadow: 0 8px 32px rgba(139, 105, 20, 0.4); 
-            position: relative; 
-            overflow: hidden; 
-        }
-        .welcome-banner::before { 
-            content: ''; 
-            position: absolute; 
-            top: -50%; 
-            right: -10%; 
-            width: 300px; 
-            height: 300px; 
-            background: rgba(255, 255, 255, 0.1); 
-            border-radius: 50%; 
-        }
-        .welcome-banner::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: -5%;
-            width: 200px;
-            height: 200px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 50%;
-        }
-        .welcome-banner-role { 
-            display: inline-block; 
-            background: rgba(255, 255, 255, 0.2); 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 12px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            margin-bottom: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.3);
+        .welcome-banner {
+            background: linear-gradient(160deg, #6b5a00 0%, var(--gold-light) 40%, var(--gold-dark) 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            color: var(--white);
+            margin-bottom: 24px;
+            box-shadow: 0 6px 24px rgba(139, 105, 20, 0.3);
             position: relative;
-            z-index: 1;
+            overflow: hidden;
         }
-        .welcome-banner h1 { 
-            font-size: 28px; 
-            font-weight: 800; 
-            margin: 0 0 12px 0; 
-            position: relative; 
-            z-index: 1; 
+        .welcome-banner h1 {
+            font-size: 22px;
+            font-weight: 800;
+            margin: 0 0 8px 0;
         }
-        .welcome-banner p { 
-            font-size: 15px; 
-            opacity: 0.95; 
-            margin: 0; 
-            max-width: 600px; 
-            position: relative; 
-            z-index: 1; 
+        .welcome-banner p {
+            font-size: 13px;
+            opacity: 0.9;
+            margin: 0;
+            max-width: 500px;
         }
-        .grid-2 { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 24px; 
-            margin-bottom: 32px;
+        .welcome-banner-role {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
         }
-        @media (max-width: 1200px) {
-            .grid-2 { grid-template-columns: 1fr; }
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
         }
-        .card { 
-            background: var(--white); 
-            border-radius: 16px; 
-            padding: 24px; 
-            box-shadow: 0 4px 20px rgba(184, 134, 11, 0.12); 
-            border: 1px solid var(--border-soft); 
-            margin-bottom: 24px; 
+        .stat-card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex: 1;
+            min-width: 160px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
-        .card-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 20px; 
-            padding-bottom: 16px; 
-            border-bottom: 2px solid var(--cream-light); 
+        .stat-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
         }
-        .card-title { 
-            font-size: 18px; 
-            font-weight: 700; 
-            color: var(--dark-text-2); 
-            display: flex; 
-            align-items: center; 
-            gap: 10px; 
+        .stat-icon.blue { background: var(--info-light); color: var(--info); }
+        .stat-icon.green { background: var(--success-light); color: var(--success); }
+        .stat-icon.gold { background: var(--gold-lighter); color: var(--gold-dark); }
+        .stat-info h4 {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--dark-text);
+            margin-bottom: 2px;
         }
-        .card-title i { 
-            color: var(--gold); 
-            font-size: 20px; 
+        .stat-info p {
+            font-size: 12px;
+            color: var(--light-text);
         }
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(184, 134, 11, 0.12);
+            border: 1px solid var(--border-soft);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--dark-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title i { color: var(--gold); font-size: 18px; }
         .search-box {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .search-box input {
             width: 100%;
-            padding: 12px 16px 12px 44px;
+            padding: 10px 14px 10px 38px;
             border: 2px solid var(--border-light);
-            border-radius: 12px;
+            border-radius: 10px;
             font-family: 'Poppins', sans-serif;
             font-size: 14px;
             color: var(--dark-text);
             background: var(--cream-light);
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         .search-box input:focus {
             outline: none;
             border-color: var(--gold-light);
             background: var(--white);
-            box-shadow: 0 0 0 4px rgba(212, 168, 67, 0.15);
         }
         .search-box i {
             position: absolute;
-            left: 14px;
+            left: 12px;
             top: 50%;
             transform: translateY(-50%);
             color: var(--light-text);
+            font-size: 14px;
         }
-        .list-item { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 16px 20px; 
-            background: var(--cream-light); 
-            border-radius: 14px; 
-            margin-bottom: 12px; 
-            border: 1px solid var(--border-light); 
-            transition: all 0.25s ease; 
+        .mentee-count {
+            background: var(--gold-light);
+            color: var(--white);
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 700;
         }
-        .list-item:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(184, 134, 11, 0.18); 
-            border-color: var(--gold-light); 
-        }
-        .student-info {
+        .list-item {
             display: flex;
             align-items: center;
-            gap: 14px;
-            flex: 1;
-            min-width: 0;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--cream-light);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-light);
+            transition: all 0.2s ease;
+        }
+        .list-item:hover {
+            border-color: var(--gold-light);
+            transform: translateX(4px);
         }
         .student-avatar {
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             background: linear-gradient(135deg, #3b82f6, #60a5fa);
             display: flex;
@@ -250,59 +247,53 @@ if (!$show_role_modal) {
             justify-content: center;
             color: white;
             font-weight: 700;
-            font-size: 16px;
+            font-size: 13px;
             flex-shrink: 0;
         }
-        .student-details {
+        .student-info {
             flex: 1;
             min-width: 0;
         }
-        .student-name { 
-            font-weight: 700; 
-            font-size: 15px; 
-            color: var(--dark-text); 
-            margin-bottom: 4px;
+        .student-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--dark-text);
+            margin-bottom: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .student-meta { 
-            font-size: 13px; 
-            color: var(--light-text); 
+        .student-meta {
+            font-size: 11px;
+            color: var(--light-text);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             flex-wrap: wrap;
-        }
-        .student-meta span {
-            display: flex;
-            align-items: center;
-            gap: 4px;
         }
         .student-id-badge {
             background: var(--gold-lighter);
             color: var(--gold-dark);
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
             font-weight: 600;
         }
-        .list-item-actions { 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
+        .assign-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             flex-shrink: 0;
-            margin-left: 12px;
         }
-        .instructor-select { 
-            padding: 10px 14px; 
-            border: 2px solid var(--border-light); 
-            border-radius: 10px; 
-            font-family: 'Poppins', sans-serif; 
-            font-size: 13px; 
-            color: var(--dark-text); 
-            background: var(--white); 
-            min-width: 200px; 
+        .instructor-select {
+            padding: 6px 10px;
+            border: 2px solid var(--border-light);
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            color: var(--dark-text);
+            background: var(--white);
+            min-width: 140px;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -310,80 +301,152 @@ if (!$show_role_modal) {
             outline: none;
             border-color: var(--gold-light);
         }
-        .btn-assign { 
-            padding: 10px 20px; 
-            background: linear-gradient(135deg, var(--gold), var(--gold-light)); 
-            color: var(--white); 
-            border: none; 
-            border-radius: 10px; 
-            font-family: 'Poppins', sans-serif; 
-            font-size: 13px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            transition: all 0.25s ease;
+        .btn-assign {
+            padding: 6px 12px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .btn-assign:hover { 
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(184, 134, 11, 0.35); 
+        .btn-assign:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(184, 134, 11, 0.3);
         }
-        .btn-assign:disabled { 
-            opacity: 0.5; 
-            cursor: not-allowed; 
-            transform: none; 
-            box-shadow: none;
+        .btn-assign:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
         }
         .btn-assign.success {
             background: linear-gradient(135deg, var(--success), #34d399);
         }
-        .mentee-count { 
-            background: var(--gold-light); 
-            color: var(--white); 
-            padding: 6px 14px; 
-            border-radius: 20px; 
-            font-size: 13px; 
-            font-weight: 700; 
+         .student-assigned {
+             background: var(--success-light);
+             border-color: var(--success);
+         }
+         .student-assigned .student-name::after {
+             content: " ✓";
+             color: var(--success);
+             font-weight: 800;
+         }
+         .student-row.selected {
+             background: var(--gold-lighter);
+             border-color: var(--gold);
+             box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.2);
+         }
+         .student-row.selected .student-checkbox {
+             accent-color: var(--gold-dark);
+         }
+        .instructor-item {
+            margin-bottom: 12px;
         }
-        .mentees-panel { 
-            margin-top: 14px; 
-            padding: 16px; 
-            background: var(--cream-light); 
-            border-radius: 12px; 
-            border: 1px solid var(--border-light); 
-            display: none; 
-            animation: slideDown 0.3s ease;
+        .instructor-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: var(--cream-light);
+            border-radius: 12px;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .instructor-header:hover {
+            border-color: var(--gold-light);
         }
-        .mentees-panel.show { 
-            display: block; 
+        .instructor-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .instructor-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 14px;
+        }
+        .instructor-info {
+            flex: 1;
+        }
+        .instructor-name {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--dark-text);
+        }
+        .instructor-position {
+            font-size: 12px;
+            color: var(--light-text);
+        }
+        .instructor-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-toggle {
+            padding: 8px 12px;
+            background: var(--white);
+            color: var(--gold);
+            border: 2px solid var(--gold-light);
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-toggle.active {
+            background: var(--gold-light);
+            color: white;
+        }
+        .btn-toggle i {
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+        .btn-toggle.active i {
+            transform: rotate(180deg);
+        }
+        .mentees-panel {
+            margin-top: 10px;
+            padding: 12px;
+            background: var(--cream-light);
+            border-radius: 10px;
+            border: 1px solid var(--border-light);
+            display: none;
+        }
+        .mentees-panel.show {
+            display: block;
         }
         .mentees-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            max-height: 300px;
+            gap: 6px;
+            max-height: 280px;
             overflow-y: auto;
         }
-        .mentee-item { 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-            padding: 12px 14px; 
-            background: var(--white); 
-            border-radius: 10px; 
+        .mentee-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--white);
+            border-radius: 8px;
             border: 1px solid var(--border-light);
-            transition: all 0.2s ease;
         }
         .mentee-item:hover {
             border-color: var(--gold-light);
@@ -394,8 +457,8 @@ if (!$show_role_modal) {
             gap: 10px;
         }
         .mentee-avatar {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
             background: linear-gradient(135deg, #8b5cf6, #a78bfa);
             display: flex;
@@ -405,250 +468,96 @@ if (!$show_role_modal) {
             font-weight: 600;
             font-size: 12px;
         }
-        .mentee-item-name { 
-            font-weight: 600; 
-            font-size: 14px; 
-            color: var(--dark-text); 
+        .mentee-item-name {
+            font-weight: 600;
+            font-size: 13px;
+            color: var(--dark-text);
         }
-        .mentee-item-email { 
-            font-size: 12px; 
-            color: var(--light-text); 
+        .mentee-item-email {
+            font-size: 11px;
+            color: var(--light-text);
         }
-        .mentee-item-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .btn-remove-mentee { 
-            padding: 6px 12px; 
-            background: var(--danger-light); 
-            color: var(--danger); 
-            border: none; 
-            border-radius: 8px; 
+        .btn-remove-mentee {
+            padding: 6px 10px;
+            background: var(--danger-light);
+            color: var(--danger);
+            border: none;
+            border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 4px;
+            transition: all 0.2s ease;
         }
-        .btn-remove-mentee:hover { 
+        .btn-remove-mentee:hover {
             background: var(--danger);
             color: white;
         }
-        .instructor-item {
-            margin-bottom: 16px;
-        }
-        .instructor-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 20px;
-            background: var(--cream-light);
-            border-radius: 14px;
-            border: 1px solid var(--border-light);
-            cursor: pointer;
-            transition: all 0.25s ease;
-        }
-        .instructor-header:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(184, 134, 11, 0.18);
-            border-color: var(--gold-light);
-        }
-        .instructor-main {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .instructor-avatar { 
-            width: 48px; 
-            height: 48px; 
-            border-radius: 50%; 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            font-weight: 800; 
-            font-size: 16px;
-        }
-        .instructor-info { 
-            flex: 1;
-        }
-        .instructor-name { 
-            font-weight: 700; 
-            font-size: 16px; 
-            color: var(--dark-text); 
-        }
-        .instructor-position { 
-            font-size: 13px; 
-            color: var(--light-text); 
-        }
-        .instructor-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .btn-toggle {
-            padding: 10px 14px; 
-            background: var(--white); 
-            color: var(--gold); 
-            border: 2px solid var(--gold-light);
-            border-radius: 10px; 
-            font-size: 13px; 
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .btn-toggle:hover { 
-            background: var(--gold-light);
-            color: white;
-        }
-        .btn-toggle.active {
-            background: var(--gold-light);
-            color: white;
-        }
-        .btn-toggle i {
-            transition: transform 0.3s ease;
-        }
-        .btn-toggle.active i {
-            transform: rotate(180deg);
-        }
-        .empty-state { 
-            text-align: center; 
-            padding: 40px 20px; 
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
             color: var(--light-text);
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            font-size: 13px;
         }
         .empty-state i {
-            font-size: 48px;
+            font-size: 36px;
             opacity: 0.4;
             color: var(--gold-light);
+            margin-bottom: 8px;
         }
         .empty-state p {
             font-style: italic;
+            margin: 0;
         }
         
-        /* Toast Notifications */
+        /* Toast */
         .toast-container {
             position: fixed;
-            top: 90px;
-            right: 24px;
+            top: 80px;
+            right: 16px;
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
         }
         .toast {
-            padding: 16px 20px;
-            border-radius: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
             color: white;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-            animation: slideIn 0.4s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideIn 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 12px;
-            min-width: 280px;
+            gap: 10px;
+            min-width: 260px;
         }
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(60px); }
+            to { opacity: 1; transform: translateX(0); }
         }
-        .toast.success {
-            background: linear-gradient(135deg, var(--success), #34d399);
-        }
-        .toast.error {
-            background: linear-gradient(135deg, var(--danger), #f87171);
-        }
-        .toast.info {
-            background: linear-gradient(135deg, var(--info), #38bdf8);
-        }
-        .toast i {
-            font-size: 18px;
-        }
+        .toast.success { background: linear-gradient(135deg, var(--success), #34d399); }
+        .toast.error { background: linear-gradient(135deg, var(--danger), #f87171); }
+        .toast i { font-size: 16px; }
         .toast-close {
             margin-left: auto;
             background: none;
             border: none;
             color: white;
             cursor: pointer;
-            opacity: 0.8;
-            font-size: 18px;
+            opacity: 0.7;
+            font-size: 16px;
         }
-        .toast-close:hover {
-            opacity: 1;
-        }
-        
-        /* Stats Badge */
-        .stats-row {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .stat-card {
-            background: var(--white);
-            border-radius: 14px;
-            padding: 20px 24px;
-            border: 1px solid var(--border-soft);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex: 1;
-            min-width: 200px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-        }
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-        }
-        .stat-icon.blue {
-            background: var(--info-light);
-            color: var(--info);
-        }
-        .stat-icon.green {
-            background: var(--success-light);
-            color: var(--success);
-        }
-        .stat-icon.gold {
-            background: var(--gold-lighter);
-            color: var(--gold-dark);
-        }
-        .stat-info h4 {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--dark-text);
-        }
-        .stat-info p {
-            font-size: 13px;
-            color: var(--light-text);
-        }
+        .toast-close:hover { opacity: 1; }
         
         /* Loading */
         .loading {
             display: inline-block;
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: white;
@@ -657,13 +566,8 @@ if (!$show_role_modal) {
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        /* Hide assigned students */
-        .assigned-indicator {
-            display: none;
-        }
-        
-        /* Confirmation Modal */
+
+        /* Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -679,102 +583,75 @@ if (!$show_role_modal) {
             visibility: hidden;
             transition: all 0.3s ease;
         }
-        .modal-overlay.show {
-            opacity: 1;
-            visibility: visible;
-        }
+        .modal-overlay.show { opacity: 1; visibility: visible; }
         .modal-content {
             background: white;
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 400px;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 360px;
             text-align: center;
-            transform: scale(0.8);
+            transform: scale(0.9);
             transition: all 0.3s ease;
         }
-        .modal-overlay.show .modal-content {
-            transform: scale(1);
-        }
+        .modal-overlay.show .modal-content { transform: scale(1); }
         .modal-icon {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: var(--danger-light);
             color: var(--danger);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
-            margin: 0 auto 20px;
+            font-size: 24px;
+            margin: 0 auto 16px;
         }
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: var(--dark-text);
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .modal-message {
             font-size: 14px;
             color: var(--light-text);
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
         .modal-actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             justify-content: center;
         }
         .btn-modal {
-            padding: 12px 24px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
             font-family: 'Poppins', sans-serif;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
             border: none;
+            transition: all 0.2s ease;
         }
         .btn-modal-cancel {
             background: var(--cream-light);
             color: var(--dark-text);
         }
-        .btn-modal-cancel:hover {
-            background: var(--border-light);
-        }
+        .btn-modal-cancel:hover { background: var(--border-light); }
         .btn-modal-confirm {
             background: var(--danger);
             color: white;
         }
-        .btn-modal-confirm:hover {
-            background: #b91c1c;
+        .btn-modal-confirm:hover { background: #b91c1c; }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .grid-2 { grid-template-columns: 1fr; }
         }
-        
-        /* Tab Navigation */
-        .tab-nav {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid var(--border-soft);
-            padding-bottom: 12px;
-        }
-        .tab-btn {
-            padding: 10px 20px;
-            background: none;
-            border: none;
-            font-family: 'Poppins', sans-serif;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--light-text);
-            cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-        .tab-btn:hover {
-            background: var(--cream-light);
-            color: var(--dark-text);
-        }
-        .tab-btn.active {
-            background: var(--gold-lighter);
-            color: var(--gold-dark);
+        @media (max-width: 768px) {
+            .page-container { padding: 16px; }
+            .welcome-banner { padding: 20px; }
+            .welcome-banner h1 { font-size: 18px; }
+            .welcome-banner p { font-size: 12px; }
         }
     </style>
 </head>
@@ -784,7 +661,6 @@ if (!$show_role_modal) {
             <img src="../../../media/LOGO.jpg" alt="Logo" class="sidebar-logo" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; border: 2px solid white; background: white; padding: 2px;">
             <div class="sidebar-brand">
                 <span class="sidebar-brand-name">IBM</span>
-                <span class="sidebar-brand-sub">Evaluation System</span>
             </div>
         </div>
         <div class="sidebar-user">
@@ -820,9 +696,9 @@ if (!$show_role_modal) {
 <main class="dashboard-content">
             <div class="page-container">
                 <div class="welcome-banner">
-                    <div class="welcome-banner-role"><i class="fas fa-user-graduate"></i> Mentee Management</div>
-                    <h1>MenteeFlow</h1>
-                    <p>Assign students to instructors and manage mentee relationships. Search for students and assign them to their preferred mentors.</p>
+                    <div class="welcome-banner-role"><i class="fas fa-user-graduate"></i> MenteeFlow</div>
+                    <h1>Mentees Management</h1>
+                    <p>Assign students to instructors and manage mentee relationships</p>
                 </div>
                 
                 <div class="stats-row">
@@ -850,70 +726,77 @@ if (!$show_role_modal) {
                 </div>
                 
                 <div class="grid-2">
-                    <!-- Left Container: Students -->
+                    <!-- Students -->
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-user-graduate"></i> Unassigned Students</h3>
-                            <span class="mentee-count" id="studentsCount"><?php echo count($students) - array_sum(array_map('count', $menteeAssignments)); ?></span>
+                            <span class="mentee-count" id="studentsCount">0</span>
                         </div>
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="studentSearch" placeholder="Search students by name, email, or ID..." onkeyup="filterStudents()">
-                        </div>
-                        <div id="studentsList">
-                            <?php 
-                            $assignedEmails = [];
-                            foreach ($menteeAssignments as $assignments) {
-                                foreach ($assignments as $mentee) {
-                                    $assignedEmails[] = $mentee['email'];
-                                }
-                            }
-                            $unassignedCount = 0;
-                            foreach ($students as $student): 
+                         <div class="search-box">
+                             <i class="fas fa-search"></i>
+                             <input type="text" id="studentSearch" placeholder="Search students..." onkeyup="filterStudents()">
+                         </div>
+                         <!-- Bulk Assignment Bar -->
+                         <div class="bulk-assign-bar" id="bulkAssignBar" style="display: none; margin-bottom: 16px; padding: 12px; background: var(--gold-lighter); border-radius: 10px; border: 1px solid var(--gold-light); align-items: center; gap: 12px;">
+                             <span style="font-size: 13px; font-weight: 600; color: var(--gold-dark);">
+                                 <i class="fas fa-check-square"></i> <span id="selectedCount">0</span> student(s) selected
+                             </span>
+                             <select class="instructor-select" id="bulk-instructor-select" style="flex: 1; max-width: 200px;">
+                                 <option value="">Assign to...</option>
+                                 <?php foreach ($instructors as $inst): 
+                                     $displayName = $inst['first_name'] . ' ' . $inst['last_name'] . ' (' . ($inst['position'] ?? 'Instructor') . ')';
+                                 ?>
+                                 <option value="<?php echo $inst['id']; ?>"><?php echo htmlspecialchars($displayName); ?></option>
+                                 <?php endforeach; ?>
+                             </select>
+                             <button class="btn-assign" id="btn-bulk-assign" disabled onclick="assignSelectedMentees()">
+                                 <i class="fas fa-user-plus"></i> Assign Selected
+                             </button>
+                             <button class="btn-assign" style="background: var(--light-text);" onclick="clearSelection()">
+                                 <i class="fas fa-times"></i> Clear
+                             </button>
+                         </div>
+                         <!-- End Bulk Assignment Bar -->
+                         <div id="studentsList">
+                             <?php 
+                             $assignedEmails = [];
+                             foreach ($menteeAssignments as $assignments) {
+                                 foreach ($assignments as $mentee) {
+                                     $assignedEmails[] = $mentee['email'];
+                                 }
+                             }
+                              $unassignedCount = 0;
+                              $unassignedCount = 0;
+                              foreach ($students as $student): 
                                 $isAssigned = in_array($student['email'], $assignedEmails);
                                 if ($isAssigned) continue;
                                 $unassignedCount++;
-                                $initials = strtoupper(substr($student['first_name'], 0, 1) . substr($student['last_name'], 0, 1));
-                             ?>
-                            <div class="list-item student-row" data-name="<?php echo strtolower($student['first_name'] . ' ' . $student['last_name']); ?>" data-email="<?php echo strtolower($student['email']); ?>" data-id="<?php echo strtolower($student['student_id'] ?? ''); ?>">
-                                <div class="student-info">
-                                    <div class="student-avatar"><?php echo $initials; ?></div>
-                                    <div class="student-details">
-                                        <div class="student-name"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></div>
-                                        <div class="student-meta">
-                                            <?php if (!empty($student['student_id'])): ?>
-                                            <span class="student-id-badge"><i class="fas fa-id-card"></i> <?php echo htmlspecialchars($student['student_id']); ?></span>
-                                            <?php endif; ?>
-                                            <span><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($student['email']); ?></span>
-                                            <span><i class="fas fa-book"></i> <?php echo htmlspecialchars($student['major_name'] ?? 'N/A'); ?></span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="list-item-actions">
-                                    <select class="instructor-select" id="instructor-select-<?php echo $student['id']; ?>">
-                                        <option value="">Select Instructor...</option>
-                                        <?php foreach ($instructors as $inst): 
-                                            $displayName = $inst['first_name'] . ' ' . $inst['last_name'] . ' (' . ($inst['position'] ?? 'Instructor') . ')';
-                                        ?>
-                                        <option value="<?php echo $inst['id']; ?>"><?php echo htmlspecialchars($displayName); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <button class="btn-assign" onclick="assignMentee(<?php echo $student['id']; ?>, '<?php echo htmlspecialchars(addslashes($student['first_name'] . ' ' . $student['last_name'])); ?>')">
-                                        <i class="fas fa-plus"></i> Assign
-                                    </button>
-                                </div>
+                                $initials = strtoupper(substr($student['first_name'] ?? '', 0, 1) . substr($student['last_name'] ?? '', 0, 1));
+                            ?>
+                             <div class="list-item student-row" data-name="<?php echo strtolower($student['first_name'] . ' ' . $student['last_name']); ?>" data-email="<?php echo strtolower($student['email']); ?>" data-id="<?php echo strtolower($student['student_id'] ?? ''); ?>" data-student-id="<?php echo $student['id']; ?>" data-student-name="<?php echo htmlspecialchars(addslashes($student['first_name'] . ' ' . $student['last_name'])); ?>" onclick="toggleStudentSelection(<?php echo $student['id']; ?>)" style="cursor: pointer;">
+                                 <input type="checkbox" class="student-checkbox" id="check-<?php echo $student['id']; ?>" data-student-id="<?php echo $student['id']; ?>" style="pointer-events: none; width: 18px; height: 18px; accent-color: var(--gold);">
+                                 <div class="student-avatar"><?php echo $initials; ?></div>
+                                 <div class="student-info">
+                                     <div class="student-name"><?php echo htmlspecialchars($student['first_name'] . ' ' . $student['last_name']); ?></div>
+                                     <div class="student-meta">
+                                         <?php if (!empty($student['student_id'])): ?>
+                                         <span class="student-id-badge"><?php echo htmlspecialchars($student['student_id']); ?></span>
+                                         <?php endif; ?>
+                                         <span><?php echo htmlspecialchars($student['email']); ?></span>
+                                     </div>
+                                 </div>
                             </div>
-                              <?php endforeach; ?>
-                              <?php if ($unassignedCount == 0): ?>
-                                  <div class="empty-state">
+                            <?php endforeach; ?>
+                            <?php if ($unassignedCount == 0): ?>
+                                <div class="empty-state">
                                     <i class="fas fa-check-circle"></i>
-                                    <p>All students are assigned to mentors!</p>
-                                  </div>
-                              <?php endif; ?>
+                                    <p>All students assigned!</p>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
-                    <!-- Right Container: Instructors -->
+                    <!-- Instructors -->
                     <div class="card">
                         <div class="card-header">
                             <h3 class="card-title"><i class="fas fa-chalkboard-teacher"></i> Instructors</h3>
@@ -925,12 +808,12 @@ if (!$show_role_modal) {
                         </div>
                         <div id="instructorsList">
                             <?php foreach ($instructors as $inst): 
-                                $initials = strtoupper(substr($inst['first_name'], 0, 1) . substr($inst['last_name'], 0, 1));
+                                $initials = strtoupper(substr($inst['first_name'] ?? '', 0, 1) . substr($inst['last_name'] ?? '', 0, 1));
                                 $assignedMentees = $menteeAssignments[$inst['id']] ?? [];
                                 $gradientFrom = $inst['avatar_gradient_from'] ?? '#667eea';
                                 $gradientTo = $inst['avatar_gradient_to'] ?? '#764ba2';
                             ?>
-                            <div class="instructor-item" data-name="<?php echo strtolower($inst['first_name'] . ' ' . $inst['last_name']); ?>">
+                             <div class="instructor-item" data-name="<?php echo strtolower($inst['first_name'] . ' ' . $inst['last_name']); ?>" data-gradient-from="<?php echo htmlspecialchars($gradientFrom); ?>" data-gradient-to="<?php echo htmlspecialchars($gradientTo); ?>">
                                 <div class="instructor-header" onclick="toggleMentees(<?php echo $inst['id']; ?>)">
                                     <div class="instructor-main">
                                         <div class="instructor-avatar" style="background: linear-gradient(135deg, <?php echo $gradientFrom; ?>, <?php echo $gradientTo; ?>);">
@@ -950,21 +833,20 @@ if (!$show_role_modal) {
                                 </div>
                                 <div class="mentees-panel" id="mentees-panel-<?php echo $inst['id']; ?>">
                                     <?php if (empty($assignedMentees)): ?>
-                                        <div class="empty-state" style="padding: 20px;">
+                                        <div class="empty-state">
                                             <i class="fas fa-user-slash"></i>
-                                            <p>No mentees assigned yet</p>
+                                            <p>No mentees</p>
                                         </div>
                                     <?php else: ?>
                                         <div class="mentees-list">
                                             <?php foreach ($assignedMentees as $mentee): 
-                                                $mInitials = strtoupper(substr($mentee['first_name'], 0, 1) . substr($mentee['last_name'], 0, 1));
+                                                $mInitials = strtoupper(substr($mentee['first_name'] ?? '', 0, 1) . substr($mentee['last_name'] ?? '', 0, 1));
                                             ?>
                                             <div class="mentee-item">
                                                 <div class="mentee-item-info">
                                                     <div class="mentee-avatar"><?php echo $mInitials; ?></div>
                                                     <div class="mentee-item-meta">
                                                         <div class="mentee-item-name"><?php echo htmlspecialchars($mentee['first_name'] . ' ' . $mentee['last_name']); ?></div>
-                                                        <div class="mentee-item-email"><?php echo htmlspecialchars($mentee['email']); ?></div>
                                                     </div>
                                                 </div>
                                                 <button class="btn-remove-mentee" onclick="removeMentee(<?php echo $mentee['id']; ?>, <?php echo $inst['id']; ?>, '<?php echo htmlspecialchars(addslashes($mentee['first_name'] . ' ' . $mentee['last_name'])); ?>')">
@@ -986,32 +868,238 @@ if (!$show_role_modal) {
     
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
-    <script>
-        // Global variable for modal
-        let currentRemoveData = null;
-        
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            
-            let icon = 'info-circle';
-            if (type === 'success') icon = 'check-circle';
-            if (type === 'error') icon = 'exclamation-circle';
-            
-            toast.innerHTML = `
-                <i class="fas fa-${icon}"></i>
-                <span>${message}</span>
-                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.4s ease reverse';
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
-        }
+     <script>
+         // Global variable for modal
+         let currentRemoveData = null;
+         let selectedStudents = new Set();
+         
+         // Store instructor mentee counts dynamically
+         let instructorMenteeCounts = {};
+         <?php foreach ($instructors as $inst): ?>
+         instructorMenteeCounts[<?php echo $inst['id']; ?>] = <?php echo count($menteeAssignments[$inst['id']] ?? []); ?>;
+         <?php endforeach; ?>
+         
+         const bulkAssignBar = document.getElementById('bulkAssignBar');
+         const bulkInstructorSelect = document.getElementById('bulk-instructor-select');
+         const bulkAssignBtn = document.getElementById('btn-bulk-assign');
+         const selectedCountSpan = document.getElementById('selectedCount');
+         
+          // Update the count display and button state
+          function updateBulkAssignUI() {
+              const count = selectedStudents.size;
+              selectedCountSpan.textContent = count;
+              bulkAssignBtn.disabled = count === 0 || bulkInstructorSelect.value === '';
+          }
+         
+         // Toggle student selection
+         function toggleStudentSelection(studentId) {
+             const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+             const checkbox = document.getElementById(`check-${studentId}`);
+             
+             if (!row || !checkbox) return;
+             
+             // Don't allow selection if already assigned
+             if (row.classList.contains('student-assigned')) {
+                 showToast('Cannot select already assigned student', 'error');
+                 return;
+             }
+             
+             if (selectedStudents.has(studentId)) {
+                 selectedStudents.delete(studentId);
+                 row.classList.remove('selected');
+                 checkbox.checked = false;
+             } else {
+                 selectedStudents.add(studentId);
+                 row.classList.add('selected');
+                 checkbox.checked = true;
+             }
+             
+             updateBulkAssignUI();
+         }
+         
+         // Clear all selections
+         function clearSelection() {
+             selectedStudents.forEach(studentId => {
+                 const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+                 const checkbox = document.getElementById(`check-${studentId}`);
+                 if (row) row.classList.remove('selected');
+                 if (checkbox) checkbox.checked = false;
+             });
+             selectedStudents.clear();
+             bulkInstructorSelect.value = '';
+             updateBulkAssignUI();
+         }
+         
+         // Bulk assign selected students
+         async function assignSelectedMentees() {
+             const instructorId = bulkInstructorSelect.value;
+             if (!instructorId) {
+                 showToast('Please select an instructor first.', 'error');
+                 return;
+             }
+             
+             if (selectedStudents.size === 0) {
+                 showToast('No students selected.', 'error');
+                 return;
+             }
+             
+             const instructorName = bulkInstructorSelect.options[bulkInstructorSelect.selectedIndex].text.split(' (')[0];
+             const studentIds = Array.from(selectedStudents);
+             const total = studentIds.length;
+             let successCount = 0;
+             let errorCount = 0;
+             
+             bulkAssignBtn.disabled = true;
+             bulkAssignBtn.innerHTML = '<span class="loading"></span> Assigning...';
+             
+             // Process each student assignment sequentially
+             for (const studentId of studentIds) {
+                 const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+                 const checkbox = document.getElementById(`check-${studentId}`);
+                 const studentName = row ? row.dataset.studentName : 'Student';
+                 
+                  try {
+                      const response = await fetch('../../data/assign_mentee.php', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                          body: 'instructor_id=' + encodeURIComponent(instructorId) + '&student_id=' + encodeURIComponent(studentId)
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                          successCount++;
+                          const menteeId = data.mentee_id; // New mentee ID from server
+                          // Update instructor panel with menteeId (for removal)
+                          updateInstructorData(instructorId, menteeId, studentName, true);
+                          if (row) {
+                              row.remove();
+                          }
+                          if (checkbox) {
+                              checkbox.checked = false;
+                              checkbox.disabled = true;
+                          }
+                      } else {
+                          errorCount++;
+                          showToast(`Failed to assign ${studentName}: ${data.message}`, 'error');
+                      }
+                  } catch (err) {
+                     errorCount++;
+                     showToast(`Error assigning ${studentName}: ${err.message}`, 'error');
+                 }
+             }
+             
+              // Clear selections and reset UI
+              selectedStudents.clear();
+              bulkInstructorSelect.value = '';
+              updateBulkAssignUI();
+              bulkAssignBtn.innerHTML = '<i class="fas fa-user-plus"></i> Assign Selected';
+              
+              // Show summary toast
+              if (successCount > 0 && errorCount === 0) {
+                  showToast(`Successfully assigned ${successCount} student(s) to ${instructorName}!`, 'success');
+              } else if (successCount > 0) {
+                  showToast(`Assigned: ${successCount}, Failed: ${errorCount}`, 'success');
+              }
+              
+              // Update counts
+              updateStudentCount();
+           }
+           
+           // Update instructor mentee count and panel
+            function updateInstructorData(instructorId, menteeId, studentName, isAdding = true) {
+                // Update count
+                instructorMenteeCounts[instructorId] = (instructorMenteeCounts[instructorId] || 0) + (isAdding ? 1 : -1);
+                const count = Math.max(0, instructorMenteeCounts[instructorId]);
+                
+                const panel = document.getElementById('mentees-panel-' + instructorId);
+                if (!panel) return;
+                
+                const instructorItem = panel.closest('.instructor-item');
+                if (instructorItem) {
+                    const countSpan = instructorItem.querySelector('.mentee-count');
+                    if (countSpan) {
+                        countSpan.textContent = count + ' mentees';
+                    }
+                }
+                
+                // Update mentees list inside panel
+                let list = panel.querySelector('.mentees-list');
+                const emptyState = panel.querySelector('.empty-state');
+                
+                if (isAdding) {
+                    // Remove empty state if present
+                    if (emptyState) emptyState.remove();
+                    
+                    // Create list if doesn't exist
+                    if (!list) {
+                        list = document.createElement('div');
+                        list.className = 'mentees-list';
+                        panel.appendChild(list);
+                    }
+                    
+                    // Avoid duplicates
+                    if (list.querySelector(`[data-mentee-id="${menteeId}"]`)) return;
+                    
+                    // Create mentee item
+                    const menteeItem = document.createElement('div');
+                    menteeItem.className = 'mentee-item';
+                    menteeItem.dataset.menteeId = menteeId;
+                    menteeItem.innerHTML = `
+                        <div class="mentee-item-info">
+                            <div class="mentee-avatar" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+                                ${studentName.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="mentee-item-meta">
+                                <div class="mentee-item-name">${studentName}</div>
+                            </div>
+                        </div>
+                        <button class="btn-remove-mentee" onclick="removeMentee(${menteeId}, ${instructorId}, '${studentName.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    `;
+                    list.appendChild(menteeItem);
+                } else {
+                    // Removal
+                    if (list) {
+                        const item = list.querySelector(`[data-mentee-id="${menteeId}"]`);
+                        if (item) item.remove();
+                        
+                        // If list is empty, show empty state
+                        if (list.children.length === 0) {
+                            panel.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="fas fa-user-slash"></i>
+                                    <p>No mentees</p>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+            }
+          
+         function showToast(message, type = 'info') {
+             const container = document.getElementById('toastContainer');
+             const toast = document.createElement('div');
+             toast.className = `toast ${type}`;
+             
+             let icon = 'info-circle';
+             if (type === 'success') icon = 'check-circle';
+             if (type === 'error') icon = 'exclamation-circle';
+             
+             toast.innerHTML = `
+                 <i class="fas fa-${icon}"></i>
+                 <span>${message}</span>
+                 <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+             `;
+             
+             container.appendChild(toast);
+             
+             setTimeout(() => {
+                 toast.style.animation = 'slideIn 0.4s ease reverse';
+                 setTimeout(() => toast.remove(), 400);
+             }, 4000);
+         }
         
         function showRemoveModal(menteeId, instructorId, menteeName) {
             currentRemoveData = { menteeId, instructorId, menteeName };
@@ -1036,11 +1124,15 @@ if (!$show_role_modal) {
                 body: 'mentee_id=' + encodeURIComponent(menteeId) + '&instructor_id=' + encodeURIComponent(instructorId)
             })
             .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(`<strong>${menteeName}</strong> removed successfully!`, 'success');
-                    setTimeout(() => location.reload(), 1200);
-                } else {
+             .then(data => {
+                 if (data.success) {
+                     showToast(`<strong>${menteeName}</strong> removed successfully!`, 'success');
+                     // Update instructor panel dynamically
+                     updateInstructorData(instructorId, menteeId, menteeName, false);
+                     // Update student count (since a mentee moved back to unassigned, we'd need to re-fetch students? Actually removal removes assignment but the student might still be a mentee elsewhere? In this system, removal means unassigning from that instructor, student remains as mentee in database but mentor_id set to null? Let's check remove_mentee.php logic.
+                     // For now, just reload to refresh the unassigned students list.
+                     setTimeout(() => location.reload(), 1200);
+                 } else {
                     showToast(data.message || 'Failed to remove mentee', 'error');
                 }
             })
@@ -1049,41 +1141,102 @@ if (!$show_role_modal) {
             });
         }
         
-        function assignMentee(studentId, studentName) {
-            const select = document.getElementById('instructor-select-' + studentId);
-            const instructorId = select.value;
-            if (!instructorId) {
-                showToast('Please select an instructor first.', 'error');
-                return;
-            }
+        function updateAssignButton(selectElement) {
+            const instructorId = selectElement.value;
+            const btn = selectElement.nextElementSibling;
+            const studentId = selectElement.dataset.studentId;
+            const studentName = selectElement.dataset.studentName;
             
-            const btn = select.nextElementSibling;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="loading"></span> Assigning...';
-            btn.disabled = true;
-            
-            fetch('../../data/assign_mentee.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'instructor_id=' + encodeURIComponent(instructorId) + '&student_id=' + encodeURIComponent(studentId)
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(`<strong>${studentName}</strong> assigned successfully!`, 'success');
-                    setTimeout(() => location.reload(), 1200);
-                } else {
-                    showToast(data.message || 'Failed to assign mentee', 'error');
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            })
-            .catch(err => {
-                showToast('Error: ' + err.message, 'error');
-                btn.innerHTML = originalText;
+            if (instructorId && studentId && studentName) {
+                const instructorName = selectElement.options[selectElement.selectedIndex].text.split(' (')[0];
                 btn.disabled = false;
-            });
-        }
+                btn.innerHTML = `<i class="fas fa-user-plus"></i> Assign to ${instructorName}`;
+                // Store reference for click handler
+                btn.dataset.studentId = studentId;
+                btn.dataset.studentName = studentName;
+            } else {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Assign';
+                delete btn.dataset.studentId;
+                delete btn.dataset.studentName;
+             }
+         }
+         
+          function assignMentee(studentId, studentName) {
+              const select = document.getElementById('instructor-select-' + studentId);
+              if (!select) return;
+              const instructorId = select.value;
+              if (!instructorId) {
+                  showToast('Please select an instructor first.', 'error');
+                  return;
+              }
+              
+              const row = select.closest('.list-item');
+              const btn = row.querySelector('.btn-assign');
+              const originalHTML = btn.innerHTML;
+              btn.innerHTML = '<span class="loading"></span> Assigning...';
+              btn.disabled = true;
+              
+              fetch('../../data/assign_mentee.php', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                  body: 'instructor_id=' + encodeURIComponent(instructorId) + '&student_id=' + encodeURIComponent(studentId)
+              })
+               .then(r => r.json())
+               .then(data => {
+                   if (data.success) {
+                       showToast(`<strong>${studentName}</strong> assigned successfully!`, 'success');
+                       // Update instructor panel with the new mentee ID
+                       const menteeId = data.mentee_id;
+                       updateInstructorData(instructorId, menteeId, studentName, true);
+                       // Disable checkbox
+                       const checkbox = document.getElementById('check-' + studentId);
+                       if (checkbox) {
+                           checkbox.checked = false;
+                           checkbox.disabled = true;
+                       }
+                       // Reset select
+                       select.value = '';
+                       // Update button
+                       btn.innerHTML = '<i class="fas fa-check"></i> Assigned';
+                       btn.classList.add('success');
+                       // Remove row with fade out
+                       setTimeout(() => {
+                           row.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                           row.style.opacity = '0';
+                           row.style.transform = 'translateX(-20px)';
+                           setTimeout(() => {
+                               row.remove();
+                               updateStudentCount();
+                           }, 500);
+                       }, 800);
+                   } else {
+                      showToast(data.message || 'Failed to assign mentee', 'error');
+                      btn.innerHTML = originalHTML;
+                      btn.disabled = false;
+                  }
+              })
+              .catch(err => {
+                  showToast('Error: ' + err.message, 'error');
+                  btn.innerHTML = originalHTML;
+                  btn.disabled = false;
+              });
+          }
+        
+         function updateStudentCount() {
+             const studentRows = document.querySelectorAll('.student-row:not([style*="display: none"])');
+             document.getElementById('studentsCount').textContent = studentRows.length;
+             
+             // Show/hide bulk assign bar based on if any unassigned students exist
+             const totalRows = document.querySelectorAll('.student-row').length;
+             if (totalRows > 0) {
+                 bulkAssignBar.style.display = 'flex';
+             } else {
+                 bulkAssignBar.style.display = 'none';
+             }
+             
+             updateBulkAssignUI();
+         }
         
         function removeMentee(menteeId, instructorId, menteeName) {
             showRemoveModal(menteeId, instructorId, menteeName);
@@ -1096,21 +1249,22 @@ if (!$show_role_modal) {
             btn.classList.toggle('active');
         }
         
-        function filterStudents() {
-            const search = document.getElementById('studentSearch').value.toLowerCase();
-            const rows = document.querySelectorAll('.student-row');
-            rows.forEach(row => {
-                const name = row.dataset.name || '';
-                const email = row.dataset.email || '';
-                const id = row.dataset.id || '';
-                
-                if (name.includes(search) || email.includes(search) || id.includes(search)) {
-                    row.style.display = 'flex';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        }
+         function filterStudents() {
+             const search = document.getElementById('studentSearch').value.toLowerCase();
+             const rows = document.querySelectorAll('.student-row');
+             rows.forEach(row => {
+                 const name = row.dataset.name || '';
+                 const email = row.dataset.email || '';
+                 const id = row.dataset.id || '';
+                 
+                 if (name.includes(search) || email.includes(search) || id.includes(search)) {
+                     row.style.display = 'flex';
+                 } else {
+                     row.style.display = 'none';
+                 }
+             });
+             updateStudentCount();
+         }
         
         function filterInstructors() {
             const search = document.getElementById('instructorSearch').value.toLowerCase();
@@ -1125,11 +1279,18 @@ if (!$show_role_modal) {
             });
         }
         
-        // Update counts on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            const studentRows = document.querySelectorAll('.student-row');
-            document.getElementById('studentsCount').textContent = studentRows.length;
-        });
+          // Auto-dismiss toasts after 4 seconds
+          document.addEventListener('DOMContentLoaded', function() {
+              setTimeout(() => {
+                  document.querySelectorAll('.toast').forEach(t => t.remove());
+              }, 4000);
+              
+              // Update counts and bulk bar visibility
+              updateStudentCount();
+              
+              // Event listener for bulk instructor select change
+              document.getElementById('bulk-instructor-select').addEventListener('change', updateBulkAssignUI);
+          });
     </script>
     
     <!-- Remove Confirmation Modal -->

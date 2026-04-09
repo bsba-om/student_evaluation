@@ -937,7 +937,6 @@ if (!$show_role_modal) {
             <img src="../../../media/LOGO.jpg" alt="Logo" class="sidebar-logo" style="width: 50px; height: 50px; border-radius: 12px; object-fit: cover; border: 2px solid white; background: white; padding: 2px;">
             <div class="sidebar-brand">
                 <span class="sidebar-brand-name">IBM</span>
-                <span class="sidebar-brand-sub">Evaluation System</span>
             </div>
         </div>
         <div class="sidebar-user">

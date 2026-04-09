@@ -173,7 +173,7 @@ if (!$show_role_modal) {
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <img src="../../../media/LOGO.jpg" alt="Logo" class="sidebar-logo" style="width: 70px; height: 70px; border-radius: 16px; object-fit: cover; border: 3px solid white; background: white; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-            <div class="sidebar-brand"><span class="sidebar-brand-name">IBM</span><span class="sidebar-brand-sub">Evaluation System</span></div>
+            <div class="sidebar-brand"><span class="sidebar-brand-name">IBM</span></div>
         </div>
         <div class="sidebar-user">
             <div class="sidebar-avatar"><i class="fas fa-user"></i></div>

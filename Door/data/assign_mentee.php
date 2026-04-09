@@ -35,8 +35,11 @@ try {
      // Insert as mentee
      $stmt = $pdo->prepare("INSERT INTO mentees (student_id, first_name, last_name, email, mentor_id) VALUES (?, ?, ?, ?, ?)");
      $stmt->execute([$student_id, $student['first_name'], $student['last_name'], $student['email'], $instructor_id]);
-    
-    echo json_encode(['success' => true, 'message' => 'Mentee assigned successfully']);
+     
+     // Get the new mentee ID
+     $mentee_id = $pdo->lastInsertId();
+     
+     echo json_encode(['success' => true, 'message' => 'Mentee assigned successfully', 'mentee_id' => $mentee_id]);
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
