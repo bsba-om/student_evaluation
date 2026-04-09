@@ -33,18 +33,22 @@ $stats = [
          $stmt->execute([$instructor_id]);
          $stats['by_major'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
          
-         $stmt = $pdo->prepare("
-             SELECT s.year_level, COUNT(*) as count 
-             FROM mentees me
-             LEFT JOIN students s ON me.student_id = s.id
-             WHERE me.mentor_id = ? AND s.year_level IS NOT NULL 
-             GROUP BY s.year_level 
-             ORDER BY s.year_level
-         ");
-         $stmt->execute([$instructor_id]);
-         $stats['by_year'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
-         
-     } catch (PDOException $e) {
+                 $stmt = $pdo->prepare("
+              SELECT s.year_level, COUNT(*) as count 
+              FROM mentees me
+              LEFT JOIN students s ON me.student_id = s.id
+              WHERE me.mentor_id = ? AND s.year_level IS NOT NULL 
+              GROUP BY s.year_level 
+              ORDER BY s.year_level
+          ");
+          $stmt->execute([$instructor_id]);
+          $stats['by_year'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
+          
+          $stmt = $pdo->prepare("SELECT COUNT(*) as total FROM tasks WHERE instructor_id = ?");
+          $stmt->execute([$instructor_id]);
+          $stats['total_tasks'] = $stmt->fetchColumn();
+          
+      } catch (PDOException $e) {
          $stats['total_students'] = 0;
      }
  }
@@ -1641,10 +1645,10 @@ function getGradient($student) {
                 </div>
                 <div class="stat-card" style="border: 2px solid #e5e7eb; box-shadow: 0 4px 16px rgba(0,0,0,0.06);">
                     <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #a78bfa); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
-                        <i class="fas fa-building"></i>
+                        <i class="fas fa-tasks"></i>
                     </div>
-                    <div class="stat-value"><?php echo count($stats['by_major']); ?></div>
-                    <div class="stat-label">Majors</div>
+                    <div class="stat-value"><?php echo number_format($stats['total_tasks'] ?? 0); ?></div>
+                    <div class="stat-label">Total Tasks Created</div>
                 </div>
                 <?php if (!empty($stats['by_year'])): 
                     $yearsCount = count($stats['by_year']);
@@ -2315,6 +2319,10 @@ function getGradient($student) {
                 if (result.success) {
                     showToast(result.message, 'success');
                     closeAssignTaskSingleModal();
+                    // Refresh student tasks if the detail modal is open
+                    if (menteeIdGlobal) {
+                        loadStudentTasks(menteeIdGlobal);
+                    }
                 } else {
                     showToast(result.message || 'Failed to assign task', 'error');
                 }
@@ -2387,101 +2395,170 @@ function getGradient($student) {
                 'low': '#059669'
             };
             
+            // Separate solo and group tasks
+            const soloTasks = tasks.filter(t => t.is_solo);
+            const groupTasks = tasks.filter(t => !t.is_solo);
+            
             let html = `
-                <div class="tasks-table-container">
-                    <table class="tasks-table">
-                        <thead>
-                            <tr>
-                                <th>Task</th>
-                                <th>Priority</th>
-                                <th>Due Date</th>
-                                <th>Assigned To</th>
-                                <th>Completion</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
             `;
             
-            tasks.forEach(task => {
-                const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date';
-                const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.task_status === 'active';
-                const priorityColor = priorityColors[task.priority] || '#6b7280';
+            // Solo Tasks Section (Left Column)
+            if (soloTasks.length > 0) {
+                html += `
+                    <div>
+                        <h4 style="font-size: 18px; font-weight: 700; color: var(--dark-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-user" style="color: #3b82f6;"></i> Solo Tasks
+                            <span style="font-size: 13px; font-weight: 600; background: #3b82f6; color: white; padding: 4px 10px; border-radius: 12px; margin-left: 8px;">
+                                ${soloTasks.length}
+                            </span>
+                        </h4>
+                        <div style="display: grid; gap: 12px;">
+                `;
                 
-                // Calculate completion count
-                const completedCount = task.mentees.filter(m => m.assignment_status === 'completed').length;
-                const totalCount = task.mentees.length;
-                const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-                const completionColor = completionPercent === 100 ? '#059669' : 'var(--gold)';
+                soloTasks.forEach(task => {
+                    const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date';
+                    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.task_status === 'active';
+                    const priorityColor = priorityColors[task.priority] || '#6b7280';
+                    const mentee = task.mentees[0];
+                    const isCompleted = mentee && mentee.assignment_status === 'completed';
+                    
+                    html += `
+                        <div style="background: white; border-radius: 12px; padding: 20px; border: 2px solid ${isCompleted ? '#059669' : (isOverdue ? '#fca5a5' : '#e5e7eb')}; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <span style="color: ${priorityColor}; font-size: 12px; font-weight: 600;">
+                                            <i class="fas fa-flag" style="color: ${priorityColor};"></i>
+                                            ${capitalizeFirst(task.priority)}
+                                        </span>
+                                        ${isCompleted ? `
+                                            <span style="background: linear-gradient(135deg, #059669, #34d399); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;">
+                                                <i class="fas fa-check-circle"></i> Completed
+                                            </span>
+                                        ` : `
+                                            <span style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;">
+                                                <i class="fas fa-clock"></i> Pending
+                                            </span>
+                                        `}
+                                    </div>
+                                    <h5 style="font-size: 16px; font-weight: 700; color: var(--dark-text); margin: 0 0 8px 0;">
+                                        ${escapeHtml(task.title)}
+                                    </h5>
+                                    ${task.description ? `
+                                        <p style="font-size: 13px; color: var(--light-text); margin: 0 0 12px 0; line-height: 1.5;">
+                                            ${escapeHtml(task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description)}
+                                        </p>
+                                    ` : ''}
+                                    <div style="font-size: 12px; color: var(--light-text); display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                                        <span style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-user" style="color: ${isOverdue ? '#dc2626' : '#3b82f6'};"></i>
+                                            ${escapeHtml(mentee.first_name + ' ' + mentee.last_name)}
+                                        </span>
+                                        <span style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-calendar" style="color: ${isOverdue ? '#dc2626' : 'var(--gold)'};"></i>
+                                            ${isOverdue ? '<span style="color: #dc2626; font-weight: 600;">Overdue:</span> ' : 'Due: '}${dueDate}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
                 
                 html += `
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600; color: var(--dark-text); margin-bottom: 4px;">
-                                ${escapeHtml(task.title)}
-                            </div>
-                            ${task.description ? `
-                                <div style="font-size: 12px; color: var(--light-text); line-height: 1.5; max-width: 300px;">
-                                    ${escapeHtml(task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description)}
-                                </div>
-                            ` : ''}
-                            <div style="font-size: 11px; color: var(--light-text); margin-top: 4px;">
-                                Created: ${new Date(task.created_at).toLocaleDateString()}
-                            </div>
-                        </td>
-                        <td>
-                            <span class="priority-badge" style="color: ${priorityColor};">
-                                <i class="fas fa-flag" style="color: ${priorityColor};"></i>
-                                ${capitalizeFirst(task.priority)}
-                            </span>
-                        </td>
-                        <td>
-                            ${isOverdue ? 
-                                `<span style="color: #dc2626; font-weight: 600; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-exclamation-circle"></i> ${dueDate}
-                                </span>` : 
-                                `<span style="color: var(--dark-text);">${dueDate}</span>`
-                            }
-                        </td>
-                        <td>
-                            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                                ${task.mentees.slice(0, 3).map(mentee => `
-                                    <div class="mentee-chip" title="${escapeHtml(mentee.first_name + ' ' + mentee.last_name)} (${escapeHtml(mentee.email)})">
-                                        <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 600;">
-                                            ${getInitialsFromName(mentee.first_name, mentee.last_name)}
-                                        </div>
-                                        <span>${escapeHtml(mentee.first_name + ' ' + (mentee.last_name ? mentee.last_name.split(' ')[0] : ''))}</span>
-                                    </div>
-                                `).join('')}
-                                ${task.mentees.length > 3 ? `
-                                    <span style="font-size: 12px; color: var(--light-text); padding: 4px 8px;">
-                                        +${task.mentees.length - 3} more
-                                    </span>
-                                ` : ''}
-                            </div>
-                            <div style="font-size: 11px; color: var(--light-text); margin-top: 4px;">
-                                ${totalCount} mentee${totalCount !== 1 ? 's' : ''} total
-                            </div>
-                        </td>
-                        <td>
-                            <div class="completion-bar">
-                                <div style="flex: 1; min-width: 60px;">
-                                    <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;">
-                                        <span style="color: var(--light-text);">${completionPercent}%</span>
-                                        <span style="color: var(--light-text);">${completedCount}/${totalCount}</span>
-                                    </div>
-                                    <div class="completion-bar-bg">
-                                        <div class="completion-bar-fill" style="background: ${completionColor}; width: ${completionPercent}%;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 `;
-            });
+            }
+            
+            // Group Tasks Section (Right Column)
+            if (groupTasks.length > 0) {
+                html += `
+                    <div>
+                        <h4 style="font-size: 18px; font-weight: 700; color: var(--dark-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-users" style="color: #d4a843;"></i> Group Tasks
+                            <span style="font-size: 13px; font-weight: 600; background: #d4a843; color: white; padding: 4px 10px; border-radius: 12px; margin-left: 8px;">
+                                ${groupTasks.length}
+                            </span>
+                        </h4>
+                        <div style="display: grid; gap: 12px;">
+                `;
+                
+                groupTasks.forEach(task => {
+                    const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date';
+                    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.task_status === 'active';
+                    const priorityColor = priorityColors[task.priority] || '#6b7280';
+                    
+                    const completedCount = task.mentees.filter(m => m.assignment_status === 'completed').length;
+                    const totalCount = task.mentees.length;
+                    const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+                    const completionColor = completionPercent === 100 ? '#059669' : 'var(--gold)';
+                    
+                    html += `
+                        <div style="background: white; border-radius: 12px; padding: 20px; border: 2px solid ${completionPercent === 100 ? '#059669' : (isOverdue ? '#fca5a5' : '#e5e7eb')}; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                        <span style="color: ${priorityColor}; font-size: 12px; font-weight: 600;">
+                                            <i class="fas fa-flag" style="color: ${priorityColor};"></i>
+                                            ${capitalizeFirst(task.priority)}
+                                        </span>
+                                        <span style="background: linear-gradient(135deg, #d4a843, #e8c768); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;">
+                                            <i class="fas fa-users"></i> ${totalCount} Students
+                                        </span>
+                                    </div>
+                                    <h5 style="font-size: 16px; font-weight: 700; color: var(--dark-text); margin: 0 0 8px 0;">
+                                        ${escapeHtml(task.title)}
+                                    </h5>
+                                    ${task.description ? `
+                                        <p style="font-size: 13px; color: var(--light-text); margin: 0 0 12px 0; line-height: 1.5;">
+                                            ${escapeHtml(task.description.length > 100 ? task.description.substring(0, 100) + '...' : task.description)}
+                                        </p>
+                                    ` : ''}
+                                    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px;">
+                                        ${task.mentees.slice(0, 3).map(mentee => `
+                                            <div style="background: #f3f4f6; padding: 4px 10px; border-radius: 20px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                                                <div style="width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 600;">
+                                                    ${getInitialsFromName(mentee.first_name, mentee.last_name)}
+                                                </div>
+                                                ${escapeHtml(mentee.first_name)}
+                                            </div>
+                                        `).join('')}
+                                        ${task.mentees.length > 3 ? `
+                                            <span style="font-size: 12px; color: var(--light-text); padding: 4px 8px;">
+                                                +${task.mentees.length - 3} more
+                                            </span>
+                                        ` : ''}
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 16px; font-size: 12px; color: var(--light-text);">
+                                        <span style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-calendar" style="color: ${isOverdue ? '#dc2626' : 'var(--gold)'};"></i>
+                                            ${isOverdue ? '<span style="color: #dc2626; font-weight: 600;">Overdue:</span> ' : 'Due: '}${dueDate}
+                                        </span>
+                                        <span style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-check-circle" style="color: ${completionColor};"></i>
+                                            ${completedCount}/${totalCount} completed
+                                        </span>
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <div style="height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                                            <div style="height: 100%; background: ${completionColor}; width: ${completionPercent}%; border-radius: 3px;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
             
             html += `
-                        </tbody>
-                    </table>
                 </div>
             `;
             
@@ -2638,13 +2715,299 @@ function getGradient($student) {
                             <div class="info-card-value">${escapeHtml(student.major_name || 'N/A')}</div>
                         </div>
                     </div>
+                    
+                    <!-- Tasks Container -->
+                    <div style="margin-top: 24px;">
+                        <h4 style="font-size: 18px; font-weight: 700; color: var(--dark-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-tasks" style="color: var(--gold);"></i> Assigned Tasks
+                        </h4>
+                        <div id="studentTasksContainer" style="display: none;">
+                            <div style="display: grid; gap: 12px;" id="studentTasksList"></div>
+                        </div>
+                        <div id="studentTasksLoading" style="text-align: center; padding: 40px; display: none;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--gold);"></i>
+                            <p style="margin-top: 12px; color: var(--light-text);">Loading tasks...</p>
+                        </div>
+                        <div id="studentNoTasksMessage" style="text-align: center; padding: 40px 20px; color: var(--light-text); display: none;">
+                            <i class="fas fa-clipboard-list" style="font-size: 40px; color: var(--gold-light); margin-bottom: 12px; opacity: 0.6;"></i>
+                            <p>No tasks assigned to this student yet.</p>
+                        </div>
+                    </div>
                 </div>
             `;
             
             document.getElementById('studentDetailModal').style.display = 'flex';
+            
+            // Load tasks for this student
+            loadStudentTasks(student.mentee_id);
+        }
+        
+        async function loadStudentTasks(menteeId) {
+            const container = document.getElementById('studentTasksContainer');
+            const list = document.getElementById('studentTasksList');
+            const loading = document.getElementById('studentTasksLoading');
+            const noTasks = document.getElementById('studentNoTasksMessage');
+            
+            container.style.display = 'none';
+            noTasks.style.display = 'none';
+            loading.style.display = 'block';
+            
+            try {
+                const response = await fetch('../../../Door/data/get_mentee_tasks.php?mentee_id=' + menteeId);
+                const result = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (!result.success || result.tasks.length === 0) {
+                    noTasks.style.display = 'block';
+                    return;
+                }
+                
+                container.style.display = 'block';
+                renderStudentTasks(result.tasks, menteeId);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                noTasks.style.display = 'block';
+                noTasks.innerHTML = '<p>Failed to load tasks.</p>';
+            }
+        }
+        
+        function renderStudentTasks(tasks, currentMenteeId) {
+            const list = document.getElementById('studentTasksList');
+            const priorityColors = {
+                'high': '#dc2626',
+                'medium': '#d97706',
+                'low': '#059669'
+            };
+            
+            let html = '';
+            
+            tasks.forEach(task => {
+                const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No due date';
+                const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.assignment_status !== 'completed';
+                const isCompleted = task.assignment_status === 'completed';
+                const priorityColor = priorityColors[task.priority] || '#6b7280';
+                
+                html += `
+                    <div style="background: white; border-radius: 12px; padding: 20px; border: 2px solid ${isCompleted ? '#059669' : (isOverdue ? '#fca5a5' : '#e5e7eb')}; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                    <span class="priority-badge" style="color: ${priorityColor}; font-size: 12px;">
+                                        <i class="fas fa-flag" style="color: ${priorityColor};"></i>
+                                        ${capitalizeFirst(task.priority)}
+                                    </span>
+                                    ${isCompleted ? `
+                                        <span style="background: linear-gradient(135deg, #059669, #34d399); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;">
+                                            <i class="fas fa-check-circle"></i> Completed
+                                        </span>
+                                    ` : `
+                                        <span style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 12px;">
+                                            <i class="fas fa-clock"></i> Pending
+                                        </span>
+                                    `}
+                                </div>
+                                <h5 style="font-size: 16px; font-weight: 700; color: var(--dark-text); margin: 0 0 8px 0;">
+                                    ${escapeHtml(task.title)}
+                                </h5>
+                                ${task.description ? `
+                                    <p style="font-size: 13px; color: var(--light-text); margin: 0 0 12px 0; line-height: 1.5;">
+                                        ${escapeHtml(task.description.length > 150 ? task.description.substring(0, 150) + '...' : task.description)}
+                                    </p>
+                                ` : ''}
+                                <div style="font-size: 12px; color: var(--light-text); display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-calendar" style="color: ${isOverdue ? '#dc2626' : 'var(--gold)'};"></i>
+                                        ${isOverdue ? '<span style="color: #dc2626; font-weight: 600;">Overdue:</span> ' : 'Due: '}${dueDate}
+                                    </span>
+                                    <span style="display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-plus-circle" style="color: var(--gold);"></i>
+                                        Created: ${new Date(task.created_at).toLocaleDateString()}
+                                    </span>
+                                    ${task.completion_date ? `
+                                        <span style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="fas fa-check-double" style="color: #059669;"></i>
+                                            Completed: ${new Date(task.completion_date).toLocaleDateString()}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0;">
+                                ${!isCompleted ? `
+                                    <button onclick="markTaskComplete(${task.task_id}, ${currentMenteeId})" 
+                                            style="padding: 10px 20px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: linear-gradient(135deg, #059669, #34d399); color: white; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); transition: all 0.2s ease;">
+                                        <i class="fas fa-check"></i> Mark Complete
+                                    </button>
+                                ` : `
+                                    <div style="padding: 10px 20px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; background: #ecfdf5; color: #059669; display: flex; align-items: center; gap: 8px; border: 1px solid #a7f3d0;">
+                                        <i class="fas fa-check-circle"></i> Completed
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            list.innerHTML = html;
+        }
+        
+        let menteeIdGlobal = null;
+        
+        function viewStudent(menteeId) {
+            menteeIdGlobal = menteeId;
+            // Find student from cached allStudents array
+            const student = allStudents.find(s => s.mentee_id == menteeId);
+            
+            if (!student) {
+                showToast('Student not found', 'error');
+                return;
+            }
+            
+            const fullName = getFullName(student);
+            const initials = getInitials(student);
+            const gradient = getGradient(student);
+            
+            document.getElementById('modalContent').innerHTML = `
+                <div class="modal-header" style="background: ${gradient}; padding: 40px;">
+                    <button class="modal-close" onclick="closeModal()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <div style="width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 48px; font-weight: 700; border: 4px solid rgba(255,255,255,0.5); box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
+                            ${escapeHtml(initials)}
+                        </div>
+                        <div style="flex: 1; color: white;">
+                            <h2 style="font-size: 28px; font-weight: 700; margin: 0 0 8px 0;">${escapeHtml(fullName)}</h2>
+                            <p style="margin: 4px 0; opacity: 0.9; font-size: 16px;">
+                                <i class="fas fa-id-card"></i> Student ID: ${escapeHtml(student.student_id || 'N/A')}
+                            </p>
+                            <p style="margin: 4px 0; opacity: 0.9; font-size: 16px;">
+                                <i class="fas fa-envelope"></i> ${escapeHtml(student.email || 'N/A')}
+                            </p>
+                            <p style="margin: 4px 0; opacity: 0.9; font-size: 16px;">
+                                <i class="fas fa-graduation-cap"></i> ${escapeHtml(student.major_name || 'N/A')} | ${escapeHtml(student.year_level || 'N/A')}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-body">
+                    <!-- Student Header Info -->
+                    <div style="background: var(--cream); padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border-light);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="font-size: 12px; color: var(--light-text); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+                                    Student ID
+                                </div>
+                                <div style="font-size: 24px; font-weight: 700; color: var(--dark-text); margin-bottom: 16px;">
+                                    ${escapeHtml(student.student_id || 'N/A')}
+                                </div>
+                                <div style="font-size: 13px; color: var(--light-text); line-height: 1.8;">
+                                    <div><i class="fas fa-envelope" style="width: 20px; color: var(--gold);"></i> ${escapeHtml(student.email || 'N/A')}</div>
+                                    <div><i class="fas fa-graduation-cap" style="width: 20px; color: var(--gold);"></i> ${escapeHtml(student.year_level || 'N/A')}</div>
+                                    <div><i class="fas fa-building" style="width: 20px; color: var(--gold);"></i> ${escapeHtml(student.major_name || 'N/A')}</div>
+                                </div>
+                            </div>
+                            <div style="flex-shrink: 0;">
+                                <button class="btn btn-primary" onclick="openAssignTaskToStudent(${student.mentee_id}, '${escapeHtml(student.first_name + ' ' + student.last_name).replace(/'/g, "\\'")}')"
+                                        style="padding: 12px 24px; border-radius: 10px; font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(212, 168, 67, 0.3);">
+                                    <i class="fas fa-tasks"></i> Assign Task
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Info Cards and Tasks - Side by Side -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <!-- Left Column - Info Cards -->
+                        <div>
+                            <div class="info-grid">
+                                <div class="info-card">
+                                    <div class="info-card-label">
+                                        <i class="fas fa-id-card"></i> Student ID
+                                    </div>
+                                    <div class="info-card-value">${escapeHtml(student.student_id || 'N/A')}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-card-label">
+                                        <i class="fas fa-envelope"></i> Email
+                                    </div>
+                                    <div class="info-card-value">${escapeHtml(student.email || 'N/A')}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-card-label">
+                                        <i class="fas fa-graduation-cap"></i> Year Level
+                                    </div>
+                                    <div class="info-card-value">${escapeHtml(student.year_level || 'N/A')}</div>
+                                </div>
+                                <div class="info-card">
+                                    <div class="info-card-label">
+                                        <i class="fas fa-building"></i> Major
+                                    </div>
+                                    <div class="info-card-value">${escapeHtml(student.major_name || 'N/A')}</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Column - Tasks -->
+                        <div style="border-left: 2px solid var(--border-light); padding-left: 24px;">
+                            <h4 style="font-size: 18px; font-weight: 700; color: var(--dark-text); margin-bottom: 16px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-tasks" style="color: var(--gold);"></i> Assigned Tasks
+                            </h4>
+                            <div id="studentTasksContainer" style="display: none; max-height: 400px; overflow-y: auto;">
+                                <div style="display: grid; gap: 12px;" id="studentTasksList"></div>
+                            </div>
+                            <div id="studentTasksLoading" style="text-align: center; padding: 40px; display: none;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 32px; color: var(--gold);"></i>
+                                <p style="margin-top: 12px; color: var(--light-text);">Loading tasks...</p>
+                            </div>
+                            <div id="studentNoTasksMessage" style="text-align: center; padding: 40px 20px; color: var(--light-text); display: none;">
+                                <i class="fas fa-clipboard-list" style="font-size: 40px; color: var(--gold-light); margin-bottom: 12px; opacity: 0.6;"></i>
+                                <p>No tasks assigned to this student yet.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('studentDetailModal').style.display = 'flex';
+            
+            // Load tasks for this student
+            loadStudentTasks(student.mentee_id);
         }
 
-            document.getElementById('studentDetailModal').addEventListener('click', function(e) {
+        async function markTaskComplete(taskId, menteeId) {
+            try {
+                const response = await fetch('../../../Door/data/update_task_status.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        task_id: taskId,
+                        mentee_id: menteeId,
+                        status: 'completed'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showToast('Task marked as completed!', 'success');
+                    loadStudentTasks(menteeId);
+                } else {
+                    showToast(result.message || 'Failed to update task', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Network error. Please try again.', 'error');
+            }
+        }
+        
+        document.getElementById('studentDetailModal').addEventListener('click', function(e) {
                 if (e.target === this) closeModal();
             });
 

@@ -23,27 +23,6 @@ try {
         exit;
     }
     
-    // First, let's check what tasks exist for this instructor
-    $debugStmt = $pdo->prepare("SELECT * FROM tasks WHERE instructor_id = ?");
-    $debugStmt->execute([$instructor_id]);
-    $debugTasks = $debugStmt->fetchAll(PDO::FETCH_ASSOC);
-    
-    // If no tasks found, try with instructors.user_id
-    if (empty($debugTasks)) {
-        $debugStmt2 = $pdo->query("SELECT id FROM instructors WHERE user_id = " . intval($instructor_id));
-        $instructorRow = $debugStmt2->fetch(PDO::FETCH_ASSOC);
-        if ($instructorRow) {
-            $debugStmt3 = $pdo->prepare("SELECT * FROM tasks WHERE instructor_id = ?");
-            $debugStmt3->execute([$instructorRow['id']]);
-            $debugTasks = $debugStmt3->fetchAll(PDO::FETCH_ASSOC);
-        }
-    }
-    
-    if (empty($debugTasks)) {
-        echo json_encode(['success' => true, 'tasks' => [], 'debug' => 'No tasks found for instructor_id: ' . $instructor_id]);
-        exit;
-    }
-    
     // Fetch tasks with their assignments and mentee details
     $stmt = $pdo->prepare("
         SELECT 
@@ -91,12 +70,14 @@ try {
         ");
         $stmt2->execute([$task['task_id']]);
         $task['mentees'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Determine if it's a solo or group task
+        $task['is_solo'] = count($task['mentees']) === 1;
     }
     
     echo json_encode([
         'success' => true,
-        'tasks' => $tasks,
-        'debug' => 'Found ' . count($tasks) . ' tasks'
+        'tasks' => $tasks
     ]);
     
 } catch (PDOException $e) {
