@@ -749,12 +749,12 @@ if (!$show_role_modal) {
                                  <option value="<?php echo $inst['id']; ?>"><?php echo htmlspecialchars($displayName); ?></option>
                                  <?php endforeach; ?>
                              </select>
-                             <button class="btn-assign" id="btn-bulk-assign" disabled onclick="assignSelectedMentees()">
-                                 <i class="fas fa-user-plus"></i> Assign Selected
-                             </button>
-                             <button class="btn-assign" style="background: var(--light-text);" onclick="clearSelection()">
-                                 <i class="fas fa-times"></i> Clear
-                             </button>
+                              <button type="button" class="btn-assign" id="btn-bulk-assign" disabled onclick="assignSelectedMentees()">
+                                  <i class="fas fa-user-plus"></i> Assign Selected
+                              </button>
+                              <button type="button" class="btn-assign" style="background: var(--light-text);" onclick="clearSelection()">
+                                  <i class="fas fa-times"></i> Clear
+                              </button>
                          </div>
                          <!-- End Bulk Assignment Bar -->
                          <div id="studentsList">
@@ -879,17 +879,22 @@ if (!$show_role_modal) {
          instructorMenteeCounts[<?php echo $inst['id']; ?>] = <?php echo count($menteeAssignments[$inst['id']] ?? []); ?>;
          <?php endforeach; ?>
          
-         const bulkAssignBar = document.getElementById('bulkAssignBar');
-         const bulkInstructorSelect = document.getElementById('bulk-instructor-select');
-         const bulkAssignBtn = document.getElementById('btn-bulk-assign');
-         const selectedCountSpan = document.getElementById('selectedCount');
-         
-          // Update the count display and button state
-          function updateBulkAssignUI() {
-              const count = selectedStudents.size;
-              selectedCountSpan.textContent = count;
-              bulkAssignBtn.disabled = count === 0 || bulkInstructorSelect.value === '';
-          }
+          const bulkAssignBar = document.getElementById('bulkAssignBar');
+          const bulkInstructorSelect = document.getElementById('bulk-instructor-select');
+          const bulkAssignBtn = document.getElementById('btn-bulk-assign');
+          const selectedCountSpan = document.getElementById('selectedCount');
+          
+          // Enable/disable button when instructor selection changes
+          bulkInstructorSelect.addEventListener('change', function() {
+              updateBulkAssignUI();
+          });
+          
+           // Update the count display and button state
+           function updateBulkAssignUI() {
+               const count = selectedStudents.size;
+               selectedCountSpan.textContent = count;
+               bulkAssignBtn.disabled = count === 0 || bulkInstructorSelect.value === '';
+           }
          
          // Toggle student selection
          function toggleStudentSelection(studentId) {
@@ -930,81 +935,89 @@ if (!$show_role_modal) {
              updateBulkAssignUI();
          }
          
-         // Bulk assign selected students
-         async function assignSelectedMentees() {
-             const instructorId = bulkInstructorSelect.value;
-             if (!instructorId) {
-                 showToast('Please select an instructor first.', 'error');
-                 return;
-             }
-             
-             if (selectedStudents.size === 0) {
-                 showToast('No students selected.', 'error');
-                 return;
-             }
-             
-             const instructorName = bulkInstructorSelect.options[bulkInstructorSelect.selectedIndex].text.split(' (')[0];
-             const studentIds = Array.from(selectedStudents);
-             const total = studentIds.length;
-             let successCount = 0;
-             let errorCount = 0;
-             
-             bulkAssignBtn.disabled = true;
-             bulkAssignBtn.innerHTML = '<span class="loading"></span> Assigning...';
-             
-             // Process each student assignment sequentially
-             for (const studentId of studentIds) {
-                 const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
-                 const checkbox = document.getElementById(`check-${studentId}`);
-                 const studentName = row ? row.dataset.studentName : 'Student';
-                 
-                  try {
-                      const response = await fetch('../../data/assign_mentee.php', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                          body: 'instructor_id=' + encodeURIComponent(instructorId) + '&student_id=' + encodeURIComponent(studentId)
-                      });
-                      
-                      const data = await response.json();
-                      
-                      if (data.success) {
-                          successCount++;
-                          const menteeId = data.mentee_id; // New mentee ID from server
-                          // Update instructor panel with menteeId (for removal)
-                          updateInstructorData(instructorId, menteeId, studentName, true);
-                          if (row) {
-                              row.remove();
-                          }
-                          if (checkbox) {
-                              checkbox.checked = false;
-                              checkbox.disabled = true;
-                          }
-                      } else {
-                          errorCount++;
-                          showToast(`Failed to assign ${studentName}: ${data.message}`, 'error');
-                      }
-                  } catch (err) {
-                     errorCount++;
-                     showToast(`Error assigning ${studentName}: ${err.message}`, 'error');
-                 }
-             }
-             
-              // Clear selections and reset UI
-              selectedStudents.clear();
-              bulkInstructorSelect.value = '';
-              updateBulkAssignUI();
-              bulkAssignBtn.innerHTML = '<i class="fas fa-user-plus"></i> Assign Selected';
+          // Bulk assign selected students
+          async function assignSelectedMentees() {
+              console.log('assignSelectedMentees called');
+              console.log('Selected students:', selectedStudents);
+              console.log('Instructor:', bulkInstructorSelect.value);
               
-              // Show summary toast
-              if (successCount > 0 && errorCount === 0) {
-                  showToast(`Successfully assigned ${successCount} student(s) to ${instructorName}!`, 'success');
-              } else if (successCount > 0) {
-                  showToast(`Assigned: ${successCount}, Failed: ${errorCount}`, 'success');
+              const instructorId = bulkInstructorSelect.value;
+              if (!instructorId) {
+                  showToast('Please select an instructor first.', 'error');
+                  return;
               }
               
-              // Update counts
-              updateStudentCount();
-           }
+              if (selectedStudents.size === 0) {
+                  showToast('No students selected.', 'error');
+                  return;
+              }
+              
+              const instructorName = bulkInstructorSelect.options[bulkInstructorSelect.selectedIndex].text.split(' (')[0];
+              const studentIds = Array.from(selectedStudents);
+              const total = studentIds.length;
+              let successCount = 0;
+              let errorCount = 0;
+              
+              bulkAssignBtn.disabled = true;
+              bulkAssignBtn.innerHTML = '<span class="loading"></span> Assigning...';
+              
+              // Process each student assignment sequentially
+              for (const studentId of studentIds) {
+                  const row = document.querySelector(`.student-row[data-student-id="${studentId}"]`);
+                  const checkbox = document.getElementById(`check-${studentId}`);
+                  const studentName = row ? row.dataset.studentName : 'Student';
+                  console.log('Assigning student:', studentId, studentName);
+                  
+                   try {
+                       const response = await fetch('../../data/assign_mentee.php', {
+                           method: 'POST',
+                           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                           body: 'instructor_id=' + encodeURIComponent(instructorId) + '&student_id=' + encodeURIComponent(studentId)
+                       });
+                       
+                       console.log('Response status:', response.status);
+                       const data = await response.json();
+                       console.log('Response data:', data);
+                       
+                       if (data.success) {
+                           successCount++;
+                           const menteeId = data.mentee_id; // New mentee ID from server
+                           // Update instructor panel with menteeId (for removal)
+                           updateInstructorData(instructorId, menteeId, studentName, true);
+                           if (row) {
+                               row.remove();
+                           }
+                           if (checkbox) {
+                               checkbox.checked = false;
+                               checkbox.disabled = true;
+                           }
+                       } else {
+                           errorCount++;
+                           showToast(`Failed to assign ${studentName}: ${data.message}`, 'error');
+                       }
+                   } catch (err) {
+                      console.error('Error:', err);
+                      errorCount++;
+                      showToast(`Error assigning ${studentName}: ${err.message}`, 'error');
+                  }
+              }
+              
+               // Clear selections and reset UI
+               selectedStudents.clear();
+               bulkInstructorSelect.value = '';
+               updateBulkAssignUI();
+               bulkAssignBtn.innerHTML = '<i class="fas fa-user-plus"></i> Assign Selected';
+               
+               // Show summary toast
+               if (successCount > 0 && errorCount === 0) {
+                   showToast(`Successfully assigned ${successCount} student(s) to ${instructorName}!`, 'success');
+               } else if (successCount > 0) {
+                   showToast(`Assigned: ${successCount}, Failed: ${errorCount}`, 'success');
+               }
+               
+               // Update counts
+               updateStudentCount();
+            }
            
            // Update instructor mentee count and panel
             function updateInstructorData(instructorId, menteeId, studentName, isAdding = true) {

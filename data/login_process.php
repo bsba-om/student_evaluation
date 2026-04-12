@@ -136,12 +136,33 @@ function demoLogin($role, $email, $password) {    $demo_credentials = [
         $_SESSION['user_id'] = 1;
         $_SESSION['user_email'] = $email;
         $_SESSION['user_role'] = $role;
-        $_SESSION['user_name'] = match($role) {
+        
+        // Get actual name from database if available
+        $user_name = match($role) {
             'admin' => 'Administrator',
             'program_head' => 'John Head',
             'instructor' => 'Jane Teacher',
             default => 'User'
         };
+        
+        if (!empty($pdo)) {
+            try {
+                $table = match($role) {
+                    'admin' => 'admins',
+                    'program_head' => 'program_heads',
+                    'instructor' => 'instructors',
+                    default => 'instructors'
+                };
+                $stmt = $pdo->prepare("SELECT first_name, last_name FROM $table WHERE id = 1");
+                $stmt->execute();
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row && !empty($row['first_name'])) {
+                    $user_name = trim($row['first_name'] . ' ' . ($row['last_name'] ?? ''));
+                }
+            } catch (Exception $e) {}
+        }
+        
+        $_SESSION['user_name'] = $user_name;
 
          // Redirect based on role
          $redirect = match($role) {

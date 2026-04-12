@@ -929,6 +929,134 @@ if (!$show_role_modal) {
         .btn-modal-confirm:hover {
             background: #b91c1c;
         }
+        
+        .btn-close-card {
+            background: transparent;
+            border: none;
+            color: var(--light-text);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .btn-close-card:hover {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-title {
+            margin: 0;
+        }
+        
+        .hidden-content {
+            display: none !important;
+        }
+        
+        .floating-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: var(--gold);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(212, 168, 67, 0.4);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .floating-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 168, 67, 0.5);
+        }
+        
+        /* Student Info Modal Styles */
+        .student-info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        
+        .student-info-overlay.hidden-content {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        
+        .student-info-overlay.hidden-content .student-info-modal {
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+        }
+        
+        .student-info-modal {
+            max-width: 90%;
+            width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+        
+        .student-info-modal .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .student-info-modal .card-header {
+            background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+            color: white;
+            padding: 20px 24px;
+            border-radius: 16px 16px 0 0;
+        }
+        
+        .student-info-modal .card-title {
+            color: white;
+        }
+        
+        .student-info-modal .card-title i {
+            color: white !important;
+        }
+        
+        .student-info-modal .btn-close-card {
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .student-info-modal .btn-close-card:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -1025,23 +1153,29 @@ if (!$show_role_modal) {
             <?php endif; ?>
             
             <?php if (!$show_role_modal): ?>
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title"><i class="fas fa-user-graduate"></i> Student Information</h3>
-                </div>
-                
-                <!-- Tabs -->
-                <div class="tab-nav">
-                    <button type="button" class="tab-btn active" data-tab="manual">
-                        <i class="fas fa-keyboard"></i> Manual Add Student
-                    </button>
-                    <button type="button" class="tab-btn" data-tab="import">
-                        <i class="fas fa-file-import"></i> Import Students
-                    </button>
-                    <button type="button" class="tab-btn" data-tab="edit">
-                        <i class="fas fa-search-edit"></i> Edit Student
-                    </button>
-                </div>
+            <!-- Student Information Modal -->
+            <div class="student-info-overlay hidden-content" id="studentInfoCard">
+                <div class="student-info-modal">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fas fa-user-graduate"></i> Student Information</h3>
+                            <button type="button" class="btn-close-card" onclick="toggleStudentInfo()" title="Close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Tabs -->
+                        <div class="tab-nav">
+                            <button type="button" class="tab-btn active" data-tab="manual" onclick="showTabContent('manual')">
+                                <i class="fas fa-keyboard"></i> Manual Add Student
+                            </button>
+                            <button type="button" class="tab-btn" data-tab="import" onclick="showTabContent('import')">
+                                <i class="fas fa-file-import"></i> Import Students
+                            </button>
+                            <button type="button" class="tab-btn" data-tab="edit" onclick="showTabContent('edit')">
+                                <i class="fas fa-search-edit"></i> Edit Student
+                            </button>
+                        </div>
                 
                 <!-- Manual Entry Tab -->
                 <div id="manual-tab" class="tab-content active">
@@ -1255,6 +1389,8 @@ if (!$show_role_modal) {
                             </div>
                         </div>
                     </div>
+                    </div>
+                </div>
                 </div>
             </div>
             
@@ -1354,8 +1490,49 @@ if (!$show_role_modal) {
          </main>
      </div>
      
-     <script>
-         // Auto-dismiss alerts after 5 seconds
+      <script>
+          // Toggle Student Information Card visibility
+          function toggleStudentInfo() {
+              const card = document.getElementById('studentInfoCard');
+              card.classList.toggle('hidden-content');
+              
+              // Show/hide floating button
+              const floatBtn = document.getElementById('showStudentInfoBtn');
+              if (card.classList.contains('hidden-content')) {
+                  floatBtn.style.display = 'flex';
+              } else {
+                  floatBtn.style.display = 'none';
+              }
+          }
+          
+          // Show tab content when clicked (called from tab buttons)
+          function showTabContent(tabName) {
+              const targetTab = tabName;
+              
+              // Remove active class from all tabs and contents
+              document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+              document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+              
+              // Add active class to clicked tab and corresponding content
+              document.querySelector('.tab-btn[data-tab="' + tabName + '"]').classList.add('active');
+              document.getElementById(tabName + '-tab').classList.add('active');
+          }
+          
+           // Initialize floating button visibility
+          document.addEventListener('DOMContentLoaded', function() {
+              const card = document.getElementById('studentInfoCard');
+              const floatBtn = document.getElementById('showStudentInfoBtn');
+              if (card && floatBtn) {
+                  // Show floating button if card is hidden (has hidden-content class)
+                  if (card.classList.contains('hidden-content')) {
+                      floatBtn.style.display = 'flex';
+                  } else {
+                      floatBtn.style.display = 'none';
+                  }
+              }
+          });
+          
+          // Auto-dismiss alerts after 5 seconds
          const alerts = document.querySelectorAll('.alert');
          alerts.forEach(alert => {
              setTimeout(() => {
@@ -1623,5 +1800,10 @@ if (!$show_role_modal) {
                 return div.innerHTML;
             }
         </script>
- </body>
-</html>
+        
+        <!-- Floating button to show Student Information -->
+        <button id="showStudentInfoBtn" class="floating-btn" onclick="toggleStudentInfo()" style="display: none;">
+            <i class="fas fa-plus"></i> Show Student Info
+        </button>
+  </body>
+ </html>

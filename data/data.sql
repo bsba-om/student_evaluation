@@ -160,22 +160,30 @@ CREATE TABLE IF NOT EXISTS students (
  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
  -- Mentees Table (student assignments to instructors)
- CREATE TABLE IF NOT EXISTS mentees (
-     id INT PRIMARY KEY AUTO_INCREMENT,
-     student_id INT NOT NULL,
-     first_name VARCHAR(100) NOT NULL,
-     last_name VARCHAR(100) NOT NULL,
-     email VARCHAR(255) NOT NULL,
-     mentor_id INT NOT NULL,
-     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CREATE TABLE IF NOT EXISTS mentees (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      student_id INT NOT NULL,
+      first_name VARCHAR(100) NOT NULL,
+      last_name VARCHAR(100) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      mentor_id INT NOT NULL,
+      assigned_by_id INT,
+      assigned_by_name VARCHAR(255),
+      assignment_notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
      INDEX idx_mentor_id (mentor_id),
      INDEX idx_student_id (student_id),
      INDEX idx_email (email),
      FOREIGN KEY (mentor_id) REFERENCES instructors(id) ON DELETE CASCADE ON UPDATE CASCADE,
      FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE ON UPDATE CASCADE
- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
- 
- -- Tasks Table (instructor assignments to mentees)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Add new columns to mentees table for tracking assignments
+ALTER TABLE mentees ADD COLUMN assigned_by_id INT;
+ALTER TABLE mentees ADD COLUMN assigned_by_name VARCHAR(255);
+ALTER TABLE mentees ADD COLUMN assignment_notes TEXT;
+
+-- Tasks Table (instructor assignments to mentees)
  CREATE TABLE IF NOT EXISTS tasks (
      id INT PRIMARY KEY AUTO_INCREMENT,
      title VARCHAR(200) NOT NULL,
@@ -340,3 +348,23 @@ ALTER TABLE students ADD COLUMN student_id VARCHAR(50) NULL UNIQUE;
 ALTER TABLE subjects ADD COLUMN lecture_hours INT DEFAULT 2;
 ALTER TABLE subjects ADD COLUMN lab_hours INT DEFAULT 0;
 ALTER TABLE subjects ADD COLUMN credit_type VARCHAR(20) DEFAULT 'lec' COMMENT 'lec, lec-lab, practical, project';
+
+-- Student Subject Grades Table (grades per subject per semester)
+CREATE TABLE IF NOT EXISTS student_subject_grades (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    student_id INT NOT NULL,
+    major_id INT NOT NULL,
+    subject_id INT NOT NULL,
+    year_level VARCHAR(20) NOT NULL,
+    semester VARCHAR(20) NOT NULL,
+    grade VARCHAR(10),
+    remarks TEXT,
+    graded_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_student (student_id),
+    INDEX idx_major (major_id),
+    INDEX idx_subject (subject_id),
+    INDEX idx_year_semester (year_level, semester),
+    UNIQUE KEY uk_student_subject_sem (student_id, subject_id, year_level, semester)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
