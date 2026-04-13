@@ -507,52 +507,105 @@ if (!$show_role_modal) {
             max-width: 100vw;
         }
         
-         .stat-popup {
-            position: absolute;
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
-            border: 1px solid var(--border-light);
-            min-width: 200px;
-            max-width: 300px;
-            z-index: 1000;
+         /* Status Modal */
+        #statusModal {
             display: none;
-            animation: fadeInUp 0.2s ease;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(30, 30, 30, 0.55);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            animation: fadeInModalBg 0.2s;
+            backdrop-filter: blur(4px);
         }
-        .stat-popup::before {
-            content: '';
-            position: absolute;
-            top: -8px;
-            left: 20px;
-            border-left: 8px solid transparent;
-            border-right: 8px solid transparent;
-            border-bottom: 8px solid white;
+        #statusModalContent {
+            background: white;
+            border-radius: 16px;
+            max-width: 450px;
+            width: 90vw;
+            max-height: 70vh;
+            overflow: hidden;
+            box-shadow: 0 24px 80px 0 rgba(0,0,0,0.25);
+            position: relative;
+            animation: popInModal 0.3s ease;
+            border: 2px solid var(--gold);
+            display: flex;
+            flex-direction: column;
         }
-        .stat-popup h4 {
-            margin: 0 0 8px 0;
-            font-size: 14px;
+        #statusModalHeader {
+            padding: 20px 24px;
+            background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #statusModalHeader h3 {
+            margin: 0;
+            font-size: 18px;
             font-weight: 700;
-            color: var(--dark-text);
         }
-        .stat-popup ul {
+        #statusModalBody {
+            padding: 20px 24px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        #statusModalBody ul {
             margin: 0;
             padding: 0;
             list-style: none;
-            max-height: 200px;
-            overflow-y: auto;
         }
-        .stat-popup li {
-            padding: 6px 0;
-            font-size: 13px;
-            color: var(--dark-text-2);
+        .status-modal-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--light-text);
+        }
+        .status-modal-empty i {
+            font-size: 48px;
+            color: var(--gold-light);
+            margin-bottom: 16px;
+            display: block;
+            opacity: 0.6;
+        }
+        .status-modal-empty h4 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-text);
+        }
+        .status-modal-empty p {
+            margin: 0;
+            font-size: 14px;
+        }
+        #statusModalBody li {
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
             border-bottom: 1px solid var(--border-soft);
         }
-        .stat-popup li:last-child {
+        #statusModalBody li:last-child {
             border-bottom: none;
         }
-        .stat-card:hover .stat-popup {
-            display: block;
+        #statusModalClose {
+            position: absolute;
+            top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        #statusModalClose:hover {
+            background: rgba(255,255,255,0.3);
         }
 
         /* Responsive adjustments */
@@ -971,11 +1024,24 @@ if (!$show_role_modal) {
          <div id="instructorDetailsBody">
              <!-- Populated by JS -->
          </div>
-     </div>
+  </div>
  </div>
 
-     <script>
-     // Instructor data for client-side filtering
+<!-- Status Modal -->
+<div id="statusModal">
+    <div id="statusModalContent">
+        <button id="statusModalClose"><i class="fas fa-times"></i></button>
+        <div id="statusModalHeader">
+            <h3 id="statusModalTitle"></h3>
+        </div>
+        <div id="statusModalBody">
+            <ul id="statusModalList"></ul>
+        </div>
+    </div>
+</div>
+
+    <script>
+    // Instructor data for client-side filtering
     const instructorsData = <?php echo json_encode($instructors); ?>;
     const promotedIds = <?php echo json_encode($promoted_ids ?? []); ?>;
     const programHeadEmails = <?php echo json_encode($program_head_emails ?? []); ?>;
@@ -1104,22 +1170,56 @@ if (!$show_role_modal) {
             return div.innerHTML;
         }
 
-        // Create status popup
-        function createStatusPopup(instructors) {
-            let popup = '<div class="stat-popup"><h4>Instructors</h4><ul>';
-            instructors.forEach(inst => {
-                popup += `<li>${escapeHtml(inst.first_name + ' ' + inst.last_name)}</li>`;
-            });
-            popup += '</ul></div>';
-            return popup;
+        // Status Modal Functions
+        function openStatusModal(title, instructors) {
+            document.getElementById('statusModalTitle').textContent = title;
+            const list = document.getElementById('statusModalList');
+            list.innerHTML = '';
+            
+            if (instructors.length === 0) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'status-modal-empty';
+                emptyState.innerHTML = `
+                    <i class="fas fa-info-circle"></i>
+                    <h4>No instructors found</h4>
+                    <p>There are currently no instructors ${title.toLowerCase().replace(' instructors', '')} at this time.</p>
+                `;
+                list.appendChild(emptyState);
+            } else {
+                instructors.forEach(inst => {
+                    const li = document.createElement('li');
+                    li.textContent = `${inst.first_name} ${inst.last_name}`;
+                    list.appendChild(li);
+                });
+            }
+            
+            document.getElementById('statusModal').style.display = 'flex';
         }
 
-        // Initialize status popups
+        function closeStatusModal() {
+            document.getElementById('statusModal').style.display = 'none';
+        }
+
+        // Initialize status modal
         document.addEventListener('DOMContentLoaded', function() {
-            // Add popups to each stat card
-            document.getElementById('onDutyCard').innerHTML += createStatusPopup(onDutyInstructors);
-            document.getElementById('onLeaveCard').innerHTML += createStatusPopup(onLeaveInstructors);
-            document.getElementById('onTravelCard').innerHTML += createStatusPopup(onTravelInstructors);
+            // Add click listeners to stat cards
+            document.getElementById('onDutyCard').addEventListener('click', () => {
+                openStatusModal('On Duty Instructors', onDutyInstructors);
+            });
+
+            document.getElementById('onLeaveCard').addEventListener('click', () => {
+                openStatusModal('On Leave Instructors', onLeaveInstructors);
+            });
+
+            document.getElementById('onTravelCard').addEventListener('click', () => {
+                openStatusModal('On Travel Instructors', onTravelInstructors);
+            });
+
+            // Close modal when clicking outside or close button
+            document.getElementById('statusModalClose').addEventListener('click', closeStatusModal);
+            document.getElementById('statusModal').addEventListener('click', function(e) {
+                if (e.target === this) closeStatusModal();
+            });
         });
 
          // Capitalize the first letter of each word (like PHP's ucwords)
@@ -1398,17 +1498,36 @@ if (!$show_role_modal) {
               });
           }
           
-          // Add Instructor button
-          const addInstructorBtn = document.getElementById('addInstructorBtn');
-          if (addInstructorBtn) {
-              addInstructorBtn.addEventListener('click', function() {
-                  window.location.href = 'add_instructor.php';
-              });
-          }
-         
-         // Initial render
-         renderTable();
-     });
+           // Add Instructor button
+           const addInstructorBtn = document.getElementById('addInstructorBtn');
+           if (addInstructorBtn) {
+               addInstructorBtn.addEventListener('click', function() {
+                   window.location.href = 'add_instructor.php';
+               });
+           }
+           
+           // Add click listeners to stat cards
+            document.getElementById('onDutyCard').addEventListener('click', () => {
+                openStatusModal('On Duty Instructors', onDutyInstructors);
+            });
+
+            document.getElementById('onLeaveCard').addEventListener('click', () => {
+                openStatusModal('On Leave Instructors', onLeaveInstructors);
+            });
+
+            document.getElementById('onTravelCard').addEventListener('click', () => {
+                openStatusModal('On Travel Instructors', onTravelInstructors);
+            });
+
+            // Close modal when clicking outside or close button
+            document.getElementById('statusModalClose').addEventListener('click', closeStatusModal);
+            document.getElementById('statusModal').addEventListener('click', function(e) {
+                if (e.target === this) closeStatusModal();
+            });
+          
+          // Initial render
+          renderTable();
+      });
      </script>
             </div>
         </main>
