@@ -149,9 +149,9 @@ if ($pdo) {
                  <i class="fas fa-user-graduate"></i>
                  <span>Students mentees</span>
              </a>
-             <a href="pages/feedback.php" class="sidebar-nav-item">
+             <a href="pages/evaluation.php" class="sidebar-nav-item">
                  <i class="fas fa-comment-dots"></i>
-                 <span>Feedback</span>
+                 <span>Evaluation</span>
              </a>
              <a href="pages/reports.php" class="sidebar-nav-item">
                  <i class="fas fa-file-alt"></i>

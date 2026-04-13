@@ -1,12 +1,16 @@
 <?php
 require_once '../../../data/session_security.php';
+require_once '../../../data/config.php';
 
+// Role access check
 $role_access = check_role_access('instructor');
 $show_role_modal = !$role_access['allowed'];
 
+// Initialize variables
 $instructor_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
 $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Jane Teacher';
 
+// Initialize stats
 $stats = [
     'total_reports' => 0,
     'pdf_count' => 0,
@@ -18,9 +22,29 @@ $stats = [
 $report_types = ['pdf', 'excel', 'csv', 'json'];
 $all_reports = [];
 
+// Initialize mentee data
+$assigned_mentees = [];
+$mentee_count = 0;
+$new_mentees = [];
+$last_viewed = null;
+
+// Sample data for reports generation
+$mock_data = [
+    'majors' => [
+        ['name' => 'Operational Management', 'count' => 2, 'gradient' => 'linear-gradient(135deg, #d4a843, #b8922f)'],
+        ['name' => 'Marketing Management', 'count' => 1, 'gradient' => 'linear-gradient(135deg, #ec4899, #f472b6)'],
+        ['name' => 'Financial Management', 'count' => 1, 'gradient' => 'linear-gradient(135deg, #3b82f6, #60a5fa)']
+    ],
+    'year_levels' => [
+        ['label' => '1st Year', 'count' => 0, 'color' => '#3b82f6'],
+        ['label' => '2nd Year', 'count' => 2, 'color' => '#10b981'],
+        ['label' => '3rd Year', 'count' => 2, 'color' => '#8b5cf6'],
+        ['label' => '4th Year', 'count' => 1, 'color' => '#f59e0b']
+    ]
+];
+
+// Process data if access is allowed
 if (!$show_role_modal) {
-    require_once '../../../data/config.php';
-    
     try {
         // Get report statistics from reports table
         $stmt = $pdo->query("SELECT COUNT(*) as total FROM reports");
@@ -50,11 +74,6 @@ if (!$show_role_modal) {
     }
     
     // Get assigned mentees for Assignment History
-    $assigned_mentees = [];
-    $mentee_count = 0;
-    $new_mentees = [];
-    $last_viewed = null;
-    
     try {
         $stmt = $pdo->prepare("SELECT m.*, s.major_id, s.year_level, maj.display_name as major_name 
                                FROM mentees m 
@@ -83,25 +102,7 @@ if (!$show_role_modal) {
         $assigned_mentees = [];
         $mentee_count = 0;
     }
-} else {
-    $assigned_mentees = [];
-    $mentee_count = 0;
 }
-
-// Sample data for reports generation (since we don't have all tables)
-$mock_data = [
-    'majors' => [
-        ['name' => 'Operational Management', 'count' => 2, 'gradient' => 'linear-gradient(135deg, #d4a843, #b8922f)'],
-        ['name' => 'Marketing Management', 'count' => 1, 'gradient' => 'linear-gradient(135deg, #ec4899, #f472b6)'],
-        ['name' => 'Financial Management', 'count' => 1, 'gradient' => 'linear-gradient(135deg, #3b82f6, #60a5fa)']
-    ],
-    'year_levels' => [
-        ['label' => '1st Year', 'count' => 0, 'color' => '#3b82f6'],
-        ['label' => '2nd Year', 'count' => 2, 'color' => '#10b981'],
-        ['label' => '3rd Year', 'count' => 2, 'color' => '#8b5cf6'],
-        ['label' => '4th Year', 'count' => 1, 'color' => '#f59e0b']
-    ]
-];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -210,6 +211,8 @@ $mock_data = [
             border: 1px solid var(--border-light);
             margin-bottom: 24px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+            z-index: 10;
         }
         
         .section-tab {
@@ -243,8 +246,15 @@ $mock_data = [
         
         .section-tab i { font-size: 14px; }
         
-        .section-content { display: none; }
-        .section-content.active { display: block; }
+        .section-content { 
+            display: none; 
+            position: relative;
+            z-index: 1;
+            padding: 20px 0;
+        }
+        .section-content.active { 
+            display: block; 
+        }
         
         .stats-grid {
             display: grid;
@@ -445,6 +455,66 @@ $mock_data = [
         .report-badge.csv {
             background: linear-gradient(135deg, #dbeafe, #bfdbfe);
             color: #2563eb;
+        }
+        
+        .report-badge.json {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #d97706;
+        }
+        
+        .toast-close {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 4px;
+            margin-left: auto;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .toast-close:hover {
+            opacity: 1;
+        }
+        
+        .search-bar {
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 12px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(212, 168, 67, 0.1);
+        }
+        
+        .filter-select {
+            min-width: 150px;
+            padding: 12px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--gold);
         }
         
         .report-card-footer {
@@ -679,10 +749,10 @@ $mock_data = [
                 <i class="fas fa-user-graduate"></i>
                 <span>Students mentees</span>
             </a>
-            <a href="feedback.php" class="sidebar-nav-item">
-                <i class="fas fa-comment-dots"></i>
-                <span>Feedback</span>
-            </a>
+            <a href="evaluation.php" class="sidebar-nav-item">
+                 <i class="fas fa-comment-dots"></i>
+                 <span>Evaluation</span>
+             </a>
             <a href="reports.php" class="sidebar-nav-item active">
                 <i class="fas fa-file-alt"></i>
                 <span>Reports</span>
@@ -800,53 +870,43 @@ $mock_data = [
                     <div class="stat-label">All-time downloads</div>
                     <div class="stat-change positive"><i class="fas fa-chart-line"></i> Active usage</div>
                 </div>
-            </div>
-
-            <!-- Mentee Information Report Section -->
-            <?php if ($mentee_count > 0): ?>
-            <div class="mentee-report-section" style="margin-bottom: 32px;">
-                <?php if (!empty($new_mentees)): ?>
-                <div class="new-mentee-notification" style="background: linear-gradient(135deg, #059669, #34d399); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
-                    <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        <i class="fas fa-user-plus" style="font-size: 20px;"></i>
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">
-                            New Mentee<?php echo count($new_mentees) > 1 ? 's' : ''; ?> Assigned!
-                        </div>
-                        <div style="font-size: 14px; opacity: 0.95;">
-                            <?php if (count($new_mentees) == 1): ?>
-                                <strong><?php echo htmlspecialchars(trim($new_mentees[0]['first_name'] . ' ' . $new_mentees[0]['last_name'])); ?></strong> has been assigned to you by the Program Head.
-                            <?php else: ?>
-                                <strong><?php echo count($new_mentees); ?></strong> students have been assigned to you: 
-                                <?php 
-                                $names = [];
-                                foreach ($new_mentees as $nm) {
-                                    $names[] = htmlspecialchars(trim($nm['first_name'] . ' ' . $nm['last_name']));
-                                }
-                                echo implode(', ', $names);
-                                ?>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                    <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            <?php endif; ?>
-
-            <?php endif; ?>
-
-            <!-- Mentees Section -->
-            <div class="section-content" id="menteesSection">
-                <?php if ($mentee_count > 0): ?>
-                <div style="margin-bottom: 24px;">
-                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                        <i class="fas fa-bell" style="font-size: 24px; color: var(--gold);"></i>
-                        <h2 style="margin: 0; font-size: 20px; color: var(--dark-text);">Assignment Notifications</h2>
-                    </div>
-                    <p style="margin: 0; font-size: 14px; color: var(--light-text);">Recent student assignments from your Program Head</p>
-                </div>
+             </div>
+ 
+             <!-- Mentees Section -->
+             <div class="section-content" id="menteesSection">
+                 <?php if (!empty($new_mentees)): ?>
+                 <div class="new-mentee-notification" style="background: linear-gradient(135deg, #059669, #34d399); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
+                     <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                         <i class="fas fa-user-plus" style="font-size: 20px;"></i>
+                     </div>
+                     <div style="flex: 1;">
+                         <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">
+                             New Mentees Assigned!
+                         </div>
+                         <div style="font-size: 14px; opacity: 0.95;">
+                             <?php echo count($new_mentees); ?> students have been assigned to you: 
+                             <?php 
+                             $names = [];
+                             foreach ($new_mentees as $nm) {
+                                 $names[] = htmlspecialchars(trim($nm['first_name'] . ' ' . $nm['last_name']));
+                             }
+                             echo implode(', ', $names);
+                             ?>
+                         </div>
+                     </div>
+                     <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                         <i class="fas fa-times"></i>
+                     </button>
+                 </div>
+                 <?php endif; ?>
+                 <?php if ($mentee_count > 0): ?>
+                 <div style="margin-bottom: 24px;">
+                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                         <i class="fas fa-bell" style="font-size: 24px; color: var(--gold);"></i>
+                         <h2 style="margin: 0; font-size: 20px; color: var(--dark-text);">Assignment Notifications</h2>
+                     </div>
+                     <p style="margin: 0; font-size: 14px; color: var(--light-text);">Recent student assignments from your Program Head</p>
+                 </div>
                 <div style="display: flex; flex-direction: column; gap: 16px;">
                     <?php foreach ($assigned_mentees as $mentee): 
                         $fullName = htmlspecialchars(trim(($mentee['first_name'] ?? '') . ' ' . ($mentee['last_name'] ?? '')));
@@ -972,7 +1032,19 @@ $mock_data = [
                 </div>
             </div>
 
-            <!-- Reports Grid -->
+             <!-- Search and Filter Bar -->
+            <div class="search-bar" id="searchBar">
+                <input type="text" class="search-input" id="reportSearch" placeholder="Search reports by name..." oninput="filterReports()">
+                <select class="filter-select" id="reportTypeFilter" onchange="filterReports()">
+                    <option value="">All Types</option>
+                    <option value="pdf">PDF</option>
+                    <option value="excel">Excel</option>
+                    <option value="csv">CSV</option>
+                    <option value="json">JSON</option>
+                </select>
+            </div>
+
+             <!-- Reports Grid -->
             <div class="reports-grid" id="reportsGrid">
                 <?php if (empty($all_reports)): ?>
                 <div class="empty-state" style="grid-column: 1 / -1;">
@@ -1014,7 +1086,7 @@ $mock_data = [
                                 <?php echo $created; ?>
                             </div>
                         </div>
-                        <div class="report-card-actions" style="padding: 16px 24px; border-top: 1px solid var(--border-light); display: flex; gap: 8px;">
+                         <div class="card-actions">
                             <button class="btn btn-primary" onclick="downloadReport('<?php echo $report['id']; ?>', '<?php echo addslashes($report['report_name']); ?>', '<?php echo $report['report_type']; ?>')">
                                 <i class="fas fa-download"></i> Download
                             </button>
@@ -1088,14 +1160,38 @@ $mock_data = [
             });
         }
 
-        document.getElementById('reportForm').addEventListener('submit', function(e) {
+         function showGenerator() {
+             switchSection('generate');
+         }
+
+         document.getElementById('reportForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const reportName = document.getElementById('reportName').value.trim();
+            const reportType = document.getElementById('reportType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            if (!reportName) {
+                showToast('Please enter a report name', 'error');
+                return;
+            }
+            
+            if (!reportType) {
+                showToast('Please select a report type', 'error');
+                return;
+            }
+            
+            if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+                showToast('Start date cannot be after end date', 'error');
+                return;
+            }
+            
             const formData = new FormData();
-            formData.append('report_name', document.getElementById('reportName').value);
-            formData.append('report_type', document.getElementById('reportType').value);
-            formData.append('date_from', document.getElementById('dateFrom').value);
-            formData.append('date_to', document.getElementById('dateTo').value);
+            formData.append('report_name', reportName);
+            formData.append('report_type', reportType);
+            formData.append('date_from', dateFrom);
+            formData.append('date_to', dateTo);
             formData.append('instructor_id', <?php echo $instructor_id; ?>);
             
             fetch('../../../data/generate_report.php', {
@@ -1153,7 +1249,7 @@ $mock_data = [
             });
         });
 
-        function downloadMenteeReport() {
+         function downloadMenteeReport() {
             fetch('../../../data/download_mentee_report.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1179,6 +1275,22 @@ $mock_data = [
             })
             .catch(err => {
                 showToast('Failed to download report: ' + err.message, 'error');
+            });
+        }
+        
+        function filterReports() {
+            const searchTerm = document.getElementById('reportSearch').value.toLowerCase();
+            const typeFilter = document.getElementById('reportTypeFilter').value;
+            const reports = document.querySelectorAll('.report-card');
+            
+            reports.forEach(card => {
+                const title = card.querySelector('.report-title').textContent.toLowerCase();
+                const type = card.querySelector('.report-badge').textContent.trim().toLowerCase();
+                
+                const matchesSearch = title.includes(searchTerm);
+                const matchesType = !typeFilter || type === typeFilter;
+                
+                card.style.display = matchesSearch && matchesType ? 'block' : 'none';
             });
         }
     </script>

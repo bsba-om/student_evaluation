@@ -93,9 +93,9 @@ if (!$show_role_modal) {
                  <i class="fas fa-user-graduate"></i>
                  <span>Students mentees</span>
              </a>
-             <a href="feedback.php" class="sidebar-nav-item active">
+            <a href="evaluation.php" class="sidebar-nav-item">
                  <i class="fas fa-comment-dots"></i>
-                 <span>Feedback</span>
+                 <span>Evaluation</span>
              </a>
              <a href="reports.php" class="sidebar-nav-item">
                  <i class="fas fa-file-alt"></i>
@@ -134,80 +134,9 @@ if (!$show_role_modal) {
             </div>
         </header>
 
-        <main class="dashboard-content">
-            <!-- Welcome Banner -->
-            <div class="welcome-banner">
-                <div class="welcome-banner-role">Instructor</div>
-                <h1>Student Feedback</h1>
-                <p>Review comments and suggestions from your students</p>
-            </div>
-            
-            <!-- Stats Row -->
-            <div class="stats-row">
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="fas fa-comment-dots"></i></div>
-                    <div class="stat-info">
-                        <h4><?php echo $total_feedback; ?></h4>
-                        <p>Total Feedback</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon gold"><i class="fas fa-star"></i></div>
-                    <div class="stat-info">
-                        <h4><?php echo $avg_rating; ?></h4>
-                        <p>Overall Rating</p>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Feedback List -->
-            <div class="content-card">
-                <div class="content-card-header">
-                    <h3><i class="fas fa-comments"></i> All Feedback</h3>
-                    <input type="text" id="feedbackSearch" placeholder="Search feedback..." style="width: 250px; padding: 8px 12px; border: 1px solid var(--border-light); border-radius: 8px; font-size: 13px;" onkeyup="filterFeedback()">
-                </div>
-                <div class="content-card-body">
-                    <?php if (empty($feedback_items)): ?>
-                    <div class="empty-state" style="padding: 60px 20px;">
-                        <i class="fas fa-comment-slash" style="font-size: 48px; opacity: 0.3; margin-bottom: 16px; display: block;"></i>
-                        <h3>No Feedback Yet</h3>
-                        <p>Students haven't provided any feedback comments.</p>
-                    </div>
-                    <?php else: ?>
-                    <div class="feedback-list" style="display: flex; flex-direction: column; gap: 16px;">
-                        <?php foreach ($feedback_items as $fb): 
-                            $rating = (float)($fb['rating'] ?? 0);
-                            $course = htmlspecialchars($fb['course_name'] ?? $fb['course_code'] ?? 'Unknown Course');
-                            $date = date('M j, Y', strtotime($fb['evaluation_date']));
-                            $comment = trim($fb['comments'] ?? '');
-                            $student_name = '';
-                            if (!empty($fb['student_first']) || !empty($fb['student_last'])) {
-                                $student_name = htmlspecialchars(trim($fb['student_first'] . ' ' . $fb['student_last']));
-                            } else {
-                                $student_name = '<span class="text-muted">Anonymous</span>';
-                            }
-                        ?>
-                        <div class="feedback-item" style="background: white; border: 1px solid var(--border-light); border-radius: 12px; padding: 20px; transition: all 0.2s ease;">
-                            <div class="feedback-header" style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                                <div style="display: flex; flex-direction: column; gap: 4px;">
-                                    <span class="feedback-course" style="font-weight: 600; color: var(--gold-dark);"><?php echo $course; ?></span>
-                                    <span style="font-size: 12px; color: var(--light-text);"><?php echo $student_name; ?></span>
-                                </div>
-                                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
-                                    <span class="feedback-date" style="font-size: 12px; color: var(--light-text);"><?php echo $date; ?></span>
-                                    <span class="rating-badge <?php echo $rating >= 4.7 ? 'excellent' : ($rating >= 4.4 ? 'good' : 'average'); ?>" style="font-size: 12px; padding: 4px 10px;">
-                                        <?php echo number_format($rating, 1); ?>
-                                    </span>
-                                </div>
-                            </div>
-                            <p class="feedback-text" style="font-size: 14px; color: var(--dark-text); line-height: 1.6; margin: 0;">"<?php echo htmlspecialchars($comment); ?>"</p>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </main>
+         <main class="dashboard-content">
+             
+         </main>
     </div>
     
     <script>

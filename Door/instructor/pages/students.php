@@ -1603,10 +1603,10 @@ function getGradient($student) {
                 <i class="fas fa-user-graduate"></i>
                 <span>Students mentees</span>
             </a>
-            <a href="feedback.php" class="sidebar-nav-item">
-                <i class="fas fa-comment-dots"></i>
-                <span>Feedback</span>
-            </a>
+           <a href="evaluation.php" class="sidebar-nav-item">
+                 <i class="fas fa-comment-dots"></i>
+                 <span>Evaluation</span>
+             </a>
             <a href="reports.php" class="sidebar-nav-item">
                 <i class="fas fa-file-alt"></i>
                 <span>Reports</span>

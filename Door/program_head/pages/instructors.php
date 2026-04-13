@@ -11,12 +11,17 @@ $user_name = $_SESSION['user_name'] ?? 'Program Head';
 if (!$show_role_modal) {
     require_once '../../../data/config.php';
     
-    // Fetch stats with error handling
+     // Fetch stats with error handling
     $total_instructors = 0;
-    $active_instructors = 0;
-    $total_courses = 0;
-    $avg_rating = 0;
+    $on_duty_count = 0;
+    $on_leave_count = 0;
+    $on_travel_count = 0;
     $instructors = [];
+    
+    // Lists for hover display
+    $on_duty_instructors = [];
+    $on_leave_instructors = [];
+    $on_travel_instructors = [];
     
     // Total instructors
     try {
@@ -27,42 +32,34 @@ if (!$show_role_modal) {
         $total_instructors = 0;
     }
     
-    // Active instructors
+    // On Duty instructors
     try {
-        $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM instructors WHERE status = 'active'");
-        $result = $stmt->fetch();
-        $active_instructors = $result['cnt'] ?? 0;
+        $stmt = $pdo->query("SELECT id, first_name, last_name FROM instructors WHERE status = 'on duty'");
+        $on_duty_instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $on_duty_count = count($on_duty_instructors);
     } catch (PDOException $e) {
-        $active_instructors = 0;
+        $on_duty_count = 0;
+        $on_duty_instructors = [];
     }
     
-    // Total courses - check if courses table exists
+    // On Leave instructors
     try {
-        $stmt = $pdo->query("SHOW TABLES LIKE 'courses'");
-        if ($stmt->rowCount() > 0) {
-            $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM courses WHERE status = 'active'");
-            $result = $stmt->fetch();
-            $total_courses = $result['cnt'] ?? 0;
-        } else {
-            // Fallback: count majors as courses
-            $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM majors WHERE is_active = 1");
-            $result = $stmt->fetch();
-            $total_courses = $result['cnt'] ?? 0;
-        }
+        $stmt = $pdo->query("SELECT id, first_name, last_name FROM instructors WHERE status = 'on leave'");
+        $on_leave_instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $on_leave_count = count($on_leave_instructors);
     } catch (PDOException $e) {
-        $total_courses = 0;
+        $on_leave_count = 0;
+        $on_leave_instructors = [];
     }
     
-    // Average rating - check if evaluations table exists
+    // On Travel instructors
     try {
-        $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
-        if ($stmt->rowCount() > 0) {
-            $stmt = $pdo->query("SELECT COALESCE(AVG(rating),0) as avg_r FROM evaluations");
-            $result = $stmt->fetch();
-            $avg_rating = round($result['avg_r'], 1);
-        }
+        $stmt = $pdo->query("SELECT id, first_name, last_name FROM instructors WHERE status = 'on travel'");
+        $on_travel_instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $on_travel_count = count($on_travel_instructors);
     } catch (PDOException $e) {
-        $avg_rating = 0;
+        $on_travel_count = 0;
+        $on_travel_instructors = [];
     }
     
      // Fetch instructors with their details
@@ -510,6 +507,54 @@ if (!$show_role_modal) {
             max-width: 100vw;
         }
         
+         .stat-popup {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-light);
+            min-width: 200px;
+            max-width: 300px;
+            z-index: 1000;
+            display: none;
+            animation: fadeInUp 0.2s ease;
+        }
+        .stat-popup::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            left: 20px;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 8px solid white;
+        }
+        .stat-popup h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--dark-text);
+        }
+        .stat-popup ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .stat-popup li {
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--dark-text-2);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .stat-popup li:last-child {
+            border-bottom: none;
+        }
+        .stat-card:hover .stat-popup {
+            display: block;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 1200px) {
             .stats-row {
@@ -568,26 +613,26 @@ if (!$show_role_modal) {
                     <p>Manage and monitor all instructors in your department, track their courses, ratings, and performance.</p>
                 </div>
 
-                <div class="stats-row">
+                 <div class="stats-row">
                     <div class="stat-card">
                         <div class="stat-card-header"><div class="stat-card-icon gold"><i class="fas fa-chalkboard-teacher"></i></div></div>
                         <div class="stat-card-value"><?php echo $total_instructors; ?></div>
                         <div class="stat-card-label">Total Instructors</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" id="onDutyCard">
                         <div class="stat-card-header"><div class="stat-card-icon green"><i class="fas fa-check-circle"></i></div></div>
-                        <div class="stat-card-value"><?php echo $active_instructors; ?></div>
-                        <div class="stat-card-label">Active</div>
+                        <div class="stat-card-value"><?php echo $on_duty_count; ?></div>
+                        <div class="stat-card-label">On Duty</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header"><div class="stat-card-icon blue"><i class="fas fa-book"></i></div></div>
-                        <div class="stat-card-value"><?php echo $total_courses; ?></div>
-                        <div class="stat-card-label">Total Courses</div>
+                    <div class="stat-card" id="onLeaveCard">
+                        <div class="stat-card-header"><div class="stat-card-icon blue"><i class="fas fa-calendar-times"></i></div></div>
+                        <div class="stat-card-value"><?php echo $on_leave_count; ?></div>
+                        <div class="stat-card-label">On Leave</div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-card-header"><div class="stat-card-icon purple"><i class="fas fa-star"></i></div></div>
-                        <div class="stat-card-value"><?php echo $avg_rating; ?></div>
-                        <div class="stat-card-label">Avg. Rating</div>
+                    <div class="stat-card" id="onTravelCard">
+                        <div class="stat-card-header"><div class="stat-card-icon purple"><i class="fas fa-plane"></i></div></div>
+                        <div class="stat-card-value"><?php echo $on_travel_count; ?></div>
+                        <div class="stat-card-label">On Travel</div>
                     </div>
                 </div>
 
@@ -931,9 +976,12 @@ if (!$show_role_modal) {
 
      <script>
      // Instructor data for client-side filtering
-     const instructorsData = <?php echo json_encode($instructors); ?>;
-     const promotedIds = <?php echo json_encode($promoted_ids ?? []); ?>;
-     const programHeadEmails = <?php echo json_encode($program_head_emails ?? []); ?>;
+    const instructorsData = <?php echo json_encode($instructors); ?>;
+    const promotedIds = <?php echo json_encode($promoted_ids ?? []); ?>;
+    const programHeadEmails = <?php echo json_encode($program_head_emails ?? []); ?>;
+    const onDutyInstructors = <?php echo json_encode($on_duty_instructors); ?>;
+    const onLeaveInstructors = <?php echo json_encode($on_leave_instructors); ?>;
+    const onTravelInstructors = <?php echo json_encode($on_travel_instructors); ?>;
      
       document.addEventListener('DOMContentLoaded', function() {
           // Initialize
@@ -1048,13 +1096,31 @@ if (!$show_role_modal) {
              document.getElementById('nextPage').disabled = currentPage >= totalPages;
          }
          
-         // Utility functions
-         function escapeHtml(text) {
-             if (!text) return '';
-             const div = document.createElement('div');
-             div.textContent = text;
-             return div.innerHTML;
-         }
+        // Utility functions
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Create status popup
+        function createStatusPopup(instructors) {
+            let popup = '<div class="stat-popup"><h4>Instructors</h4><ul>';
+            instructors.forEach(inst => {
+                popup += `<li>${escapeHtml(inst.first_name + ' ' + inst.last_name)}</li>`;
+            });
+            popup += '</ul></div>';
+            return popup;
+        }
+
+        // Initialize status popups
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add popups to each stat card
+            document.getElementById('onDutyCard').innerHTML += createStatusPopup(onDutyInstructors);
+            document.getElementById('onLeaveCard').innerHTML += createStatusPopup(onLeaveInstructors);
+            document.getElementById('onTravelCard').innerHTML += createStatusPopup(onTravelInstructors);
+        });
 
          // Capitalize the first letter of each word (like PHP's ucwords)
          function ucwords(str) {
