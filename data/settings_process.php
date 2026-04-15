@@ -5,7 +5,23 @@ require_once 'config.php';
 
 $action = isset($_POST['action']) ? $_POST['action'] : '';
 
-if ($action == 'save_settings') {
+if ($action == 'get_settings') {
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'settings'");
+        if ($stmt->rowCount() > 0) {
+            $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+            $stmt->execute();
+            $row = $stmt->fetch();
+            if ($row && $row['setting_value']) {
+                echo json_encode(['success' => true, 'settings' => json_decode($row['setting_value'], true)]);
+                return;
+            }
+        }
+        echo json_encode(['success' => true, 'settings' => null]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => true, 'settings' => null]);
+    }
+} elseif ($action == 'save_settings') {
     $settings_key = 'program_head_settings';
     $settings_value = json_encode($_POST);
     

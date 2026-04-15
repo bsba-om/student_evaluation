@@ -88,12 +88,13 @@ function createPrereqSet() {
     $prereq_code = isset($_POST['prereq_code']) ? trim($_POST['prereq_code']) : '';
     $major_id = isset($_POST['major_id']) ? intval($_POST['major_id']) : 0;
     $subject_ids = isset($_POST['subject_ids']) ? $_POST['subject_ids'] : '';
+    $target_subject_id = isset($_POST['target_subject_id']) ? intval($_POST['target_subject_id']) : 0;
     
     if (empty($prereq_code)) {
         echo json_encode(['success' => false, 'message' => 'Prerequisites code is required']);
         return;
     }
-if ($major_id <= 0) {
+    if ($major_id <= 0) {
         echo json_encode(['success' => false, 'message' => 'Please select a major']);
         return;
     }
@@ -109,10 +110,12 @@ if ($major_id <= 0) {
             id INT AUTO_INCREMENT PRIMARY KEY,
             code VARCHAR(100) NOT NULL UNIQUE,
             major_id INT NOT NULL,
+            target_subject_id INT DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )");
         
         try { $pdo->exec("ALTER TABLE prerequisite_sets ADD COLUMN major_id INT NOT NULL DEFAULT 0"); } catch (Exception $e) {}
+        try { $pdo->exec("ALTER TABLE prerequisite_sets ADD COLUMN target_subject_id INT DEFAULT NULL"); } catch (Exception $e) {}
         
         $pdo->exec("CREATE TABLE IF NOT EXISTS prerequisite_set_subjects (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -122,8 +125,8 @@ if ($major_id <= 0) {
             FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
         )");
         
-        $stmt = $pdo->prepare("INSERT INTO prerequisite_sets (code, major_id) VALUES (?, ?)");
-        $stmt->execute([$prereq_code, $major_id]);
+        $stmt = $pdo->prepare("INSERT INTO prerequisite_sets (code, major_id, target_subject_id) VALUES (?, ?, ?)");
+        $stmt->execute([$prereq_code, $major_id, $target_subject_id > 0 ? $target_subject_id : null]);
         $set_id = $pdo->lastInsertId();
         
         $stmt = $pdo->prepare("INSERT INTO prerequisite_set_subjects (set_id, subject_id) VALUES (?, ?)");
@@ -167,6 +170,15 @@ function getPrereqSets() {
             $stmt->execute([$set['id']]);
             $set['subjects'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $set['subject_count'] = count($set['subjects']);
+            
+            if (!empty($set['target_subject_id'])) {
+                $stmt2 = $pdo->prepare("SELECT * FROM subjects WHERE id = ?");
+                $stmt2->execute([$set['target_subject_id']]);
+                $target = $stmt2->fetch(PDO::FETCH_ASSOC);
+                $set['target_subject'] = $target;
+            } else {
+                $set['target_subject'] = null;
+            }
         }
         
         echo json_encode(['success' => true, 'sets' => $sets]);

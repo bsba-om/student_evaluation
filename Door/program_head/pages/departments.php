@@ -56,6 +56,21 @@ if (!$show_role_modal) {
     } catch (PDOException $e) {
         $all_subjects = [];
     }
+    
+    $ph_settings = [];
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'settings'");
+        if ($stmt->rowCount() > 0) {
+            $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row && $row['setting_value']) {
+                $ph_settings = json_decode($row['setting_value'], true) ?: [];
+            }
+        }
+    } catch (PDOException $e) {
+        $ph_settings = [];
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -695,6 +710,14 @@ if (!$show_role_modal) {
                 </div>
             </div>
             <div class="form-section">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Target Subject (needs this prerequisite)</label>
+                    <select class="form-select" id="prereqTargetSubjectSelect">
+                        <option value="">— Optional: Select target subject —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-section">
                 <div class="form-section-title"><i class="fas fa-book"></i> Select Subjects</div>
                 <div id="prereqSubjectsContainer" style="max-height:350px;overflow-y:auto;border:1.5px solid var(--border-light);border-radius:10px;padding:12px;background:white;">
                     <div style="text-align:center;padding:20px;color:var(--light-text);"><i class="fas fa-spinner fa-spin"></i> Select a major first...</div>
@@ -822,6 +845,7 @@ if (!$show_role_modal) {
     let currentMajorId = 0;
     let majorsData   = <?php echo json_encode($majors, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
     let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+    let phSettings = <?php echo json_encode($ph_settings, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
 
     /* ══ TOAST NOTIFICATIONS ══════════════════════════════════════ */
     function toast(msg, type = 'info', duration = 3000) {
@@ -1103,6 +1127,7 @@ if (!$show_role_modal) {
     function showCreatePrereqModal() {
         document.getElementById('prereqSetCode').value = '';
         document.getElementById('prereqMajorSelect').value = '';
+        document.getElementById('prereqTargetSubjectSelect').innerHTML = '<option value="">— Optional: Select target subject —</option>';
         document.getElementById('prereqSubjectsContainer').innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
         const majorSel = document.getElementById('prereqMajorSelect');
         majorSel.innerHTML = '<option value="">— Select Major —</option>';
@@ -1119,6 +1144,8 @@ if (!$show_role_modal) {
     function loadPrereqSubjectsForSelection() {
         const container = document.getElementById('prereqSubjectsContainer');
         const majorId = document.getElementById('prereqMajorSelect').value;
+        const targetSel = document.getElementById('prereqTargetSubjectSelect');
+        targetSel.innerHTML = '<option value="">— Optional: Select target subject —</option>';
         if (!majorId) {
             container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
             return;
@@ -1142,6 +1169,15 @@ if (!$show_role_modal) {
                             if (s && s.id) usedSubjectIds.push(Number(s.id)); 
                         });
                     }
+                });
+            }
+            
+            // Populate target subject dropdown with all subjects for this major
+            const targetSel = document.getElementById('prereqTargetSubjectSelect');
+            if (subjectData && subjectData.success && Array.isArray(subjectData.subjects)) {
+                const allSubjects = subjectData.subjects;
+                allSubjects.forEach(s => {
+                    targetSel.innerHTML += `<option value="${s.id}">${escHtml(s.subject_code)} — ${escHtml(s.subject_name)}</option>`;
                 });
             }
             
@@ -1223,6 +1259,7 @@ if (!$show_role_modal) {
     function savePrereqSet() {
         const code = document.getElementById('prereqSetCode').value.trim();
         const majorId = document.getElementById('prereqMajorSelect').value;
+        const targetSubjectId = document.getElementById('prereqTargetSubjectSelect').value;
         if (!code) { toast('Please enter a Prerequisites Code', 'error'); return; }
         if (!majorId) { toast('Please select a Major', 'error'); return; }
         const checkboxes = document.querySelectorAll('.prereq-subject-check:checked');
@@ -1237,6 +1274,7 @@ if (!$show_role_modal) {
         fd.append('prereq_code', code);
         fd.append('major_id', majorId);
         fd.append('subject_ids', JSON.stringify(selectedSubjects.map(s => s.id)));
+        fd.append('target_subject_id', targetSubjectId);
         fetch('../../../data/major_process.php', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
@@ -1299,6 +1337,15 @@ if (!$show_role_modal) {
                     });
                     subjectsGrid += `</div>`;
                 }
+                let targetHtml = '';
+                if (set.target_subject) {
+                    targetHtml = `<div style="padding:8px 16px;background:#fef3c7;border-top:1px solid #fbbf24;display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-arrow-right" style="color:#92400e;font-size:12px;"></i>
+                        <span style="font-size:12px;color:#92400e;font-weight:600;">Required for:</span>
+                        <span style="background:white;border:1px solid #fbbf24;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;color:#92400e;">${escHtml(set.target_subject.subject_code)}</span>
+                        <span style="font-size:11px;color:#666;">${escHtml(set.target_subject.subject_name)}</span>
+                    </div>`;
+                }
                 html += `<div style="background:var(--cream);border-radius:12px;padding:0;margin-bottom:20px;border:1px solid var(--border-light);page-break-inside:avoid;">
                     <div style="padding:12px 16px;border-bottom:1px solid var(--border-light);display:flex;justify-content:space-between;align-items:center;">
                         <div style="font-size:15px;font-weight:700;color:var(--dark-text);">${escHtml(set.code)}</div>
@@ -1308,6 +1355,7 @@ if (!$show_role_modal) {
                         </div>
                     </div>
                     ${subjectsGrid}
+                    ${targetHtml}
                 </div>`;
             });
         });
@@ -1374,14 +1422,18 @@ if (!$show_role_modal) {
 
     /* ══ PROSPECTUS RENDERING ═════════════════════════════════════ */
     function buildProspectusHeader(majorName) {
+        const schoolName = phSettings?.school_name || 'Northern Bukidnon State College';
+        const schoolAddress = phSettings?.school_address || 'Manolo Fortich, Bukidnon';
+        const instituteName = phSettings?.institute_name || 'Institute for Business Management';
+        const degreeName = phSettings?.degree_name || 'Bachelor of Science in Business Administration';
         return `
         <div class="pro-header">
             <img src="../../../media/LOGO.jpg" alt="Logo" class="pro-logo">
             <div class="pro-title-block">
-                <div class="pro-school">Northern Bukidnon State College</div>
-                <div class="pro-address">Manolo Fortich, Bukidnon</div>
-                <div class="pro-institute">Institute for Business Management</div>
-                <div class="pro-degree">Bachelor of Science in Business Administration</div>
+                <div class="pro-school">${escHtml(schoolName)}</div>
+                <div class="pro-address">${escHtml(schoolAddress)}</div>
+                <div class="pro-institute">${escHtml(instituteName)}</div>
+                <div class="pro-degree">${escHtml(degreeName)}</div>
                 <div class="pro-major">Major in <strong>${escHtml(majorName)}</strong></div>
                 <div class="pro-label">Student Evaluation Prospectus</div>
             </div>
@@ -1397,13 +1449,14 @@ if (!$show_role_modal) {
             subjects.forEach(s => {
                 const u = parseFloat(s.units) || 0;
                 total += u;
-                const prereqCode = prereqMap[s.id] || '—';
+                const prereqCode = prereqMap[s.id] || s.prerequisite || '—';
+                const prereqDisplay = prereqCode !== '—' ? '<span style="color:#dc2626;font-weight:600;">★ ' + escHtml(prereqCode) + '</span>' : '—';
                 rows += `<tr>
                     <td class="pro-grade-cell"></td>
                     <td class="pro-code">${escHtml(s.subject_code||'')}</td>
                     <td>${escHtml(s.subject_name||'')}</td>
                     <td class="pro-units">${u%1===0?u:u.toFixed(1)}</td>
-                    <td class="pro-prereq-col">${prereqCode !== '—' ? prereqCode : '—'}</td>
+                    <td class="pro-prereq-col">${prereqDisplay}</td>
                 </tr>`;
             });
         }
@@ -1424,7 +1477,7 @@ if (!$show_role_modal) {
         </div>`;
     }
 
-    function renderProspectus(subjects, majorName) {
+    function renderProspectus(subjects, majorName, prereqMap = {}) {
         const yearOrder = ['1st Year','2nd Year','3rd Year','4th Year'];
         const grouped = {};
         subjects.forEach(s => {
@@ -1448,8 +1501,8 @@ if (!$show_role_modal) {
                     <span class="pro-year-total">${tFmt} units</span>
                 </div>
                 <div class="pro-sem-row">
-                    ${buildSemTable(sem1,'1st Semester')}
-                    ${buildSemTable(sem2,'2nd Semester')}
+                    ${buildSemTable(sem1,'1st Semester', prereqMap)}
+                    ${buildSemTable(sem2,'2nd Semester', prereqMap)}
                 </div>
             </div>`;
         });
@@ -1475,7 +1528,10 @@ if (!$show_role_modal) {
                                 <th class="pro-th" style="width:75px;">Pre-Req</th>
                             </tr></thead>
                             <tbody>
-                                ${bridging.map(s=>`<tr><td class="pro-grade-cell"></td><td class="pro-code">${escHtml(s.subject_code||'')}</td><td>${escHtml(s.subject_name||'')}</td><td class="pro-units">${parseFloat(s.units)||0}</td><td class="pro-prereq-col">${escHtml(s.prerequisite||'—')}</td></tr>`).join('')}
+                                ${bridging.map(s=>{
+                                    const prereqCode = prereqMap[s.id] || s.prerequisite || '—';
+                                    return `<tr><td class="pro-grade-cell"></td><td class="pro-code">${escHtml(s.subject_code||'')}</td><td>${escHtml(s.subject_name||'')}</td><td class="pro-units">${parseFloat(s.units)||0}</td><td class="pro-prereq-col">${prereqCode !== '—' ? '<span style="color:#dc2626;font-weight:600;">★ ' + prereqCode + '</span>' : '—'}</td></tr>`;
+                                }).join('')}
                                 <tr class="pro-total-row"><td colspan="3" style="text-align:right;padding-right:8px;">Total Units</td><td class="pro-units">${bt%1===0?bt:bt.toFixed(1)}</td><td></td></tr>
                             </tbody>
                         </table>
@@ -1556,10 +1612,15 @@ if (!$show_role_modal) {
             let prereqMap = {};
             if (prereqData.success && prereqData.sets) {
                 prereqData.sets.forEach(set => {
-                    if (set.major_id == majorId && set.subjects) {
-                        set.subjects.forEach(s => {
-                            prereqMap[s.id] = set.code;
-                        });
+                    if (set.major_id == majorId) {
+                        if (set.target_subject_id && set.target_subject) {
+                            prereqMap[set.target_subject_id] = set.code;
+                        }
+                        if (set.subjects) {
+                            set.subjects.forEach(s => {
+                                prereqMap[s.id] = set.code;
+                            });
+                        }
                     }
                 });
             }
@@ -1659,7 +1720,7 @@ if (!$show_role_modal) {
             <p style="font-size:14px;color:#6b7280;margin-bottom:20px;"><?php echo htmlspecialchars($role_access['message'] ?? 'You do not have access.'); ?></p>
             <div style="display:flex;gap:12px;justify-content:center;">
                 <a href="../../../data/logout.php" style="background:#dc2626;color:white;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:500;"><i class="fas fa-sign-out-alt"></i> Logout</a>
-                <a href="../../../Door/login.php" style="background:linear-gradient(135deg,#d4a843,#b8922f);color:white;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:500;"><i class="fas fa-sign-in-alt"></i> Login</a>
+               
             </div>
         </div>
     </div>

@@ -303,6 +303,31 @@ if (!$show_role_modal) {
                             <label class="toggle-switch"><input type="checkbox" id="emailNotif" checked><span class="toggle-slider"></span></label>
                         </div>
                     </div>
+                    
+                    <div class="card" style="margin-top: 24px;">
+                        <div class="section-header">
+                            <div class="section-icon" style="background: linear-gradient(135deg, #B8860B, #D4A843);"><i class="fas fa-scroll"></i></div>
+                            <h3 class="section-title">Prospectus Header Info</h3>
+                        </div>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>School Name</label>
+                                <input type="text" id="schoolName" value="Northern Bukidnon State College" placeholder="Northern Bukidnon State College">
+                            </div>
+                            <div class="form-group">
+                                <label>School Address</label>
+                                <input type="text" id="schoolAddress" value="Manolo Fortich, Bukidnon" placeholder="Manolo Fortich, Bukidnon">
+                            </div>
+                            <div class="form-group">
+                                <label>Institute/College Name</label>
+                                <input type="text" id="instituteName" value="Institute for Business Management" placeholder="Institute for Business Management">
+                            </div>
+                            <div class="form-group">
+                                <label>Degree Name</label>
+                                <input type="text" id="degreeName" value="Bachelor of Science in Business Administration" placeholder="Bachelor of Science in Business Administration">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Evaluation Tab -->
@@ -493,6 +518,10 @@ if (!$show_role_modal) {
                 formData.append('notifEnrollment', document.getElementById('notifEnrollment')?.checked || false);
                 formData.append('reminderFreq', document.getElementById('reminderFreq')?.value || '');
                 formData.append('reminderTime', document.getElementById('reminderTime')?.value || '');
+                formData.append('schoolName', document.getElementById('schoolName')?.value || '');
+                formData.append('schoolAddress', document.getElementById('schoolAddress')?.value || '');
+                formData.append('instituteName', document.getElementById('instituteName')?.value || '');
+                formData.append('degreeName', document.getElementById('degreeName')?.value || '');
                 
                 fetch('../../../data/settings_process.php', {
                     method: 'POST',
@@ -507,12 +536,56 @@ if (!$show_role_modal) {
         
         // Attach auto-save to all inputs
         document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
             const inputs = document.querySelectorAll('input, select, textarea');
             inputs.forEach(input => {
                 input.addEventListener('change', autoSave);
                 input.addEventListener('keyup', autoSave);
             });
         });
+        
+        function loadSettings() {
+            fetch('../../../data/settings_process.php', {
+                method: 'POST',
+                body: new FormData().append('action', 'get_settings')
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.settings) {
+                    const s = data.settings;
+                    if (s.deptName) document.getElementById('deptName').value = s.deptName;
+                    if (s.academicYear) document.getElementById('academicYear').value = s.academicYear;
+                    if (s.deptDesc) document.getElementById('deptDesc').value = s.deptDesc;
+                    if (s.currentSemester) document.getElementById('currentSemester').value = s.currentSemester;
+                    if (s.enrollmentStatus) document.getElementById('enrollmentStatus').value = s.enrollmentStatus;
+                    if (s.autoAssign !== undefined) document.getElementById('autoAssign').checked = s.autoAssign;
+                    if (s.requireApproval !== undefined) document.getElementById('requireApproval').checked = s.requireApproval;
+                    if (s.publicEval !== undefined) document.getElementById('publicEval').checked = s.publicEval;
+                    if (s.emailNotif !== undefined) document.getElementById('emailNotif').checked = s.emailNotif;
+                    if (s.ratingScale) document.getElementById('ratingScale').value = s.ratingScale;
+                    if (s.minRating) document.getElementById('minRating').value = s.minRating;
+                    if (s.ratingLabels) document.getElementById('ratingLabels').value = s.ratingLabels;
+                    if (s.minResponse) document.getElementById('minResponse').value = s.minResponse;
+                    if (s.evalDeadline) document.getElementById('evalDeadline').value = s.evalDeadline;
+                    if (s.allowLate) document.getElementById('allowLate').value = s.allowLate;
+                    if (s.includeComments !== undefined) document.getElementById('includeComments').checked = s.includeComments;
+                    if (s.showRankings !== undefined) document.getElementById('showRankings').checked = s.showRankings;
+                    if (s.exportPdf !== undefined) document.getElementById('exportPdf').checked = s.exportPdf;
+                    if (s.exportExcel !== undefined) document.getElementById('exportExcel').checked = s.exportExcel;
+                    if (s.notifNewEval !== undefined) document.getElementById('notifNewEval').checked = s.notifNewEval;
+                    if (s.notifReminders !== undefined) document.getElementById('notifReminders').checked = s.notifReminders;
+                    if (s.notifWeekly !== undefined) document.getElementById('notifWeekly').checked = s.notifWeekly;
+                    if (s.notifInstructor !== undefined) document.getElementById('notifInstructor').checked = s.notifInstructor;
+                    if (s.notifEnrollment !== undefined) document.getElementById('notifEnrollment').checked = s.notifEnrollment;
+                    if (s.reminderFreq) document.getElementById('reminderFreq').value = s.reminderFreq;
+                    if (s.reminderTime) document.getElementById('reminderTime').value = s.reminderTime;
+                    if (s.schoolName) document.getElementById('schoolName').value = s.schoolName;
+                    if (s.schoolAddress) document.getElementById('schoolAddress').value = s.schoolAddress;
+                    if (s.instituteName) document.getElementById('instituteName').value = s.instituteName;
+                    if (s.degreeName) document.getElementById('degreeName').value = s.degreeName;
+                }
+            });
+        }
         
         function saveProfile(e) {
             e.preventDefault();
