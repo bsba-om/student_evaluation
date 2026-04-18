@@ -102,7 +102,7 @@
 /* --- Enhanced Styles for Students Page --- */
 .main-content {
     background: linear-gradient(135deg, #f8f6f0 0%, #fffbe6 100%);
-    padding: 32px 24px 32px 24px;
+    padding: 80px 24px 32px 24px;
     min-height: 100vh;
 }
 
@@ -440,6 +440,7 @@ html, body, .dashboard-page, .main-content {
     min-height: 100vh;
     transition: margin-left var(--transition-speed) ease;
     background: var(--off-white);
+    padding-top: var(--topbar-height);
 }
 
 /* Top Bar */
@@ -451,9 +452,11 @@ html, body, .dashboard-page, .main-content {
     justify-content: space-between;
     align-items: center;
     padding: 0 32px;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 50;
+    left: 0;
+    right: 0;
+    z-index: 1000;
     border-bottom: 3px solid var(--gold-primary);
 }
 

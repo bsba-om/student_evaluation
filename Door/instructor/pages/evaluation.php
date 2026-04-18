@@ -170,6 +170,9 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
     .grade-input{border:0.5pt solid #aaa!important;background:transparent!important;font-size:7pt!important;width:30pt!important;}
     .grade-hint{display:none!important;}
     .g-pill{font-size:6pt!important;padding:1pt 3pt!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+    .pro-th:nth-child(2),.pro-td-status,.pro-th:nth-child(6),.pro-td-prereq{display:none!important;}
+    .grade-input{display:none!important;}
+    .grade-print{display:inline-block!important;font-size:7pt!important;font-weight:700!important;}
     .pro-total-row td{font-size:6.5pt!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
     .pro-grand-total{font-size:8pt!important;padding:3pt 7pt!important;margin-bottom:4pt!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
     .pro-sig-block{gap:10pt!important;padding-top:5pt!important;margin-top:5pt!important;}
@@ -462,17 +465,18 @@ function buildTable(subjects,student,ay){
                         value="${raw?parseFloat(raw).toFixed(2):''}" min="1" max="5" step="0.01" placeholder="—"
                         onchange="onGradeChange(${s.id},${student.id},${student.major_id},'${esc(s.semester)}','${esc(s.year_level)}','${esc(ay)}')"
                         title="1.00–5.00">
+                    <span class="grade-print">${raw?parseFloat(raw).toFixed(2):'—'}</span>
                     <button class="save-btn" id="sbtn-${s.id}"
                         onclick="saveGrade(${s.id},${student.id},${student.major_id},'${esc(s.semester)}','${esc(s.year_level)}','${esc(ay)}')"
                         title="Save"><i class="fas fa-save"></i></button>
                 </div>
                 <div class="grade-hint" id="gl-${s.id}">${s.grade_label||''}</div>
             </div></td>
-            <td><span class="${pillClass(status)}" id="pill-${s.id}">${statusText(status)}</span></td>
+            <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${s.id}">${statusText(status)}</span></td>
             <td class="pro-code">${esc(s.subject_code)}${s.is_prerequisite?'<span style="color:#dc2626;font-size:9px;"> ★</span>':''}</td>
             <td style="font-size:10px;">${esc(s.subject_name)}</td>
             <td class="pro-units">${parseFloat(s.units)||0}</td>
-            <td class="pro-prereq-col">${prereq?`<span class="pro-prereq-mark">★ ${esc(prereq)}</span>`:'—'}</td>
+            <td class="pro-td-prereq pro-prereq-col">${prereq?`<span class="pro-prereq-mark">★ ${esc(prereq)}</span>`:'—'}</td>
         </tr>`;
     });
     const t=total%1===0?total:total.toFixed(1);

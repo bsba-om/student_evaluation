@@ -633,7 +633,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
 .detail-card-label i { color: var(--gold); }
 .detail-card-val { font-size: 15px; font-weight: 700; color: var(--ink); }
 
-.modal-task-list { display: flex; flex-direction: column; gap: 10px; max-height: 340px; overflow-y: auto; }
+.modal-task-list { display: flex; flex-direction: column; gap: 10px; max-height: 160px; overflow-y: auto; }
 .modal-task-list::-webkit-scrollbar { width: 4px; }
 .modal-task-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
 
@@ -981,7 +981,6 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
 <div class="modal-overlay" id="studentModal">
     <div class="modal-box wide">
         <div class="student-modal-hero" id="studentModalHero" style="background:linear-gradient(135deg,#1a1209,#3d2a0a);">
-            <button class="modal-close-btn" onclick="closeModal('studentModal')"><i class="fas fa-times"></i></button>
             <div class="student-modal-avatar" id="smAvatar"></div>
             <div style="flex:1;position:relative;z-index:1;">
                 <div class="student-modal-name" id="smName"></div>
@@ -1450,14 +1449,15 @@ function renderTasksList() {
             </div>
             ${t.description ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">${esc(t.description.length>80?t.description.slice(0,80)+'…':t.description)}</div>` : ''}
             <div class="task-mentees">
+                ${pct === 100 ? `<span class="task-mentee-chip" style="background:#dcfce7;border:1px solid #22c55e;"><span style="color:#22c55e;">✓ All Done</span></span>` : ''}
                 ${(t.mentees||[]).slice(0,4).map(m => `<span class="task-mentee-chip"><span class="chip-dot" style="background:${m.assignment_status==='completed'?'#22c55e':'var(--gold)'}"></span>${esc(m.first_name||'')}</span>`).join('')}
                 ${totalM > 4 ? `<span class="task-mentee-chip">+${totalM-4} more</span>` : ''}
             </div>
             ${totalM > 1 ? `<div class="task-progress">
-                <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);">
-                    <span>${doneM}/${totalM} completed</span><span>${pct}%</span>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:${pct===100?'#22c55e':'var(--muted)'};font-weight:${pct===100?'600':'400'};">
+                    <span>${doneM}/${totalM} completed</span><span>${pct === 100 ? '🎉' : pct + '%'}</span>
                 </div>
-                <div class="task-progress-bar"><div class="task-progress-fill" style="width:${pct}%;background:${pct===100?'#22c55e':'linear-gradient(to right, var(--gold), var(--gold-light))'}"></div></div>
+                <div class="task-progress-bar"><div class="task-progress-fill" style="width:${pct}%;background:${pct===100?'linear-gradient(90deg, #22c55e, #4ade80)':'linear-gradient(to right, var(--gold), var(--gold-light))'}"></div></div>
             </div>` : ''}
         </div>`;
     }).join('');

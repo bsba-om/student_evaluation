@@ -488,16 +488,6 @@ try {
                         </div>
                     </div>
                 </div>
-
-                <!-- Reports Container -->
-                <div class="content-card" style="grid-column: span 2;">
-                    <div class="content-card-header" style="background: linear-gradient(135deg, #D4A843, #FFD700); border-bottom: 1px solid rgba(255,255,255,0.2);">
-                        <h3 style="color: white;"><i class="fas fa-file-alt" style="color: white;"></i> Reports</h3>
-                    </div>
-                    <div class="content-card-body" style="background: white; border-radius: 0 0 20px 20px; min-height: 200px;">
-                        <!-- Reports content will go here -->
-                    </div>
-                </div>
             </div>
         </main>
     </div>
