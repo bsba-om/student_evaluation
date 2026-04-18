@@ -416,13 +416,13 @@ if (!$show_role_modal) {
     }
 
     .pro-logo {
-        width: 21mm !important;
-        height: 21mm !important;
-        min-width: 21mm !important;
-        min-height: 21mm !important;
+        width: 24mm !important;
+        height: 24mm !important;
+        min-width: 24mm !important;
+        min-height: 24mm !important;
         object-fit: cover !important;
-        border: 1.5pt solid #8B6914 !important;
-        border-radius: 2pt !important;
+        border: 2pt solid #8B6914 !important;
+        border-radius: 3pt !important;
         flex-shrink: 0 !important;
         display: block !important;
         -webkit-print-color-adjust: exact !important;
@@ -436,60 +436,60 @@ if (!$show_role_modal) {
     }
 
     .pro-school {
-        font-size: 13pt !important;
+        font-size: 14pt !important;
         font-weight: 700 !important;
         font-family: 'Times New Roman', Times, serif !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.4pt !important;
-        line-height: 1.15 !important;
-        color: #111 !important;
+        letter-spacing: 0.5pt !important;
+        line-height: 1.1 !important;
+        color: #000 !important;
         margin: 0 0 1mm !important;
     }
 
     .pro-address {
-        font-size: 7.5pt !important;
-        color: #555 !important;
+        font-size: 8.5pt !important;
+        color: #444 !important;
         font-style: italic !important;
         margin: 0 0 1.5mm !important;
         font-family: 'Times New Roman', Times, serif !important;
     }
 
     .pro-institute {
-        font-size: 9.5pt !important;
+        font-size: 10.5pt !important;
         font-weight: 700 !important;
         color: #8B6914 !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.3pt !important;
-        margin: 0 0 0.8mm !important;
+        letter-spacing: 0.4pt !important;
+        margin: 0 0 1mm !important;
         font-family: 'Times New Roman', Times, serif !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
     .pro-degree {
-        font-size: 8pt !important;
-        color: #333 !important;
-        margin: 0 0 0.8mm !important;
+        font-size: 9pt !important;
+        color: #222 !important;
+        margin: 0 0 1mm !important;
         font-family: 'Times New Roman', Times, serif !important;
     }
 
     .pro-major {
-        font-size: 9pt !important;
+        font-size: 10pt !important;
         font-weight: 700 !important;
-        color: #111 !important;
-        margin: 0 0 1mm !important;
+        color: #000 !important;
+        margin: 0 0 1.2mm !important;
         font-family: 'Times New Roman', Times, serif !important;
     }
 
     .pro-label {
         display: inline-block !important;
-        padding: 1.5pt 8pt !important;
-        border: 1pt solid #8B6914 !important;
-        border-radius: 10pt !important;
-        font-size: 7pt !important;
+        padding: 2pt 10pt !important;
+        border: 1.2pt solid #8B6914 !important;
+        border-radius: 12pt !important;
+        font-size: 8pt !important;
         font-weight: 700 !important;
         color: #8B6914 !important;
-        letter-spacing: 0.6pt !important;
+        letter-spacing: 0.8pt !important;
         text-transform: uppercase !important;
         font-family: 'Times New Roman', Times, serif !important;
         -webkit-print-color-adjust: exact !important;
