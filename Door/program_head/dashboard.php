@@ -274,7 +274,7 @@ try {
             <script>
                 function updateTime() {
                     const now = new Date();
-                    const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+                    const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
                     const timeString = now.toLocaleTimeString('en-US', options);
                     const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }));
                     const greetingEl = document.getElementById('time-greeting');
@@ -358,6 +358,38 @@ try {
                                         <a href="pages/departments.php?tab=subjects" style="padding: 10px 20px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; border-radius: 8px; font-size: 12px; font-weight: 600; text-decoration: none; box-shadow: 0 2px 8px rgba(139,92,246,0.3);">
                                             <i class="fas fa-eye"></i> Quick View
                                         </a>
+                                    </div>
+                                </div>
+
+                                <!-- Students by Year Card -->
+                                <?php
+                                // Get students count by year level
+                                $yearLevels = [];
+                                try {
+                                    $stmt = $pdo->query("SELECT year_level, COUNT(*) as count FROM students WHERE year_level IS NOT NULL AND year_level != '' GROUP BY year_level ORDER BY year_level");
+                                    $yearLevels = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                                } catch (PDOException $e) {
+                                    $yearLevels = [];
+                                }
+                                ?>
+                                <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 16px; border: 1px solid #6ee7b7;">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                        <div style="flex: 1;">
+                                            <h4 style="font-size: 16px; font-weight: 800; color: #065f46; margin-bottom: 4px;">Students by Year</h4>
+                                            <p style="font-size: 12px; color: #64748b;">Total students per academic year</p>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                        <?php if (empty($yearLevels)): ?>
+                                            <div style="font-size: 12px; color: #888;">No student data available</div>
+                                        <?php else: ?>
+                                            <?php foreach ($yearLevels as $year): ?>
+                                            <div style="background: white; border-radius: 8px; padding: 10px 14px; text-align: center; min-width: 80px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                                <div style="font-size: 20px; font-weight: 800; color: #059669;"><?php echo intval($year['count']); ?></div>
+                                                <div style="font-size: 10px; color: #64748b; font-weight: 600;"><?php echo htmlspecialchars($year['year_level']); ?></div>
+                                            </div>
+                                            <?php endforeach; ?>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endif; ?>

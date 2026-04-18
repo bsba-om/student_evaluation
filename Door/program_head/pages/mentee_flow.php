@@ -838,7 +838,7 @@ if (!$show_role_modal) {
                                 $gradientFrom = $inst['avatar_gradient_from'] ?? '#667eea';
                                 $gradientTo = $inst['avatar_gradient_to'] ?? '#764ba2';
                             ?>
-                             <div class="instructor-item" data-name="<?php echo strtolower($inst['first_name'] . ' ' . $inst['last_name']); ?>" data-gradient-from="<?php echo htmlspecialchars($gradientFrom); ?>" data-gradient-to="<?php echo htmlspecialchars($gradientTo); ?>">
+                             <div class="instructor-item" id="instructor-item-<?php echo $inst['id']; ?>" data-name="<?php echo strtolower($inst['first_name'] . ' ' . $inst['last_name']); ?>" data-gradient-from="<?php echo htmlspecialchars($gradientFrom); ?>" data-gradient-to="<?php echo htmlspecialchars($gradientTo); ?>">
                                 <div class="instructor-header" onclick="toggleMentees(<?php echo $inst['id']; ?>)">
                                     <div class="instructor-main">
                                         <div class="instructor-avatar" style="background: linear-gradient(135deg, <?php echo $gradientFrom; ?>, <?php echo $gradientTo; ?>);">
@@ -863,15 +863,19 @@ if (!$show_role_modal) {
                                             <p>No mentees</p>
                                         </div>
                                     <?php else: ?>
-                                        <div class="mentees-list">
+                                        <div style="padding: 8px 12px; border-bottom: 1px solid #eee;">
+                                            <input type="text" placeholder="Search mentees..." onkeyup="filterMentees(<?php echo $inst['id']; ?>, this.value)" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px;">
+                                        </div>
+                                        <div class="mentees-list" id="mentees-list-<?php echo $inst['id']; ?>">
                                             <?php foreach ($assignedMentees as $mentee): 
                                                 $mInitials = strtoupper(substr($mentee['first_name'] ?? '', 0, 1) . substr($mentee['last_name'] ?? '', 0, 1));
                                             ?>
-                                            <div class="mentee-item">
+                                            <div class="mentee-item" data-mentee-name="<?php echo strtolower($mentee['first_name'] . ' ' . $mentee['last_name']); ?>">
                                                 <div class="mentee-item-info">
                                                     <div class="mentee-avatar"><?php echo $mInitials; ?></div>
                                                     <div class="mentee-item-meta">
                                                         <div class="mentee-item-name"><?php echo htmlspecialchars($mentee['first_name'] . ' ' . $mentee['last_name']); ?></div>
+                                                        <div style="font-size: 11px; color: #888;"><?php echo htmlspecialchars($mentee['email'] ?? ''); ?></div>
                                                     </div>
                                                 </div>
                                                 <button class="btn-remove-mentee" onclick="removeMentee(<?php echo $mentee['id']; ?>, <?php echo $inst['id']; ?>, '<?php echo htmlspecialchars(addslashes($mentee['first_name'] . ' ' . $mentee['last_name'])); ?>')">
@@ -1309,8 +1313,40 @@ if (!$show_role_modal) {
             const items = document.querySelectorAll('.instructor-item');
             items.forEach(item => {
                 const name = item.dataset.name || '';
-                if (name.includes(search)) {
+                const instructorId = item.id.replace('instructor-item-', '');
+                
+                // Check instructor name
+                const instructorMatch = name.includes(search);
+                
+                // Check mentee names
+                let menteeMatch = false;
+                const menteeList = item.querySelector('.mentees-list');
+                if (menteeList && search) {
+                    const mentees = menteeList.querySelectorAll('.mentee-item');
+                    mentees.forEach(mentee => {
+                        const menteeName = mentee.dataset.menteeName || '';
+                        if (menteeName.includes(search)) {
+                            menteeMatch = true;
+                        }
+                    });
+                }
+                
+                if (instructorMatch || menteeMatch) {
                     item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        function filterMentees(instructorId, searchTerm) {
+            const list = document.getElementById('mentees-list-' + instructorId);
+            if (!list) return;
+            const mentees = list.querySelectorAll('.mentee-item');
+            mentees.forEach(item => {
+                const name = item.dataset.menteeName || '';
+                if (name.includes(searchTerm.toLowerCase())) {
+                    item.style.display = 'flex';
                 } else {
                     item.style.display = 'none';
                 }

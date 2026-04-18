@@ -1394,7 +1394,7 @@ if (!$show_role_modal) {
                 </div>
             </div>
             
-            <?php
+<?php
             $total_students = 0;
             if ($pdo) {
                 try {
@@ -1405,54 +1405,56 @@ if (!$show_role_modal) {
                 }
             }
             ?>
-             <div class="stats-row">
-                 <div class="stat-card">
-                     <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-                     <div>
-                         <div class="stat-value"><?php echo $total_students; ?></div>
-                         <div class="stat-label">Total Students</div>
-                     </div>
-                 </div>
-                 <div class="stat-card">
-                     <div class="stat-icon gold"><i class="fas fa-graduation-cap"></i></div>
-                     <div>
-                         <div class="stat-value"><?php echo count($majors); ?></div>
-                         <div class="stat-label">Active Majors</div>
-                     </div>
-                 </div>
-             </div>
-             
-             <!-- Students by Year Level -->
-             <?php if ($total_students > 0): ?>
-             
-             <!-- Major Filter -->
-             <div class="major-filter-container">
-                 <div class="filter-label">
-                     <i class="fas fa-filter"></i>
-                     <span>Filter by Major:</span>
-                 </div>
-                 <select id="majorFilter" class="major-filter-select">
-                     <option value="">All Majors</option>
-                     <?php foreach ($majors as $major): ?>
-                     <option value="<?php echo $major['id']; ?>"><?php echo htmlspecialchars($major['display_name']); ?></option>
-                     <?php endforeach; ?>
-                 </select>
-             </div>
-             
-             <div class="year-levels-container">
-                 <?php 
-                 $year_order = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
-                 foreach ($year_order as $year): 
-                     $students = $students_by_year[$year] ?? [];
-                 ?>
-                 <div class="year-container">
-                     <div class="year-header">
-                         <div class="year-title">
-                             <i class="fas fa-calendar-alt"></i>
-                             <?php echo htmlspecialchars($year); ?>
-                         </div>
-                         <div class="year-count"><?php echo count($students); ?></div>
-                     </div>
+              
+<!-- Major Filter -->
+              <div class="major-filter-container">
+                  <div class="filter-label">
+                      <i class="fas fa-filter"></i>
+                      <span>Filter by Major:</span>
+                  </div>
+                  <select id="majorFilter" class="major-filter-select" onchange="updateYearCounts()">
+                      <option value="">All Majors</option>
+                      <?php foreach ($majors as $major): ?>
+                      <option value="<?php echo $major['id']; ?>"><?php echo htmlspecialchars($major['display_name']); ?></option>
+                      <?php endforeach; ?>
+                  </select>
+              </div>
+              
+              <script>
+              function updateYearCounts() {
+                  const majorId = document.getElementById('majorFilter').value;
+                  const yearContainers = document.querySelectorAll('.year-container');
+                  yearContainers.forEach(container => {
+                      let count = 0;
+                      const students = container.querySelectorAll('.student-item');
+                      students.forEach(student => {
+                          if (majorId === '' || student.dataset.majorId === majorId) {
+                              student.style.display = 'flex';
+                              count++;
+                          } else {
+                              student.style.display = 'none';
+                          }
+                      });
+                      const countEl = container.querySelector('.year-count');
+                      if (countEl) countEl.textContent = count;
+                  });
+              }
+              </script>
+              
+              <div class="year-levels-container">
+                  <?php 
+                  $year_order = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+                  foreach ($year_order as $year): 
+                      $students = $students_by_year[$year] ?? [];
+                  ?>
+                  <div class="year-container" data-year="<?php echo $year; ?>">
+                      <div class="year-header">
+                          <div class="year-title">
+                              <i class="fas fa-calendar-alt"></i>
+                              <?php echo htmlspecialchars($year); ?>
+                          </div>
+                          <div class="year-count"><?php echo count($students); ?></div>
+                      </div>
                      <div class="year-content">
                          <?php if (empty($students)): ?>
                          <div class="empty-year">
@@ -1479,15 +1481,9 @@ if (!$show_role_modal) {
                      </div>
                  </div>
                  <?php endforeach; ?>
-             </div>
-              <?php else: ?>
-              <div class="no-students-message">
-                  <i class="fas fa-users"></i>
-                  <p>No students have been enrolled yet. Use the form above to add students to the system.</p>
-              </div>
-              <?php endif; ?>
-              <?php endif; ?>
-         </main>
+</div>
+               <?php endif; ?>
+          </main>
      </div>
      
       <script>

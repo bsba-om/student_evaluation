@@ -690,14 +690,9 @@ if (!$show_role_modal) {
                 </div>
 
                  <div class="card">
-                     <div class="card-header">
-                         <h3 class="card-title"><i class="fas fa-users"></i> Instructor List</h3>
-                         <div style="display: flex; gap: 12px; align-items: center;">
-                             <button class="btn-export" id="exportBtn" style="background: var(--white); color: var(--dark-text-2); padding: 10px 18px; border: 2px solid var(--border-light); border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                                 <i class="fas fa-download"></i> Export
-                             </button>
-                         </div>
-                     </div>
+<div class="card-header">
+                          <h3 class="card-title"><i class="fas fa-users"></i> Instructor List</h3>
+                      </div>
                      
                      <!-- Search and Filters -->
                      <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
@@ -722,29 +717,27 @@ if (!$show_role_modal) {
                          <!-- Clear button moved inside search field above -->
                      </div>
                      
-                     <div class="table-responsive">
-                         <table class="data-table" id="instructorsTable">
-                             <thead>
-                                 <tr>
-                                     <th style="width: 50px;"><input type="checkbox" id="selectAll" title="Select All"></th>
-                                     <th data-sort="name">Instructor <i class="fas fa-sort"></i></th>
-                                     <th data-sort="email">Email <i class="fas fa-sort"></i></th>
-                                     <th data-sort="role">Role <i class="fas fa-sort"></i></th>
-                                     <th data-sort="status">Status <i class="fas fa-sort"></i></th>
-                                     <th>Actions</th>
-                                 </tr>
-                             </thead>
-                             <tbody>
-                                 <?php foreach ($instructors as $inst): 
-                                     $initials = strtoupper(substr($inst['first_name'], 0, 1) . substr($inst['last_name'], 0, 1));
-                                     $is_program_head = in_array((int)$inst['id'], $promoted_ids ?? [], true) || 
-                                                        (isset($program_head_emails) && in_array(strtolower($inst['email']), $program_head_emails ?? [], true));
-                                     $role = $is_program_head ? 'Program Head' : 'Instructor';
-                                     $status = $inst['status'] ?? 'on duty';
-                                 ?>
-                                 <tr data-instructor-id="<?php echo $inst['id']; ?>" data-status="<?php echo htmlspecialchars($status); ?>">
-                                     <td><input type="checkbox" class="instructor-select" value="<?php echo $inst['id']; ?>"></td>
-                                     <td>
+<div class="table-responsive">
+                          <table class="data-table" id="instructorsTable">
+                              <thead>
+                                  <tr>
+                                      <th data-sort="name">Instructor <i class="fas fa-sort"></i></th>
+                                      <th data-sort="email">Email <i class="fas fa-sort"></i></th>
+                                      <th data-sort="role">Role <i class="fas fa-sort"></i></th>
+                                      <th data-sort="status">Status <i class="fas fa-sort"></i></th>
+                                      <th>Actions</th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <?php foreach ($instructors as $inst): 
+                                      $initials = strtoupper(substr($inst['first_name'], 0, 1) . substr($inst['last_name'], 0, 1));
+                                      $is_program_head = in_array((int)$inst['id'], $promoted_ids ?? [], true) || 
+                                                         (isset($program_head_emails) && in_array(strtolower($inst['email']), $program_head_emails ?? [], true));
+                                      $role = $is_program_head ? 'Program Head' : 'Instructor';
+                                      $status = $inst['status'] ?? 'on duty';
+                                  ?>
+                                  <tr data-instructor-id="<?php echo $inst['id']; ?>" data-status="<?php echo htmlspecialchars($status); ?>">
+                                      <td>
                                          <div class="instructor-cell">
                                              <span class="avatar" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($inst['avatar_gradient_from'] ?? '#B8860B'); ?>, <?php echo htmlspecialchars($inst['avatar_gradient_to'] ?? '#D4A843'); ?>);"><?php echo $initials; ?></span>
                                              <span class="instructor-name"><?php echo htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']); ?></span>
@@ -753,12 +746,9 @@ if (!$show_role_modal) {
                                      <td><?php echo htmlspecialchars($inst['email']); ?></td>
                                      <td><span class="status-badge" style="background: #f0ebe3; color: #4a5568; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;"><?php echo $role; ?></span></td>
                                      <td><span class="status-badge status-<?php echo htmlspecialchars($status); ?>"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i><?php echo ucwords(str_replace('_', ' ', htmlspecialchars($status))); ?></span></td>
-                                       <td>
-                                           <button class="action-btn view-instructor" data-id="<?php echo $inst['id']; ?>" title="View Details"><i class="fas fa-eye"></i></button>
-                                           <?php if (!$is_program_head): ?>
-                                           <button class="action-btn sign-mentees" data-id="<?php echo $inst['id']; ?>" data-name="<?php echo htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']); ?>" title="Sign Instructor Mentees" style="color: #059669;"><i class="fas fa-user-check"></i></button>
-                                           <?php endif; ?>
-                                       </td>
+<td>
+                                            <button class="action-btn view-instructor" data-id="<?php echo $inst['id']; ?>" title="View Details"><i class="fas fa-eye"></i></button>
+                                        </td>
 
 
                                  </tr>
@@ -1132,25 +1122,23 @@ if (!$show_role_modal) {
                      const isProgHead = promotedIds.includes(inst.id) || programHeadEmails.includes(inst.email?.toLowerCase());
                      const role = isProgHead ? 'Program Head' : 'Instructor';
                      const status = isProgHead ? 'program_head' : (inst.status || 'on duty');
-                     const tr = document.createElement('tr');
-                     tr.dataset.instructorId = inst.id;
-                     tr.dataset.status = status;
-                     tr.innerHTML = `
-                         <td><input type="checkbox" class="instructor-select" value="${inst.id}"></td>
-                         <td>
-                             <div class="instructor-cell">
-                                 <span class="avatar" style="background: linear-gradient(135deg, ${inst.avatar_gradient_from || '#B8860B'}, ${inst.avatar_gradient_to || '#D4A843'});">${initials}</span>
-                                 <span class="instructor-name">${escapeHtml(inst.first_name + ' ' + inst.last_name)}</span>
-                             </div>
-                         </td>
-                         <td>${escapeHtml(inst.email)}</td>
-                         <td><span class="status-badge" style="background: #f0ebe3; color: #4a5568; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${role}</span></td>
-                         <td><span class="status-badge status-${escapeHtml(status)}"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>${escapeHtml(ucwords(status.replace('_', ' ')))}</span></td>
+const tr = document.createElement('tr');
+                      tr.dataset.instructorId = inst.id;
+                      tr.dataset.status = status;
+                      tr.innerHTML = `
                           <td>
-                              <button class="action-btn view-instructor" data-id="${inst.id}" title="View Details"><i class="fas fa-eye"></i></button>
-                              ${!isProgHead ? `<button class="action-btn sign-mentees" data-id="${inst.id}" data-name="${escapeHtml(inst.first_name + ' ' + inst.last_name)}" title="Sign Instructor Mentees" style="color: #059669;"><i class="fas fa-user-check"></i></button>` : ''}
+                              <div class="instructor-cell">
+                                  <span class="avatar" style="background: linear-gradient(135deg, ${inst.avatar_gradient_from || '#B8860B'}, ${inst.avatar_gradient_to || '#D4A843'});">${initials}</span>
+                                  <span class="instructor-name">${escapeHtml(inst.first_name + ' ' + inst.last_name)}</span>
+                              </div>
                           </td>
-                     `;
+                          <td>${escapeHtml(inst.email)}</td>
+                          <td><span class="status-badge" style="background: #f0ebe3; color: #4a5568; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${role}</span></td>
+<td><span class="status-badge status-${escapeHtml(status)}"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>${escapeHtml(ucwords(status.replace('_', ' ')))}</span></td>
+                           <td>
+                               <button class="action-btn view-instructor" data-id="${inst.id}" title="View Details"><i class="fas fa-eye"></i></button>
+                           </td>
+                      `;
                      tbody.appendChild(tr);
                  });
              }
@@ -1259,16 +1247,11 @@ if (!$show_role_modal) {
              const totalPages = Math.ceil(filteredData.length / rowsPerPage);
              if (currentPage < totalPages) {
                  currentPage++;
-                 renderTable();
-             }
-         });
-         
-         document.getElementById('selectAll').addEventListener('change', function() {
-             const checkboxes = document.querySelectorAll('.instructor-select');
-             checkboxes.forEach(cb => cb.checked = this.checked);
-         });
-         
-         // Sortable headers
+renderTable();
+              }
+          });
+          
+          // Sortable headers
          document.querySelectorAll('th[data-sort]').forEach(th => {
              th.style.cursor = 'pointer';
              th.addEventListener('click', function() {
@@ -1457,48 +1440,12 @@ if (!$show_role_modal) {
           if (modal) {
               modal.addEventListener('click', function(e) {
                   if (e.target === modal) {
-                      modal.style.display = 'none';
+modal.style.display = 'none';
                   }
-              });
-          }
-         
-          // Export button
-          const exportBtn = document.getElementById('exportBtn');
-          if (exportBtn) {
-              exportBtn.addEventListener('click', function() {
-                  const selected = Array.from(document.querySelectorAll('.instructor-select:checked')).map(cb => cb.value);
-                  if (selected.length === 0) {
-                      alert('Please select at least one instructor to export.');
-                      return;
-                  }
-                  // Simple CSV export (only Name, Email, Role, Status)
-                  const headers = ['Name', 'Email', 'Role', 'Status'];
-                  const rows = filteredData.filter(instr => selected.includes(String(instr.id))).map(instr => {
-                      const isProgHead = promotedIds.includes(instr.id) || programHeadEmails.includes(instr.email?.toLowerCase());
-                      const role = isProgHead ? 'Program Head' : 'Instructor';
-                      const status = isProgHead ? 'Program Head' : (instr.status || 'On Duty');
-                      return [
-                          instr.first_name + ' ' + instr.last_name,
-                          instr.email,
-                          role,
-                          status.charAt(0).toUpperCase() + status.slice(1)
-                      ];
-                  });
-                  let csvContent = headers.join(',') + '\n';
-                  rows.forEach(row => {
-                      csvContent += row.map(cell => `"${cell}"`).join(',') + '\n';
-                  });
-                  const blob = new Blob([csvContent], { type: 'text/csv' });
-                  const url = window.URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `instructors_${new Date().toISOString().split('T')[0]}.csv`;
-                  a.click();
-                  window.URL.revokeObjectURL(url);
               });
           }
           
-           // Add Instructor button
+            // Add Instructor button
            const addInstructorBtn = document.getElementById('addInstructorBtn');
            if (addInstructorBtn) {
                addInstructorBtn.addEventListener('click', function() {
