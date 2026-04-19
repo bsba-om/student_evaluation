@@ -30,7 +30,7 @@ try {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
         $message[] = 'Created subjects table';
-    } else {
+     } else {
         // Add columns if they don't exist
         try { $pdo->exec("ALTER TABLE subjects ADD COLUMN lecture_hours INT DEFAULT 2"); $message[] = 'Added lecture_hours'; } catch (Exception $e) {}
         try { $pdo->exec("ALTER TABLE subjects ADD COLUMN lab_hours INT DEFAULT 0"); $message[] = 'Added lab_hours'; } catch (Exception $e) {}
@@ -41,6 +41,9 @@ try {
         try { $pdo->exec("ALTER TABLE subjects ADD COLUMN prerequisite VARCHAR(50) DEFAULT NULL"); $message[] = 'Added prerequisite'; } catch (Exception $e) {}
         try { $pdo->exec("ALTER TABLE subjects ADD COLUMN bridging_for VARCHAR(100) DEFAULT NULL"); $message[] = 'Added bridging_for'; } catch (Exception $e) {}
     }
+
+    // Check major_subjects table and add prerequisite column if missing
+    try { $pdo->exec("ALTER TABLE major_subjects ADD COLUMN prerequisite VARCHAR(50) DEFAULT NULL"); $message[] = 'Added prerequisite to major_subjects'; } catch (Exception $e) {}
     
     // Check if major_subjects table exists
     $stmt = $pdo->query("SHOW TABLES LIKE 'major_subjects'");
@@ -54,6 +57,7 @@ try {
                 semester VARCHAR(20) DEFAULT '1st Semester',
                 is_required BOOLEAN DEFAULT TRUE,
                 is_prerequisite BOOLEAN DEFAULT FALSE,
+                prerequisite VARCHAR(50) DEFAULT NULL,
                 prerequisite_for INT DEFAULT NULL,
                 sort_order INT DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -64,7 +68,33 @@ try {
         $message[] = 'Created major_subjects table';
     }
     
-    echo json_encode(['success' => true, 'message' => implode(', ', $message)]);
-} catch (PDOException $e) {
-    echo json_encode(['success' => false, 'message' => $e->getMessage()]);
-}
+     // Create prerequisite sets tables
+     try {
+         $pdo->exec("CREATE TABLE IF NOT EXISTS prerequisite_sets (
+             id INT AUTO_INCREMENT PRIMARY KEY,
+             code VARCHAR(100) NOT NULL UNIQUE,
+             major_id INT NOT NULL,
+             target_subject_id INT DEFAULT NULL,
+             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+             FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE CASCADE,
+             FOREIGN KEY (target_subject_id) REFERENCES subjects(id) ON DELETE SET NULL
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+         $message[] = 'Created prerequisite_sets table';
+     } catch (Exception $e) {}
+
+     try {
+         $pdo->exec("CREATE TABLE IF NOT EXISTS prerequisite_set_subjects (
+             id INT AUTO_INCREMENT PRIMARY KEY,
+             set_id INT NOT NULL,
+             subject_id INT NOT NULL,
+             FOREIGN KEY (set_id) REFERENCES prerequisite_sets(id) ON DELETE CASCADE,
+             FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+             UNIQUE KEY uk_set_subject (set_id, subject_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+         $message[] = 'Created prerequisite_set_subjects table';
+     } catch (Exception $e) {}
+
+     echo json_encode(['success' => true, 'message' => implode(', ', $message)]);
+ } catch (PDOException $e) {
+     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+ }

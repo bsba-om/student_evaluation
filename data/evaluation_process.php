@@ -119,11 +119,12 @@ if ($action === 'get_student_evaluation') {
         // Get all subjects for this major (prospectus)
         $stmt2 = $pdo->prepare("
             SELECT s.*, ms.year_level, ms.semester, ms.is_prerequisite, ms.is_required,
-                   s.prerequisite
+                   ms.prerequisite, ms.sort_order,
+                   COALESCE(ms.prerequisite, s.prerequisite) as display_prerequisite
             FROM major_subjects ms
             JOIN subjects s ON ms.subject_id = s.id
             WHERE ms.major_id = ?
-            ORDER BY ms.year_level, ms.semester, s.subject_name
+            ORDER BY ms.year_level, ms.semester, ms.sort_order, s.subject_name
         ");
         $stmt2->execute([$major_id]);
         $prospectus = $stmt2->fetchAll(PDO::FETCH_ASSOC);
