@@ -39,7 +39,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;}
-.page-wrap{padding:3px 1px 4px;animation:fadeInUp .5s ease forwards;}
+.page-wrap{padding:16px 20px 24px;animation:fadeInUp .5s ease forwards;}
 @keyframes fadeInUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
 
 /* ═══════════════════════════════════════════════════════════
@@ -761,7 +761,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
         <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-end;position:relative;z-index:1;">
           <div class="hero-search" style="min-width:220px;">
             <i class="fas fa-search"></i>
-            <input type="text" id="menteeSearch" placeholder="Search by name, ID, major…" oninput="filterMentees()">
+            <input type="text" id="menteeSearch" placeholder="Search by name, ID, major…" oninput="filterMentees()" onkeyup="if(event.key==='Enter'){const first=document.querySelector('.mentee-card:not([style*=none])');if(first){first.click();}}">
           </div>
           <div class="year-filter-btns" style="display:flex;gap:6px;">
             <button class="year-btn active" data-year="all" onclick="filterMenteeYear('all')">All</button>
@@ -1055,10 +1055,12 @@ function loadMentees() {
       const gTo=m.avatar_gradient_to||'#60a5fa';
 
       const yrNum = (m.year_level || '0').replace(/[^0-9]/g, '');
+      const semester = (m.year_level || '').includes('2nd Semester') ? '2nd Semester' : '1st Semester';
       html+=`<div class="mentee-card"
           onclick='openEval(${JSON.stringify(m).replace(/'/g,"&#39;")})'
           data-name="${esc(full.toLowerCase())}"
-          data-year="${yrNum || '0'}">
+          data-year="${yrNum || '0'}"
+          data-semester="${semester}">
         <div class="mc-top">
           <div class="mc-avatar" style="background:linear-gradient(135deg,${esc(gFrom)},${esc(gTo)});">${esc(init)}</div>
           <div>
@@ -1102,6 +1104,10 @@ function filterMenteeYear(y) {
 
 function applyFilters() {
   const q = document.getElementById('menteeSearch').value.toLowerCase();
+  const yearSelect = document.getElementById('filterYearLevel');
+  const semSelect = document.getElementById('filterSemester');
+  const selectedYear = yearSelect ? yearSelect.value : '';
+  const selectedSem = semSelect ? semSelect.value : '';
   const cards = document.querySelectorAll('.mentee-card');
   if(cards.length === 0) return;
   cards.forEach(c=>{
@@ -1109,8 +1115,10 @@ function applyFilters() {
     const yl = c.dataset.year || '0';
     const filterYear = currentYearFilter;
     const matchesSearch = name.includes(q);
-    const matchesYear = filterYear === 'all' || yl === filterYear;
-    c.style.display = (matchesSearch && matchesYear) ? '' : 'none';
+    const matchesYearBtn = filterYear === 'all' || yl === filterYear;
+    const matchesYearDropdown = selectedYear === '' || yl === selectedYear;
+    const matchesSem = selectedSem === '' || (c.dataset.semester || '').includes(selectedSem);
+    c.style.display = (matchesSearch && matchesYearBtn && matchesYearDropdown && matchesSem) ? '' : 'none';
   });
 }
 
@@ -1226,6 +1234,22 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsTaken">${gwaData.total_units||0}</div><div class="gwa-stat-lbl">Units Taken</div></div>
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsPassed">${gwaData.units_passed||0}</div><div class="gwa-stat-lbl">Units Passed</div></div>
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsFailed" style="color:var(--red);">${(gwaData.total_units||0)-(gwaData.units_passed||0)}</div><div class="gwa-stat-lbl">w/ Issues</div></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
+      <select id="panelYearLevel" onchange="filterSubjectsByPanel()" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;color:#374151;background:#fff;cursor:pointer;min-width:100px;">
+        <option value="">All Years</option>
+        <option value="1st Year">1st Year</option>
+        <option value="2nd Year">2nd Year</option>
+        <option value="3rd Year">3rd Year</option>
+        <option value="4th Year">4th Year</option>
+        <option value="Bridging">Bridging</option>
+      </select>
+      <select id="panelSemester" onchange="filterSubjectsByPanel()" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;color:#374151;background:#fff;cursor:pointer;min-width:100px;">
+        <option value="">All Semesters</option>
+        <option value="1st Semester">1st Semester</option>
+        <option value="2nd Semester">2nd Semester</option>
+      </select>
+      <span id="evalStatus" style="padding:4px 10px;background:#f3f4f6;border-radius:6px;font-size:11px;font-weight:600;color:#6b7280;"></span>
+    </div>
     <div class="gwa-hint">
       Enter grade (1.00–5.00) → click <strong>save</strong><br>
       <span style="background:var(--amber-l);padding:1px 6px;border-radius:4px;font-size:10px;color:#92400e;font-weight:600;">
@@ -1255,7 +1279,7 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     const sem2=all.filter(s2=>s2.semester&&s2.semester.includes('2nd'));
     const t=all.reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
     grandTotal+=t;
-    yearBlocks+=`<div class="pro-year-block">
+    yearBlocks+=`<div class="pro-year-block" data-year="${year}">
       <div class="pro-year-hdr">
         <span><i class="fas fa-calendar-alt" style="margin-right:6px;font-size:11px;"></i>${year}</span>
         <span class="pro-year-total">${fmt(t)} units</span>
@@ -1837,6 +1861,73 @@ function getNextSemester(yr,sem) {
 function esc(str){
   if(!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function filterSubjectsByPanel() {
+  const yrSelect = document.getElementById('panelYearLevel');
+  const semSelect = document.getElementById('panelSemester');
+  const statusEl = document.getElementById('evalStatus');
+  const selectedYear = yrSelect ? yrSelect.value : '';
+  const selectedSem = semSelect ? semSelect.value : '';
+  
+  document.querySelectorAll('.pro-year-block').forEach(block => {
+    const blockYear = block.dataset.year || '';
+    const matchesYear = selectedYear === '' || blockYear === selectedYear;
+    block.style.display = matchesYear ? '' : 'none';
+  });
+  
+  let totalSubjects = 0;
+  let gradedSubjects = 0;
+  
+  if (selectedYear || selectedSem) {
+    document.querySelectorAll('.pro-year-block').forEach(block => {
+      const blockYear = block.dataset.year || '';
+      const matchesYear = selectedYear === '' || blockYear === selectedYear;
+      if (matchesYear) {
+        block.querySelectorAll('.pro-subject-row, .pro-row').forEach(row => {
+          const gradeInput = row.querySelector('input[type="number"]') || row.querySelector('.grade-input');
+          const gradeSelect = row.querySelector('select');
+          const isLocked = row.querySelector('.fa-lock') || row.classList.contains('locked-row');
+          let hasGrade = false;
+          if (gradeInput && gradeInput.value) hasGrade = true;
+          if (gradeSelect && gradeSelect.value && gradeSelect.value !== '') hasGrade = true;
+          
+          const semText = block.textContent || '';
+          const isFirstSem = semText.includes('First Semester');
+          const isSecondSem = semText.includes('Second Semester');
+          
+          let countThis = true;
+          if (selectedSem === '1st Semester' && !isFirstSem) countThis = false;
+          if (selectedSem === '2nd Semester' && !isSecondSem) countThis = false;
+          
+          if (countThis && !isLocked) {
+            totalSubjects++;
+            if (hasGrade) gradedSubjects++;
+          }
+        });
+      }
+    });
+    
+    if (totalSubjects > 0) {
+      const pct = Math.round((gradedSubjects / totalSubjects) * 100);
+      if (pct === 100) {
+        statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981;"></i> Fully Evaluated';
+        statusEl.style.background = '#d1fae5';
+        statusEl.style.color = '#065f46';
+      } else if (pct > 0) {
+        statusEl.innerHTML = '<i class="fas fa-spinner" style="color:#f59e0b;"></i> ' + gradedSubjects + '/' + totalSubjects + ' (' + pct + '%)';
+        statusEl.style.background = '#fef3c7';
+        statusEl.style.color = '#92400e';
+      } else {
+        statusEl.innerHTML = '<i class="fas fa-clock" style="color:#6b7280;"></i> Not Started';
+        statusEl.style.background = '#f3f4f6';
+        statusEl.style.color = '#6b7280';
+      }
+    } else {
+      statusEl.innerHTML = '';
+    }
+  } else {
+    statusEl.innerHTML = '';
+  }
 }
 </script>
 
