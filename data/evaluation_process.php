@@ -1,6 +1,16 @@
 <?php
 // evaluation_process.php
 // Place at: data/evaluation_process.php
+//
+// ════════════════════════════════════════════════════════════════════════════
+//  ACADEMIC ADVISER ENGINE — Northern Bukidnon State College
+//  Rules enforced:
+//  1. Grade Processing     — merge prospectus + saved grades
+//  2. Failure Logic        — failed subjects re-queued as priority retakes
+//  3. Prerequisite Lock    — direct code + prereq-SET enforcement
+//  4. Priority Retakes     — failed subjects listed before new ones
+//  5. Semester Sequencing  — no future-year subjects if current year has pending
+// ════════════════════════════════════════════════════════════════════════════
 
 header('Content-Type: application/json');
 require_once __DIR__ . '/session_security.php';
@@ -15,17 +25,17 @@ if (!$role_access['allowed']) {
 $instructor_id = $_SESSION['user_id'] ?? 0;
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 
-// ─── GRADE ROUNDING (Philippine college system) ─────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  GRADE HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
 function round_grade(float $raw): float {
     $valid = [1.00, 1.25, 1.50, 1.75, 2.00, 2.25, 2.50, 2.75, 3.00, 4.00, 5.00];
     $closest = 5.00;
     $minDiff = PHP_FLOAT_MAX;
     foreach ($valid as $v) {
         $diff = abs($raw - $v);
-        if ($diff < $minDiff) {
-            $minDiff = $diff;
-            $closest = $v;
-        }
+        if ($diff < $minDiff) { $minDiff = $diff; $closest = $v; }
     }
     return $closest;
 }
@@ -38,73 +48,274 @@ function grade_status(float $grade): string {
 
 function grade_label(float $grade): string {
     $map = [
-        1.00 => 'Excellent',
-        1.25 => 'Very Good',
-        1.50 => 'Very Good',
-        1.75 => 'Good',
-        2.00 => 'Satisfactory',
-        2.25 => 'Fair',
-        2.50 => 'Passing',
-        2.75 => 'Low Passing',
-        3.00 => 'Barely Passing',
-        4.00 => 'Conditional',
-        5.00 => 'Failed',
+        1.00 => 'Excellent',   1.25 => 'Very Good',  1.50 => 'Very Good',
+        1.75 => 'Good',        2.00 => 'Satisfactory',2.25 => 'Fair',
+        2.50 => 'Passing',     2.75 => 'Low Passing', 3.00 => 'Barely Passing',
+        4.00 => 'Conditional', 5.00 => 'Failed',
     ];
     return $map[$grade] ?? 'Unknown';
 }
 
-// ─── COMPUTE GWA ─────────────────────────────────────────────────────────────
-function compute_gwa(array $grades): array {
-    $totalPoints = 0;
-    $totalUnits = 0;
-    $unitsPassed = 0;
-    foreach ($grades as $g) {
+function compute_gwa(array $rows): array {
+    $totalPoints = 0; $totalUnits = 0; $unitsPassed = 0;
+    foreach ($rows as $g) {
         if ($g['grade_rounded'] === null) continue;
         $units = floatval($g['units']);
         $grade = floatval($g['grade_rounded']);
         $totalPoints += $grade * $units;
-        $totalUnits += $units;
+        $totalUnits  += $units;
         if (grade_status($grade) === 'passed') $unitsPassed += $units;
     }
-    $gwa = $totalUnits > 0 ? round($totalPoints / $totalUnits, 2) : null;
-    return ['gwa' => $gwa, 'total_units' => $totalUnits, 'units_passed' => $unitsPassed];
+    return [
+        'gwa'          => $totalUnits > 0 ? round($totalPoints / $totalUnits, 4) : null,
+        'total_units'  => $totalUnits,
+        'units_passed' => $unitsPassed,
+    ];
 }
 
-// ─── GET MY MENTEES ───────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  YEAR / SEMESTER HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const YEAR_ORDER = [
+    'Bridging'  => 0,
+    '1st Year'  => 1,
+    '2nd Year'  => 2,
+    '3rd Year'  => 3,
+    '4th Year'  => 4,
+];
+
+const SEM_ORDER = [
+    '1st Semester' => 1,
+    '2nd Semester' => 2,
+];
+
+function year_num(string $y): int  { return YEAR_ORDER[$y]  ?? 1; }
+function sem_num(string $s): int   { return SEM_ORDER[$s]   ?? 1; }
+
+/**
+ * Parse a student's year_level string like "2nd Year - 2nd Semester"
+ * Returns ['yr' => 2, 'sem' => 2]
+ */
+function parse_standing(string $str): array {
+    $yr  = 1; $sem = 1;
+    if (preg_match('/(\d+)(st|nd|rd|th)?\s*Year/i', $str, $m)) $yr = intval($m[1]);
+    if (preg_match('/2nd\s*Sem/i', $str)) $sem = 2;
+    return ['yr' => $yr, 'sem' => $sem];
+}
+
+/** Returns the NEXT semester a student should enrol in */
+function next_semester(int $yr, int $sem): array {
+    if ($sem === 1) return ['yr' => $yr, 'sem' => 2];
+    return ['yr' => $yr + 1, 'sem' => 1];
+}
+
+/** Human-readable year label */
+function year_label(int $n): string {
+    return ['', '1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'][$n] ?? "{$n}th Year";
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  PREREQUISITE RESOLUTION
+//  Returns a map: subject_id → ['unlocked'=>bool, 'blocked_by'=>[...]]
+//
+//  Two layers:
+//    A) direct: subject.prerequisite (text code) must be passed
+//    B) set:    all subjects in a prerequisite SET linked to this subject
+//               as target must be passed
+// ═══════════════════════════════════════════════════════════════════════════
+
+function build_prereq_unlock_map(
+    array $subjects,        // all prospectus subjects
+    array $gradeMap,        // subject_id → rounded grade
+    array $prereqSets,      // from prerequisite_sets + prerequisite_set_subjects
+    int   $majorId
+): array {
+    // Indexes
+    $byCode = []; // UPPER(code) → subject
+    $byId   = []; // id         → subject
+    foreach ($subjects as $s) {
+        $byId[$s['id']] = $s;
+        if (!empty($s['subject_code'])) $byCode[strtoupper(trim($s['subject_code']))] = $s;
+    }
+
+    // Helper: has the student passed a subject?
+    $hasPassed = function(int $sid) use ($gradeMap): bool {
+        if (!isset($gradeMap[$sid])) return false;
+        return grade_status($gradeMap[$sid]) === 'passed';
+    };
+
+    // Build set-prereq map: target_subject_id → [ prereq subject objects ]
+    $setPrereqs = []; // target_id => [subject, ...]
+    foreach ($prereqSets as $set) {
+        // Only apply for this student's major
+        if (!empty($set['major_id']) && intval($set['major_id']) !== $majorId) continue;
+        if (empty($set['target_subject_id'])) continue;
+        $tid = intval($set['target_subject_id']);
+        if (!isset($setPrereqs[$tid])) $setPrereqs[$tid] = [];
+        foreach (($set['subjects'] ?? []) as $ps) {
+            $found = $byId[$ps['id']] ?? null;
+            if (!$found && !empty($ps['subject_code'])) {
+                $found = $byCode[strtoupper(trim($ps['subject_code']))] ?? null;
+            }
+            if ($found) $setPrereqs[$tid][] = $found;
+        }
+    }
+
+    $result = [];
+    foreach ($subjects as $s) {
+        $sid = intval($s['id']);
+        $blockedBy = []; // human-readable reasons
+
+        // ── Layer A: direct prerequisite ──────────────────────────────────
+        $directCode = strtoupper(trim($s['prerequisite'] ?? ''));
+        $directLocked = false;
+        $directPrereqSubj = null;
+        if ($directCode !== '') {
+            $directPrereqSubj = $byCode[$directCode] ?? null;
+            if ($directPrereqSubj) {
+                if (!$hasPassed(intval($directPrereqSubj['id']))) {
+                    $directLocked = true;
+                    $blockedBy[]  = [
+                        'type'    => 'direct',
+                        'code'    => $directCode,
+                        'name'    => $directPrereqSubj['subject_name'] ?? '',
+                        'subject' => $directPrereqSubj,
+                        'grade'   => $gradeMap[intval($directPrereqSubj['id'])] ?? null,
+                        'status'  => isset($gradeMap[intval($directPrereqSubj['id'])])
+                                     ? grade_status($gradeMap[intval($directPrereqSubj['id'])]) : 'not_taken',
+                    ];
+                }
+            }
+            // If prerequisite subject not found in prospectus, treat as unlocked
+        }
+
+        // ── Layer B: prerequisite set ─────────────────────────────────────
+        $setLocked = false;
+        if (isset($setPrereqs[$sid])) {
+            foreach ($setPrereqs[$sid] as $ps) {
+                if (!$hasPassed(intval($ps['id']))) {
+                    $setLocked   = true;
+                    $psGrade     = $gradeMap[intval($ps['id'])] ?? null;
+                    $blockedBy[] = [
+                        'type'    => 'set',
+                        'code'    => $ps['subject_code'],
+                        'name'    => $ps['subject_name'] ?? '',
+                        'subject' => $ps,
+                        'grade'   => $psGrade,
+                        'status'  => $psGrade !== null ? grade_status($psGrade) : 'not_taken',
+                    ];
+                }
+            }
+        }
+
+        $result[$sid] = [
+            'unlocked'         => !$directLocked && !$setLocked,
+            'direct_locked'    => $directLocked,
+            'set_locked'       => $setLocked,
+            'direct_prereq'    => $directPrereqSubj,
+            'blocked_by'       => $blockedBy,
+        ];
+    }
+    return $result;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LOAD PREREQUISITE SETS from DB
+// ═══════════════════════════════════════════════════════════════════════════
+
+function load_prereq_sets(PDO $pdo): array {
+    $sets = [];
+    try {
+        $stmt = $pdo->query("
+            SELECT ps.id, ps.code, ps.major_id, ps.target_subject_id,
+                   ts.subject_code as target_code, ts.subject_name as target_name
+            FROM prerequisite_sets ps
+            LEFT JOIN subjects ts ON ps.target_subject_id = ts.id
+            ORDER BY ps.id
+        ");
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $set) {
+            $set['subjects'] = [];
+            $stmt2 = $pdo->prepare("
+                SELECT pss.subject_id, s.subject_code, s.subject_name, s.units
+                FROM prerequisite_set_subjects pss
+                JOIN subjects s ON pss.subject_id = s.id
+                WHERE pss.set_id = ?
+            ");
+            $stmt2->execute([$set['id']]);
+            $set['subjects'] = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+            $sets[] = $set;
+        }
+    } catch (PDOException $e) {
+        // Table may not exist yet — silently return empty
+    }
+    return $sets;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  LOAD PH SETTINGS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function load_ph_settings(PDO $pdo): array {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['setting_value']) return json_decode($row['setting_value'], true) ?: [];
+    } catch (PDOException $e) {}
+    return [];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  ACTION: get_mentees
+// ═══════════════════════════════════════════════════════════════════════════
+
 if ($action === 'get_mentees') {
     try {
         $stmt = $pdo->prepare("
-            SELECT DISTINCT s.id, s.first_name, s.middle_name, s.last_name, s.suffix,
-                   s.email, s.student_id as student_number, s.year_level, s.avatar_initials,
-                   s.avatar_gradient_from, s.avatar_gradient_to,
-                   m.display_name as major_name, m.id as major_id,
-                   m.gradient_from as major_gradient_from, m.gradient_to as major_gradient_to,
-                   (SELECT COUNT(*) FROM student_grades sg WHERE sg.student_id = s.id AND sg.graded_by = :iid) as graded_count,
-                   (SELECT COUNT(*) FROM major_subjects ms WHERE ms.major_id = s.major_id) as total_subjects
+            SELECT DISTINCT
+                s.id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                s.email, s.student_id AS student_number, s.year_level,
+                s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                m.display_name AS major_name, m.id AS major_id,
+                (
+                    SELECT COUNT(*)
+                    FROM student_grades sg
+                    WHERE sg.student_id = s.id AND sg.graded_by = :iid
+                ) AS graded_count,
+                (
+                    SELECT COUNT(*)
+                    FROM major_subjects ms
+                    WHERE ms.major_id = s.major_id
+                ) AS total_subjects
             FROM mentees me
-            JOIN students s ON me.student_id = s.id
-            LEFT JOIN majors m ON s.major_id = m.id
+            JOIN students s   ON me.student_id = s.id
+            LEFT JOIN majors m ON s.major_id   = m.id
             WHERE me.mentor_id = :iid
             ORDER BY s.last_name, s.first_name
         ");
         $stmt->execute([':iid' => $instructor_id]);
-        $mentees = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        echo json_encode(['success' => true, 'mentees' => $mentees]);
+        echo json_encode(['success' => true, 'mentees' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-// ─── GET STUDENT FULL PROFILE + PROSPECTUS ───────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  ACTION: get_student_evaluation
+//  Loads the full department prospectus template (in sort_order) and merges
+//  saved grades.  Also returns a prereq_map for the JS to render ★ codes.
+// ═══════════════════════════════════════════════════════════════════════════
+
 if ($action === 'get_student_evaluation') {
-    $student_id = intval($_POST['student_id'] ?? 0);
-    $academic_year = $_POST['academic_year'] ?? '2025-2026';
+    $student_id    = intval($_POST['student_id']    ?? 0);
+    $academic_year = $_POST['academic_year']        ?? '2025-2026';
 
     try {
-        // Student info
+        // Student
         $stmt = $pdo->prepare("
-            SELECT s.*, m.display_name as major_name, m.id as major_id,
+            SELECT s.*, m.display_name AS major_name, m.id AS major_id,
                    m.gradient_from, m.gradient_to, m.icon_class
             FROM students s
             LEFT JOIN majors m ON s.major_id = m.id
@@ -114,102 +325,108 @@ if ($action === 'get_student_evaluation') {
         $student = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$student) { echo json_encode(['success' => false, 'message' => 'Student not found']); exit; }
 
-        $major_id = $student['major_id'];
+        $major_id = intval($student['major_id']);
 
-        // Get all subjects for this major (prospectus)
+        // ── Prospectus template (EXACT sort_order from department page) ──
         $stmt2 = $pdo->prepare("
-            SELECT s.*, ms.year_level, ms.semester, ms.is_prerequisite, ms.is_required,
-                   ms.prerequisite, ms.sort_order,
-                   COALESCE(ms.prerequisite, s.prerequisite) as display_prerequisite
+            SELECT
+                s.id, s.subject_code, s.subject_name, s.units,
+                s.prerequisite        AS subject_prerequisite,
+                s.bridging_for,
+                ms.year_level, ms.semester,
+                ms.is_prerequisite, ms.is_required,
+                ms.sort_order,
+                COALESCE(ms.prerequisite, s.prerequisite) AS prerequisite,
+                COALESCE(ms.prerequisite, s.prerequisite) AS display_prerequisite
             FROM major_subjects ms
             JOIN subjects s ON ms.subject_id = s.id
             WHERE ms.major_id = ?
-            ORDER BY ms.sort_order, ms.year_level, ms.semester
+            ORDER BY ms.sort_order ASC, FIELD(ms.year_level,'1st Year','2nd Year','3rd Year','4th Year','Bridging'), FIELD(ms.semester,'1st Semester','2nd Semester')
         ");
         $stmt2->execute([$major_id]);
         $prospectus = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
-        // Get existing grades for this student
+        // ── Saved grades (all academic years, latest wins per subject) ──
         $stmt3 = $pdo->prepare("
-            SELECT sg.*, s.subject_code, s.subject_name, s.units
+            SELECT sg.*
             FROM student_grades sg
-            JOIN subjects s ON sg.subject_id = s.id
             WHERE sg.student_id = ?
-            ORDER BY sg.year_level, sg.semester
+            ORDER BY sg.graded_at DESC
         ");
         $stmt3->execute([$student_id]);
-        $grades_raw = $stmt3->fetchAll(PDO::FETCH_ASSOC);
-
-        // Index grades by subject_id + semester + academic_year
-        $grades = [];
-        foreach ($grades_raw as $g) {
-            $grades[$g['subject_id']] = $g;
+        $gradeIndex = [];
+        foreach ($stmt3->fetchAll(PDO::FETCH_ASSOC) as $g) {
+            // Latest grade per subject_id
+            if (!isset($gradeIndex[$g['subject_id']])) {
+                $gradeIndex[$g['subject_id']] = $g;
+            }
         }
 
-        // Merge prospectus + grades
-        $subjects_with_grades = [];
+        // ── Merge ──
+        $merged = [];
         foreach ($prospectus as $subj) {
-            $g = $grades[$subj['id']] ?? null;
-            $subj['grade'] = $g ? $g['grade'] : null;
-            $subj['grade_rounded'] = $g ? $g['grade_rounded'] : null;
-            $subj['grade_status'] = $g ? $g['status'] : 'not_taken';
-            $subj['grade_label'] = $g && $g['grade_rounded'] ? grade_label(floatval($g['grade_rounded'])) : null;
-            $subj['graded_at'] = $g ? $g['graded_at'] : null;
-            $subj['remarks'] = $g ? $g['remarks'] : null;
-            $subjects_with_grades[] = $subj;
+            $g = $gradeIndex[$subj['id']] ?? null;
+            $rounded = $g && $g['grade_rounded'] !== null ? floatval($g['grade_rounded']) : null;
+            $subj['grade']         = $g ? $g['grade'] : null;
+            $subj['grade_rounded'] = $rounded;
+            $subj['grade_status']  = $g ? $g['status'] : 'not_taken';
+            $subj['grade_label']   = $rounded !== null ? grade_label($rounded) : null;
+            $subj['graded_at']     = $g ? $g['graded_at'] : null;
+            $subj['remarks']       = $g ? ($g['remarks'] ?? '') : '';
+            $merged[] = $subj;
         }
 
-        // GWA
-        $gwaData = compute_gwa(array_filter($subjects_with_grades, fn($s) => $s['grade_rounded'] !== null));
+        // ── GWA ──
+        $gwaData = compute_gwa(array_filter($merged, fn($s) => $s['grade_rounded'] !== null));
 
-        // Get prerequisite sets map (subject_id → prereq set code)
+        // ── Prereq map for JS rendering (subject_id → prereq set code) ──
         $prereqMap = [];
         try {
-            $stmtSets = $pdo->query("SELECT ps.target_subject_id, ps.code, pss.subject_id 
-                                    FROM prerequisite_sets ps 
-                                    LEFT JOIN prerequisite_set_subjects pss ON ps.id = pss.set_id
-                                    ORDER BY ps.id");
-            while ($row = $stmtSets->fetch(PDO::FETCH_ASSOC)) {
-                if ($row['target_subject_id']) {
-                    $prereqMap[$row['target_subject_id']] = $row['code'];
-                }
-                if ($row['subject_id']) {
-                    $prereqMap[$row['subject_id']] = $row['code'];
-                }
+            $stmtP = $pdo->query("
+                SELECT ps.target_subject_id, ps.code, pss.subject_id
+                FROM prerequisite_sets ps
+                LEFT JOIN prerequisite_set_subjects pss ON ps.id = pss.set_id
+            ");
+            foreach ($stmtP->fetchAll(PDO::FETCH_ASSOC) as $row) {
+                if ($row['target_subject_id']) $prereqMap[$row['target_subject_id']] = $row['code'];
+                if ($row['subject_id'])        $prereqMap[$row['subject_id']]        = $row['code'];
             }
         } catch (PDOException $e) {}
 
         echo json_encode([
-            'success' => true,
-            'student' => $student,
-            'subjects' => $subjects_with_grades,
-            'gwa_data' => $gwaData,
+            'success'       => true,
+            'student'       => $student,
+            'subjects'      => $merged,         // sorted exactly as department page
+            'gwa_data'      => $gwaData,
             'academic_year' => $academic_year,
-            'prereq_map' => $prereqMap,
-            'ph_settings' => $ph_settings ?? []
+            'prereq_map'    => $prereqMap,
+            'ph_settings'   => load_ph_settings($pdo),
         ]);
+
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-// ─── SAVE / UPDATE GRADE ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  ACTION: save_grade
+// ═══════════════════════════════════════════════════════════════════════════
+
 if ($action === 'save_grade') {
-    $student_id = intval($_POST['student_id'] ?? 0);
-    $subject_id = intval($_POST['subject_id'] ?? 0);
-    $major_id   = intval($_POST['major_id'] ?? 0);
-    $raw_grade  = $_POST['grade'] ?? '';
-    $semester   = $_POST['semester'] ?? '1st Semester';
-    $year_level = $_POST['year_level'] ?? '1st Year';
-    $academic_year = $_POST['academic_year'] ?? '2025-2026';
-    $remarks    = trim($_POST['remarks'] ?? '');
+    $student_id    = intval($_POST['student_id']    ?? 0);
+    $subject_id    = intval($_POST['subject_id']    ?? 0);
+    $major_id      = intval($_POST['major_id']      ?? 0);
+    $raw_grade     = $_POST['grade']                ?? '';
+    $semester      = $_POST['semester']             ?? '1st Semester';
+    $year_level    = $_POST['year_level']           ?? '1st Year';
+    $academic_year = $_POST['academic_year']        ?? '2025-2026';
+    $remarks       = trim($_POST['remarks']         ?? '');
 
     if (!$student_id || !$subject_id || $raw_grade === '') {
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
         exit;
     }
-
     $raw = floatval($raw_grade);
     if ($raw < 1.00 || $raw > 5.00) {
         echo json_encode(['success' => false, 'message' => 'Grade must be between 1.00 and 5.00']);
@@ -223,20 +440,28 @@ if ($action === 'save_grade') {
     try {
         $stmt = $pdo->prepare("
             INSERT INTO student_grades
-                (student_id, subject_id, major_id, grade, grade_rounded, status, semester, year_level, academic_year, graded_by, graded_at, remarks)
+                (student_id, subject_id, major_id, grade, grade_rounded, status,
+                 semester, year_level, academic_year, graded_by, graded_at, remarks)
             VALUES (?,?,?,?,?,?,?,?,?,?,NOW(),?)
             ON DUPLICATE KEY UPDATE
-                grade=VALUES(grade), grade_rounded=VALUES(grade_rounded), status=VALUES(status),
-                graded_by=VALUES(graded_by), graded_at=NOW(), remarks=VALUES(remarks)
+                grade         = VALUES(grade),
+                grade_rounded = VALUES(grade_rounded),
+                status        = VALUES(status),
+                graded_by     = VALUES(graded_by),
+                graded_at     = NOW(),
+                remarks       = VALUES(remarks)
         ");
-        $stmt->execute([$student_id, $subject_id, $major_id, $raw, $rounded, $status, $semester, $year_level, $academic_year, $instructor_id, $remarks]);
+        $stmt->execute([
+            $student_id, $subject_id, $major_id, $raw, $rounded, $status,
+            $semester, $year_level, $academic_year, $instructor_id, $remarks
+        ]);
         echo json_encode([
-            'success' => true,
-            'message' => 'Grade saved successfully',
+            'success'       => true,
+            'message'       => 'Grade saved successfully',
             'grade_rounded' => $rounded,
-            'grade_raw' => $raw,
-            'status' => $status,
-            'label' => $label,
+            'grade_raw'     => $raw,
+            'status'        => $status,
+            'label'         => $label,
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -244,118 +469,259 @@ if ($action === 'save_grade') {
     exit;
 }
 
-// ─── GENERATE ADVISEMENT ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  ACTION: get_advisement
+//
+//  Rules implemented:
+//  1. Grade Processing     — grades from DB are truth; grade_rounded is used
+//  2. Failure Logic        — failed → RETAKE list (re-queued)
+//  3. Prerequisite Lock    — direct code + prereq set both checked
+//  4. Priority Retakes     — retake list separated, must be enrolled first
+//  5. Semester Sequencing  — recommended filtered to next semester first;
+//                            future-year subjects blocked if current year
+//                            still has pending/failed subjects
+// ═══════════════════════════════════════════════════════════════════════════
+
 if ($action === 'get_advisement') {
-    $student_id = intval($_POST['student_id'] ?? 0);
-    $major_id   = intval($_POST['major_id'] ?? 0);
+    $student_id    = intval($_POST['student_id'] ?? 0);
+    $major_id      = intval($_POST['major_id']   ?? 0);
+    $academic_year = $_POST['academic_year']      ?? '2025-2026';
 
     try {
-        // All prospectus subjects
+        // ── All prospectus subjects (sorted by sort_order = department order) ──
         $stmt = $pdo->prepare("
-            SELECT s.*, ms.year_level, ms.semester, ms.is_prerequisite, ms.is_required,
-                   ms.sort_order, s.prerequisite
+            SELECT
+                s.id, s.subject_code, s.subject_name, s.units,
+                s.prerequisite AS subject_prerequisite, s.bridging_for,
+                ms.year_level, ms.semester, ms.is_prerequisite, ms.is_required,
+                ms.sort_order,
+                COALESCE(ms.prerequisite, s.prerequisite) AS prerequisite
             FROM major_subjects ms
             JOIN subjects s ON ms.subject_id = s.id
             WHERE ms.major_id = ?
-            ORDER BY ms.year_level, ms.semester, ms.sort_order
+            ORDER BY ms.sort_order ASC,
+                     FIELD(ms.year_level,'1st Year','2nd Year','3rd Year','4th Year','Bridging'),
+                     FIELD(ms.semester,'1st Semester','2nd Semester')
         ");
         $stmt->execute([$major_id]);
         $allSubjects = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        // Student grades
-        $stmt2 = $pdo->prepare("SELECT * FROM student_grades WHERE student_id = ?");
+        // ── Student grades (latest per subject) ──
+        $stmt2 = $pdo->prepare("
+            SELECT * FROM student_grades
+            WHERE student_id = ?
+            ORDER BY graded_at DESC
+        ");
         $stmt2->execute([$student_id]);
-        $grades = [];
+        $gradeIndex = [];
         foreach ($stmt2->fetchAll(PDO::FETCH_ASSOC) as $g) {
-            $grades[$g['subject_id']] = $g;
+            if (!isset($gradeIndex[$g['subject_id']])) $gradeIndex[$g['subject_id']] = $g;
         }
 
-        // Student current info
+        // Build gradeMap: subject_id → rounded grade (float)
+        $gradeMap = [];
+        foreach ($gradeIndex as $sid => $g) {
+            if ($g['grade_rounded'] !== null) $gradeMap[$sid] = floatval($g['grade_rounded']);
+        }
+
+        // ── Student current standing ──
         $stmt3 = $pdo->prepare("SELECT year_level FROM students WHERE id = ?");
         $stmt3->execute([$student_id]);
         $stu = $stmt3->fetch(PDO::FETCH_ASSOC);
-        $currentYear = $stu['year_level'] ?? '1st Year';
+        $currentYearStr = $stu['year_level'] ?? '1st Year';
+        ['yr' => $cYr, 'sem' => $cSem] = parse_standing($currentYearStr);
+        ['yr' => $nYr, 'sem' => $nSem] = next_semester($cYr, $cSem);
 
-        $yearOrder = ['1st Year' => 1, '2nd Year' => 2, '3rd Year' => 3, '4th Year' => 4, 'Bridging' => 0];
-        $currentYearNum = $yearOrder[$currentYear] ?? 1;
+        // ── Load prerequisite sets ──
+        $prereqSets = load_prereq_sets($pdo);
 
-        // Build advisement
-        $recommended = [];
-        $retake = [];
-        $blocked = [];
-        $completed = [];
-        $conditional = [];
+        // ── Build unlock map ──
+        $unlockMap = build_prereq_unlock_map($allSubjects, $gradeMap, $prereqSets, $major_id);
 
-        // Index passed subjects by code for prerequisite checking
-        $passedCodes = [];
-        foreach ($grades as $sid => $g) {
-            if (in_array($g['status'], ['passed'])) {
-                foreach ($allSubjects as $subj) {
-                    if ($subj['id'] == $sid) {
-                        $passedCodes[] = $subj['subject_code'];
-                        break;
-                    }
-                }
+        // ════════════════════════════════════════════════════════════════
+        //  RULE 5 — Semester sequencing
+        //  Detect if current year has any PENDING (not_taken + unblocked)
+        //  or FAILED subjects. If so, suppress higher-year "recommended" entries.
+        // ════════════════════════════════════════════════════════════════
+        $hasPendingInCurrentYear = false;
+        foreach ($allSubjects as $subj) {
+            $sid    = intval($subj['id']);
+            $sYr    = year_num($subj['year_level']);
+            if ($sYr !== $cYr) continue;
+            $g      = $gradeIndex[$sid] ?? null;
+            $status = $g ? $g['status'] : 'not_taken';
+            $unlock = $unlockMap[$sid] ?? ['unlocked' => true];
+            // Pending = not taken AND prerequisite already met
+            if ($status === 'not_taken' && $unlock['unlocked']) {
+                $hasPendingInCurrentYear = true;
+                break;
+            }
+            if ($status === 'failed') {
+                $hasPendingInCurrentYear = true;
+                break;
             }
         }
 
-        foreach ($allSubjects as $subj) {
-            $g = $grades[$subj['id']] ?? null;
-            $status = $g ? $g['status'] : 'not_taken';
-            $subjYearNum = $yearOrder[$subj['year_level']] ?? 1;
+        // ════════════════════════════════════════════════════════════════
+        //  CLASSIFY each subject
+        // ════════════════════════════════════════════════════════════════
+        $recommended = []; // available for next enrollment
+        $retake      = []; // RULE 2 + 4: failed, must re-enroll first
+        $conditional = []; // grade 4.00 — removal exam
+        $blocked     = []; // RULE 3: prerequisite not met
+        $completed   = []; // passed
+        $notYet      = []; // future year, not yet time
 
-            // Check prerequisite
-            $prereqMet = true;
-            $prereqNote = '';
-            if (!empty($subj['prerequisite'])) {
-                if (!in_array($subj['prerequisite'], $passedCodes)) {
-                    $prereqMet = false;
-                    $prereqNote = 'Prerequisite not yet passed: ' . $subj['prerequisite'];
-                }
+        foreach ($allSubjects as $subj) {
+            $sid    = intval($subj['id']);
+            $g      = $gradeIndex[$sid] ?? null;
+            $status = $g ? $g['status'] : 'not_taken';
+            $unlock = $unlockMap[$sid] ?? ['unlocked' => true];
+
+            $sYr  = year_num($subj['year_level']);
+            $sSem = sem_num($subj['semester'] ?? '1st Semester');
+
+            // Attach grade info to subject for display
+            $subj['grade_rounded'] = isset($gradeMap[$sid]) ? $gradeMap[$sid] : null;
+            $subj['grade_status']  = $status;
+            $subj['grade_label']   = isset($gradeMap[$sid]) ? grade_label($gradeMap[$sid]) : null;
+
+            // ── Completed ──
+            if ($status === 'passed') {
+                $completed[] = $subj;
+                continue;
             }
 
-            if ($status === 'passed') {
-                $completed[] = array_merge($subj, ['grade_rounded' => $g['grade_rounded'], 'status' => 'completed']);
-            } elseif ($status === 'failed') {
-                $retake[] = array_merge($subj, ['grade_rounded' => $g['grade_rounded'], 'reason' => 'Failed — must retake']);
-            } elseif ($status === 'conditional') {
-                $conditional[] = array_merge($subj, ['grade_rounded' => $g['grade_rounded'], 'reason' => 'Conditional — removal exam required']);
-            } elseif ($status === 'not_taken') {
-                if (!$prereqMet) {
-                    $blocked[] = array_merge($subj, ['reason' => $prereqNote]);
-                } elseif ($subjYearNum <= $currentYearNum + 1) {
-                    $recommended[] = array_merge($subj, ['reason' => 'Available for enrollment']);
+            // ── RULE 2+4: Failed → priority retake ──
+            if ($status === 'failed') {
+                // Check if retake itself needs a (different) prerequisite now
+                // (edge case: student failed subject A which has prereq B not yet passed)
+                if (!$unlock['unlocked']) {
+                    $subj['reason']     = 'Failed — but prerequisite still not passed';
+                    $subj['blocked_by'] = $unlock['blocked_by'];
+                    $blocked[] = $subj;
+                } else {
+                    $subj['reason'] = 'Failed — must retake (priority)';
+                    $retake[] = $subj;
                 }
+                continue;
+            }
+
+            // ── Conditional: grade 4.00 ──
+            if ($status === 'conditional') {
+                $subj['reason'] = 'Grade 4.00 — removal exam required';
+                $conditional[] = $subj;
+                continue;
+            }
+
+            // ── Not yet taken ──
+            if ($status === 'not_taken') {
+
+                // RULE 3: prerequisite not met → blocked
+                if (!$unlock['unlocked']) {
+                    // Build human-readable reason
+                    $reasons = [];
+                    foreach ($unlock['blocked_by'] as $bl) {
+                        $gradeStr = $bl['grade'] !== null
+                            ? ' (' . number_format($bl['grade'], 2) . ' — ' . grade_label($bl['grade']) . ')'
+                            : ' (no grade yet)';
+                        $reasons[] = 'Must pass ' . $bl['code'] . $gradeStr;
+                    }
+                    $subj['reason']     = implode('; ', $reasons) ?: 'Prerequisite not yet passed';
+                    $subj['blocked_by'] = $unlock['blocked_by'];
+                    $blocked[] = $subj;
+                    continue;
+                }
+
+                // RULE 5: suppress higher-year if current year still has pending/failed
+                if ($hasPendingInCurrentYear && $sYr > $cYr + 1) {
+                    $subj['reason'] = year_label($sYr) . ' — ' . ($subj['semester'] ?? '');
+                    $notYet[] = $subj;
+                    continue;
+                }
+
+                // Available for enrollment
+                $subj['reason'] = 'Available for enrollment';
+                $recommended[] = $subj;
+                continue;
+            }
+        }
+
+        // ── Compute progress summary ──
+        $totalUnits     = array_sum(array_map(fn($s) => floatval($s['units']), $allSubjects));
+        $completedUnits = array_sum(array_map(fn($s) => floatval($s['units']), $completed));
+        $remainingUnits = $totalUnits - $completedUnits;
+
+        // ── Credit-load note (standard Philippine limit: 21 units/sem) ──
+        $maxCredits   = 21;
+        $retakeUnits  = array_sum(array_map(fn($s) => floatval($s['units']), $retake));
+        $retakeUnits += array_sum(array_map(fn($s) => floatval($s['units']), $conditional));
+        $remainSlots  = max(0, $maxCredits - $retakeUnits);
+
+        // Split recommended into "next semester" vs "later"
+        $nextSemRec  = [];
+        $laterRec    = [];
+        foreach ($recommended as $subj) {
+            $sYr  = year_num($subj['year_level']);
+            $sSem = sem_num($subj['semester'] ?? '1st Semester');
+            if ($sYr === $nYr && $sSem === $nSem) {
+                $nextSemRec[] = $subj;
+            } else {
+                $laterRec[] = $subj;
             }
         }
 
         echo json_encode([
             'success' => true,
             'advisement' => [
-                'recommended' => $recommended,
-                'retake' => $retake,
-                'blocked' => $blocked,
-                'completed' => $completed,
-                'conditional' => $conditional,
+                'recommended'  => $recommended,    // all available (next + later)
+                'next_sem_rec' => $nextSemRec,     // specifically next semester
+                'later_rec'    => $laterRec,       // future semesters
+                'retake'       => $retake,         // PRIORITY
+                'conditional'  => $conditional,
+                'blocked'      => $blocked,
+                'completed'    => $completed,
+                'not_yet'      => $notYet,         // future-year blocked by sequencing
             ],
-            'current_year' => $currentYear,
+            'summary' => [
+                'total_subjects'    => count($allSubjects),
+                'completed_count'   => count($completed),
+                'total_units'       => $totalUnits,
+                'completed_units'   => $completedUnits,
+                'remaining_units'   => $remainingUnits,
+                'retake_count'      => count($retake) + count($conditional),
+                'blocked_count'     => count($blocked),
+                'max_credits'       => $maxCredits,
+                'retake_units_load' => $retakeUnits,
+                'remaining_slots'   => $remainSlots,    // units left after retakes
+            ],
+            'current_year'  => $currentYearStr,
+            'current_yr'    => $cYr,
+            'current_sem'   => $cSem,
+            'next_yr'       => $nYr,
+            'next_sem'      => $nSem,
+            'next_year'     => year_label($nYr) . ' — ' . ($nSem === 1 ? '1st Semester' : '2nd Semester'),
         ]);
+
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-// ─── FINALIZE EVALUATION SESSION ─────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+//  ACTION: finalize_session
+// ═══════════════════════════════════════════════════════════════════════════
+
 if ($action === 'finalize_session') {
-    $student_id = intval($_POST['student_id'] ?? 0);
-    $major_id   = intval($_POST['major_id'] ?? 0);
-    $academic_year = $_POST['academic_year'] ?? '2025-2026';
-    $semester = $_POST['semester'] ?? '1st Semester';
-    $notes = trim($_POST['notes'] ?? '');
+    $student_id    = intval($_POST['student_id']    ?? 0);
+    $major_id      = intval($_POST['major_id']      ?? 0);
+    $academic_year = $_POST['academic_year']        ?? '2025-2026';
+    $semester      = $_POST['semester']             ?? '1st Semester';
+    $notes         = trim($_POST['notes']           ?? '');
 
     try {
-        // Fetch grades for GWA
+        // Compute GWA from all saved grades
         $stmt = $pdo->prepare("
             SELECT sg.grade_rounded, s.units
             FROM student_grades sg
@@ -367,22 +733,35 @@ if ($action === 'finalize_session') {
 
         $stmt2 = $pdo->prepare("
             INSERT INTO evaluation_sessions
-                (instructor_id, student_id, major_id, academic_year, semester, session_status, gwa, total_units_taken, total_units_passed, notes)
+                (instructor_id, student_id, major_id, academic_year, semester,
+                 session_status, gwa, total_units_taken, total_units_passed, notes)
             VALUES (?,?,?,?,?,'finalized',?,?,?,?)
             ON DUPLICATE KEY UPDATE
-                session_status='finalized', gwa=VALUES(gwa),
-                total_units_taken=VALUES(total_units_taken), total_units_passed=VALUES(total_units_passed),
-                notes=VALUES(notes), updated_at=NOW()
+                session_status    = 'finalized',
+                gwa               = VALUES(gwa),
+                total_units_taken = VALUES(total_units_taken),
+                total_units_passed= VALUES(total_units_passed),
+                notes             = VALUES(notes),
+                updated_at        = NOW()
         ");
         $stmt2->execute([
             $instructor_id, $student_id, $major_id, $academic_year, $semester,
             $gwaData['gwa'], $gwaData['total_units'], $gwaData['units_passed'], $notes
         ]);
-        echo json_encode(['success' => true, 'message' => 'Evaluation finalized!', 'gwa' => $gwaData]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Evaluation session finalized successfully.',
+            'gwa'     => $gwaData,
+        ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
     exit;
 }
 
-echo json_encode(['success' => false, 'message' => 'Unknown action: ' . $action]);
+// ═══════════════════════════════════════════════════════════════════════════
+//  FALLBACK
+// ═══════════════════════════════════════════════════════════════════════════
+
+echo json_encode(['success' => false, 'message' => 'Unknown action: ' . htmlspecialchars($action)]);

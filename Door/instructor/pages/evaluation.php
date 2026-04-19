@@ -39,7 +39,8 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;}
-.page-wrap{padding:28px;}
+.page-wrap{padding:28px;animation:fadeInUp .5s ease forwards;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
 
 /* ═══════════════════════════════════════════════════════════
    MENTEE GRID
@@ -47,10 +48,17 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .mentee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
 .mentee-card{
   background:var(--white);border-radius:var(--radius);border:1px solid var(--border);
-  padding:0;cursor:pointer;transition:all .28s cubic-bezier(.23,1,.32,1);
+  padding:0;cursor:pointer;transition:all .32s cubic-bezier(.23,1,.32,1);
   overflow:hidden;position:relative;
 }
-.mentee-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.13);}
+.mentee-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,var(--gold-l),var(--gold-d));
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .32s cubic-bezier(.23,1,.32,1);
+}
+.mentee-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(184,134,11,.2);}
+.mentee-card:hover::before{transform:scaleX(1);}
 .mc-top{
   padding:18px 18px 14px;display:flex;align-items:center;gap:14px;
   background:linear-gradient(135deg,#fffdf6,#fef9ed);
@@ -62,7 +70,9 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   font-size:17px;font-weight:800;color:#fff;flex-shrink:0;
   box-shadow:0 4px 12px rgba(0,0,0,.18);
   font-family:'Playfair Display',serif;letter-spacing:.5px;
+  transition:transform .28s ease;
 }
+.mentee-card:hover .mc-avatar{transform:scale(1.05);}
 .mc-name{font-size:14px;font-weight:700;color:var(--dark);line-height:1.3;}
 .mc-sub{font-size:11px;color:var(--muted);margin-top:3px;}
 .mc-bottom{padding:13px 18px 16px;}
@@ -89,17 +99,19 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 ═══════════════════════════════════════════════════════════ */
 .search-wrap{
   display:flex;align-items:center;gap:9px;
-  padding:9px 14px;background:var(--white);
+  padding:10px 14px;background:var(--white);
   border-radius:var(--radius-sm);border:1.5px solid var(--border);
-  transition:border-color .2s;
+  transition:all .25s cubic-bezier(.23,1,.32,1);
 }
-.search-wrap:focus-within{border-color:var(--gold);}
+.search-wrap:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.15);}
 .search-wrap i{color:var(--muted);font-size:13px;}
 .search-wrap input{border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:13px;color:var(--dark);flex:1;outline:none;}
 .ay-badge{
   padding:8px 14px;background:var(--cream2);border-radius:var(--radius-sm);
   border:1px solid var(--border);font-size:12px;font-weight:600;color:var(--gold-d);
+  transition:all .2s;
 }
+.ay-badge:hover{background:var(--amber-l);border-color:var(--amber-b);}
 
 /* ═══════════════════════════════════════════════════════════
    EVAL OVERLAY
@@ -112,20 +124,21 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 }
 .overlay.open{display:flex;}
 .eval-panel{
-  background:var(--white);border-radius:20px;
+  background:var(--white);border-radius:22px;
   width:100%;max-width:1200px;
   box-shadow:0 32px 80px rgba(0,0,0,.35);
   display:flex;flex-direction:column;
   min-height:min(96vh,860px);overflow:hidden;
   margin:auto;
+  border:1px solid rgba(184,134,11,.15);
 }
 
 /* eval header */
 .eval-hdr{
   background:linear-gradient(135deg,var(--gold-d) 0%,#a87120 50%,var(--gold-l) 100%);
-  padding:16px 22px;color:#fff;
+  padding:18px 24px;color:#fff;
   display:flex;align-items:center;justify-content:space-between;
-  flex-wrap:wrap;gap:10px;flex-shrink:0;
+  flex-wrap:wrap;gap:12px;flex-shrink:0;
   position:relative;overflow:hidden;
 }
 .eval-hdr::before{
@@ -133,53 +146,73 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   width:220px;height:220px;border-radius:50%;
   background:rgba(255,255,255,.06);pointer-events:none;
 }
+.eval-hdr::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+}
 .eval-hdr-name{font-size:17px;font-weight:700;font-family:'Playfair Display',serif;}
 .eval-hdr-sub{font-size:11px;opacity:.82;margin-top:2px;}
 .eval-hdr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .hdr-btn{
-  padding:8px 15px;border:1.5px solid rgba(255,255,255,.4);
-  border-radius:9px;background:rgba(255,255,255,.14);color:#fff;
+  padding:9px 16px;border:1.5px solid rgba(255,255,255,.4);
+  border-radius:10px;background:rgba(255,255,255,.14);color:#fff;
   cursor:pointer;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;
-  display:inline-flex;align-items:center;gap:6px;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;transition:all .25s cubic-bezier(.23,1,.32,1);
 }
-.hdr-btn:hover{background:rgba(255,255,255,.28);}
-.hdr-btn-solid{background:rgba(255,255,255,.95);color:var(--gold-d);}
-.hdr-btn-solid:hover{background:#fff;}
+.hdr-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px);}
+.hdr-btn-solid{background:rgba(255,255,255,.98);color:var(--gold-d);border-color:rgba(255,255,255,.6);}
+.hdr-btn-solid:hover{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);}
 .hdr-close{
-  width:32px;height:32px;border:none;background:rgba(255,255,255,.18);
-  border-radius:8px;cursor:pointer;font-size:15px;color:#fff;
-  display:flex;align-items:center;justify-content:center;transition:all .2s;
+  width:36px;height:36px;border:none;background:rgba(255,255,255,.18);
+  border-radius:10px;cursor:pointer;font-size:15px;color:#fff;
+  display:flex;align-items:center;justify-content:center;transition:all .25s cubic-bezier(.23,1,.32,1);
 }
-.hdr-close:hover{background:rgba(255,255,255,.32);}
+.hdr-close:hover{background:rgba(255,255,255,.32);transform:rotate(90deg);}
 
-/* eval tabs */
+/* eval tabs - modern pill style */
 .eval-tabs{
   display:flex;background:var(--cream);border-bottom:2px solid var(--border);
-  padding:0 22px;flex-shrink:0;
+  padding:14px 22px 0;flex-shrink:0;gap:8px;
 }
 .eval-tab{
-  padding:12px 18px;border:none;background:transparent;
+  padding:10px 20px;border:none;background:transparent;
   font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;
-  color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;
-  margin-bottom:-2px;display:flex;align-items:center;gap:7px;transition:all .2s;
+  color:var(--muted);cursor:pointer;border-radius:24px;
+  display:flex;align-items:center;gap:7px;transition:all .25s cubic-bezier(.23,1,.32,1);
+  position:relative;
 }
-.eval-tab:hover{color:var(--dark);}
-.eval-tab.active{color:var(--gold-d);border-bottom-color:var(--gold);font-weight:700;}
+.eval-tab::after{
+  content:'';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);
+  width:0;height:3px;background:var(--gold);border-radius:3px 3px 0 0;
+  transition:width .25s cubic-bezier(.23,1,.32,1);
+}
+.eval-tab:hover{color:var(--dark);background:rgba(184,134,11,.06);}
+.eval-tab.active{
+  color:var(--gold-d);background:rgba(184,134,11,.1);font-weight:700;
+  box-shadow:0 2px 8px rgba(184,134,11,.15);
+}
+.eval-tab.active::after{width:60%;}
 
 .eval-body{padding:20px 24px 24px;flex:1;overflow-y:auto;}
 
 /* ═══════════════════════════════════════════════════════════
-   GWA STRIP
-═══════════════════════════════════════════════════════════ */
+    GWA STRIP
+ ═══════════════════════════════════════════════════════════ */
 .gwa-strip{
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-  padding:14px 18px;background:linear-gradient(135deg,#fffdf6,#fef9ed);
-  border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;
+  display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+  padding:16px 20px;background:linear-gradient(135deg,#fffdf6,#fef9ed);
+  border:1px solid var(--border);border-radius:var(--radius);margin-bottom:20px;
+  box-shadow:0 2px 10px rgba(0,0,0,.05);
 }
 .gwa-main{
   background:linear-gradient(135deg,var(--gold-d),var(--gold));
-  border-radius:11px;padding:12px 20px;color:#fff;text-align:center;min-width:110px;
-  box-shadow:0 4px 16px rgba(139,105,20,.35);
+  border-radius:12px;padding:14px 22px;color:#fff;text-align:center;min-width:115px;
+  box-shadow:0 4px 16px rgba(139,105,20,.35),0 0 0 1px rgba(139,105,20,.1);
+  position:relative;overflow:hidden;
+}
+.gwa-main::after{
+  content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;
+  background:radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%);
 }
 .gwa-val{font-size:26px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;}
 .gwa-lbl{font-size:9px;opacity:.85;margin-top:2px;text-transform:uppercase;letter-spacing:.5px;}
@@ -194,6 +227,27 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   background:var(--cream);border-radius:8px;padding:8px 12px;border:1px solid var(--border);
   line-height:1.6;
 }
+
+/* Student Info Strip */
+.student-info-strip{
+  display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap;gap:10px;
+  padding:12px 16px;background:linear-gradient(135deg,#fffdf6,#fef9ed);
+  border:1px solid var(--border);border-radius:var(--radius);margin-bottom:18px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06);
+  position:relative;overflow:hidden;
+}
+.student-info-strip::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold-d));
+}
+.si-item{display:flex;flex-direction:column;gap:2px;padding:4px 10px;background:var(--white);border-radius:6px;border:1px solid var(--border);flex:1;min-width:100px;}
+.si-item:hover{background:var(--amber-l);}
+.si-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;white-space:nowrap;}
+.si-value{font-size:12px;color:var(--dark);font-weight:700;}
+@media(max-width:768px){.student-info-strip{flex-direction:column;align-items:stretch;}.si-item{flex:none;width:100%;}}
+
+/* Hide print version in screen mode */
+.student-info-strip-print{display:none;}
 
 /* ═══════════════════════════════════════════════════════════
    PROSPECTUS — mirrors department page exactly
@@ -276,22 +330,24 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .grade-cell-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
 .grade-row{display:flex;align-items:center;gap:3px;}
 .grade-inp{
-  width:48px;padding:3px 4px;border:1.5px solid var(--border);
-  border-radius:5px;font-family:'Poppins',sans-serif;font-size:10px;
-  font-weight:700;text-align:center;transition:all .2s;background:#fafaf8;
+  width:52px;padding:4px 5px;border:1.5px solid var(--border);
+  border-radius:6px;font-family:'Poppins',sans-serif;font-size:11px;
+  font-weight:700;text-align:center;transition:all .25s cubic-bezier(.23,1,.32,1);background:#fafaf8;
 }
-.grade-inp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,134,11,.15);}
+.grade-inp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.2);}
+.grade-inp:hover:not(:focus){border-color:var(--gold-l);}
 .grade-inp.gp{border-color:var(--green);background:#f0fdf4;}
 .grade-inp.gf{border-color:var(--red);background:#fef2f2;}
 .grade-inp.gc{border-color:var(--amber);background:#fffbeb;}
 .save-btn{
-  width:19px;height:19px;border:none;border-radius:4px;cursor:pointer;
-  background:var(--blue-l);color:var(--blue);font-size:8px;
-  display:flex;align-items:center;justify-content:center;transition:all .15s;
+  width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;
+  background:var(--blue-l);color:var(--blue);font-size:9px;
+  display:flex;align-items:center;justify-content:center;transition:all .25s cubic-bezier(.23,1,.32,1);
 }
-.save-btn:hover{background:var(--blue);color:#fff;}
+.save-btn:hover{background:var(--blue);color:#fff;transform:scale(1.1);}
 .save-btn.saved{background:var(--green-l);color:var(--green);}
-.grade-hint{font-size:8px;color:var(--muted);text-align:center;max-width:52px;line-height:1.2;}
+.save-btn.saved:hover{background:var(--green);color:#fff;}
+.grade-hint{font-size:8px;color:var(--muted);text-align:center;max-width:54px;line-height:1.2;}
 
 /* status pills */
 .gpill{padding:2px 5px;border-radius:4px;font-size:8px;font-weight:700;}
@@ -317,15 +373,27 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
    ADVISEMENT PANEL
 ═══════════════════════════════════════════════════════════ */
 .adv-panel{padding:4px 0;}
-.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px;margin-bottom:20px;}
+.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:20px;}
 .sum-card{
-  background:var(--white);border-radius:12px;padding:15px;
+  background:var(--white);border-radius:14px;padding:16px;
   text-align:center;border:1px solid var(--border);
-  box-shadow:0 1px 4px rgba(0,0,0,.05);transition:transform .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);transition:all .28s cubic-bezier(.23,1,.32,1);
+  position:relative;overflow:hidden;
 }
-.sum-card:hover{transform:translateY(-2px);}
-.sum-num{font-size:26px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;}
-.sum-lbl{font-size:9.5px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.3px;}
+.sum-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .28s cubic-bezier(.23,1,.32,1);
+}
+.sum-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+.sum-card:hover::before{transform:scaleX(1);}
+.sum-rec::before{background:var(--green);}
+.sum-fail::before{background:var(--red);}
+.sum-cond::before{background:var(--amber);}
+.sum-block::before{background:#64748b;}
+.sum-done::before{background:var(--blue);}
+.sum-num{font-size:28px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;}
+.sum-lbl{font-size:10px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
 .sum-rec .sum-num{color:var(--green);}
 .sum-fail .sum-num{color:var(--red);}
 .sum-cond .sum-num{color:var(--amber);}
@@ -334,17 +402,19 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 
 .context-banner{
   background:linear-gradient(135deg,#eff6ff,#dbeafe);
-  border-radius:var(--radius-sm);padding:13px 16px;margin-bottom:20px;
+  border-radius:var(--radius-sm);padding:15px 20px;margin-bottom:20px;
   border:1px solid var(--blue-b);
+  box-shadow:0 2px 8px rgba(29,78,216,.1);
 }
-.context-title{font-size:13px;font-weight:700;color:#1e40af;margin-bottom:3px;}
+.context-title{font-size:14px;font-weight:700;color:#1e40af;margin-bottom:4px;}
 .context-sub{font-size:12px;color:#1d4ed8;}
 
-.adv-section{margin-bottom:22px;}
+.adv-section{margin-bottom:24px;}
 .adv-sec-title{
-  font-size:12px;font-weight:700;margin-bottom:10px;
-  display:flex;align-items:center;gap:7px;
-  padding:8px 14px;border-radius:9px;
+  font-size:13px;font-weight:700;margin-bottom:12px;
+  display:flex;align-items:center;gap:8px;
+  padding:10px 16px;border-radius:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
 }
 .ast-green{background:var(--green-l);color:#166534;border:1px solid var(--green-b);}
 .ast-red{background:var(--red-l);color:#991b1b;border:1px solid var(--red-b);}
@@ -354,10 +424,10 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 
 .adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;}
 .adv-card{
-  border-radius:10px;padding:13px;border:1px solid var(--border);
-  background:var(--white);transition:all .2s;
+  border-radius:12px;padding:14px;border:1px solid var(--border);
+  background:var(--white);transition:all .28s cubic-bezier(.23,1,.32,1);
 }
-.adv-card:hover{box-shadow:0 5px 14px rgba(0,0,0,.09);transform:translateY(-1px);}
+.adv-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.1);transform:translateY(-2px);}
 .adv-card.ac-rec{border-left:4px solid var(--green);}
 .adv-card.ac-fail{border-left:4px solid var(--red);}
 .adv-card.ac-cond{border-left:4px solid var(--amber);}
@@ -407,36 +477,37 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .session-bar textarea:focus{outline:none;border-color:var(--gold);}
 
 /* ═══════════════════════════════════════════════════════════
-   BUTTONS
-═══════════════════════════════════════════════════════════ */
+    BUTTONS
+ ═══════════════════════════════════════════════════════════ */
 .btn{
-  padding:9px 16px;border:none;border-radius:9px;cursor:pointer;
-  font-weight:600;font-size:12px;font-family:'Poppins',sans-serif;
-  display:inline-flex;align-items:center;gap:7px;transition:all .2s;
+  padding:10px 18px;border:none;border-radius:10px;cursor:pointer;
+  font-weight:600;font-size:13px;font-family:'Poppins',sans-serif;
+  display:inline-flex;align-items:center;gap:8px;transition:all .28s cubic-bezier(.23,1,.32,1);
 }
-.btn-gold{background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;}
-.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(139,105,20,.35);}
+.btn-gold{background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;box-shadow:0 2px 8px rgba(139,105,20,.25);}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(139,105,20,.4);}
 .btn-green{background:var(--green);color:#fff;}
-.btn-green:hover{background:#15803d;}
+.btn-green:hover{background:#15803d;transform:translateY(-2px);}
 .btn-blue{background:var(--blue);color:#fff;}
-.btn-blue:hover{background:#1e40af;}
+.btn-blue:hover{background:#1e40af;transform:translateY(-2px);}
 
 /* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
+    TOAST
+ ═══════════════════════════════════════════════════════════ */
 .toast{
-  position:fixed;bottom:22px;right:22px;
+  position:fixed;bottom:28px;right:28px;
   background:var(--white);color:var(--dark);
-  padding:14px 18px;border-radius:14px;font-size:13px;font-weight:500;
-  display:flex;align-items:center;gap:10px;
-  transform:translateY(100px);opacity:0;transition:all .38s cubic-bezier(.23,1,.32,1);
-  z-index:99999;box-shadow:var(--shadow-lg);max-width:360px;
-  border-top:3px solid var(--gold);
+  padding:16px 22px;border-radius:14px;font-size:14px;font-weight:500;
+  display:flex;align-items:center;gap:12px;
+  transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.23,1,.32,1);
+  z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.2);max-width:380px;
+  border-left:4px solid var(--gold);
 }
 .toast.show{transform:translateY(0);opacity:1;}
-.toast.success{border-top-color:var(--green);}
-.toast.error{border-top-color:var(--red);}
-.toast-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.toast.success{border-left-color:var(--green);}
+.toast.error{border-left-color:var(--red);}
+.toast.info{border-left-color:var(--amber);}
+.toast-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .toast.success .toast-icon{background:var(--green-l);color:var(--green);}
 .toast.error .toast-icon{background:var(--red-l);color:var(--red);}
 .toast.info .toast-icon{background:var(--amber-l);color:var(--amber);}
@@ -449,6 +520,8 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .empty-state{text-align:center;padding:52px 24px;color:var(--muted);}
 .empty-state i{font-size:44px;opacity:.18;display:block;margin-bottom:14px;}
 .empty-state h3{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:5px;}
+.empty-state{animation:fadeInUp .5s ease forwards;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
 .divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
 .card{background:var(--white);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:20px;}
 
@@ -469,8 +542,8 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 
   /* ─ Page setup ─ */
   @page {
-    size: legal portrait;        /* 8.5 × 14 in = 216 × 356 mm */
-    margin: 6mm 6mm 6mm 6mm;
+    size: A4 portrait;
+    margin: 5mm;
   }
 
   /* ─ Hide everything except the print target ─ */
@@ -485,13 +558,13 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   }
 
   #printTarget {
-    width: 100% !important; margin: 0 !important;
+    width: 100% !important; max-width: 210mm !important; margin: 0 !important;
     position: static !important;
   }
 
   /* ─ Pro-wrap ─ */
   .pro-wrap {
-    width: 100% !important; max-width: 204mm !important;
+    width: 100% !important; max-width: 200mm !important;
     border: none !important; box-shadow: none !important;
     border-radius: 0 !important; background: white !important;
     font-size: 7pt !important;
@@ -500,84 +573,98 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
     print-color-adjust: exact !important;
   }
 
-  /* Header */
+  /* Header - bigger for A4 */
   .pro-hdr {
     display: flex !important; flex-direction: row !important;
     align-items: center !important; justify-content: space-between !important;
-    padding: 2.5mm 3mm 2mm !important;
+    padding: 3mm 3mm 2mm !important;
     border-top: 2.5pt solid #8B6914 !important;
     border-bottom: 1.5pt solid #8B6914 !important;
     background: white !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    width: 100% !important;
   }
-  .pro-logo { width: 22mm !important; height: 22mm !important; border: 1.5pt solid #8B6914 !important; border-radius: 3pt !important; flex-shrink: 0 !important; }
-  .pro-title-block { flex: 1 1 auto !important; text-align: center !important; padding: 0 4mm !important; }
-  .pro-school { font-size: 13pt !important; font-weight: 700 !important; font-family: 'Times New Roman',serif !important; -webkit-print-color-adjust: exact !important; }
-  .pro-address { font-size: 8pt !important; color: #555 !important; font-style: italic !important; }
-  .pro-institute { font-size: 10pt !important; font-weight: 700 !important; color: #8B6914 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .pro-degree { font-size: 8.5pt !important; }
-  .pro-major-line { font-size: 9.5pt !important; font-weight: 700 !important; }
-  .pro-student-line { font-size: 8pt !important; color: #333 !important; }
-  .pro-label { font-size: 7.5pt !important; padding: 1.5pt 8pt !important; border: 1pt solid #8B6914 !important; color: #8B6914 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .pro-logo { width: 22mm !important; height: 22mm !important; border: 1.5pt solid #8B6914 !important; border-radius: 2pt !important; flex-shrink: 0 !important; }
+  .pro-title-block { flex: 1 1 auto !important; text-align: center !important; padding: 0 3mm !important; }
+  .pro-school { font-size: 14pt !important; font-weight: 700 !important; font-family: 'Times New Roman',serif !important; }
+  .pro-address { font-size: 9pt !important; color: #555 !important; font-style: italic !important; }
+  .pro-institute { font-size: 11pt !important; font-weight: 700 !important; color: #8B6914 !important; }
+  .pro-degree { font-size: 9pt !important; }
+  .pro-major-line { font-size: 10pt !important; font-weight: 700 !important; }
+  .pro-student-line { font-size: 9pt !important; color: #333 !important; }
+  .pro-label { font-size: 8pt !important; padding: 1.5pt 8pt !important; border: 1pt solid #8B6914 !important; color: #8B6914 !important; }
 
-  /* GWA strip — hide interactive; print student info already in header */
-  .gwa-strip { display: none !important; }
-  .session-bar { display: none !important; }
-  .eval-hdr, .eval-tabs { display: none !important; }
+  /* Print student info strip */
+  .student-info-strip-print { display: flex !important; justify-content: space-between !important; padding: 1.5mm 2mm !important; background: #fafafa !important; border: 0.5pt solid #ccc !important; margin-bottom: 1mm !important; }
+  .sip-item { display: flex !important; gap: 2mm !important; }
+  .sip-label { font-size: 9pt !important; font-weight: 700 !important; color: #333 !important; }
+  .sip-value { font-size: 9pt !important; }
+  
+  /* Show student info strip in print, hide interactive elements */
+  .gwa-strip, .student-info-strip, .session-bar, .eval-hdr, .eval-tabs { display: none !important; }
+  .student-info-strip-print { display: flex !important; }
 
   /* Body */
-  .pro-body { padding: 1.5mm 0 0 !important; overflow: visible !important; }
+  .pro-body { padding: 1mm 2mm 0 !important; overflow: visible !important; width: 100% !important; }
 
-  /* Year blocks */
+/* Year blocks - compact */
   .pro-year-block {
-    margin-bottom: 1.5mm !important; border: 0.5pt solid #bbb !important;
+    margin-bottom: 1mm !important; border: 0.3pt solid #bbb !important;
     border-radius: 0 !important; overflow: hidden !important;
     page-break-inside: avoid !important; break-inside: avoid !important;
-    -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+    width: 100% !important;
   }
   .pro-year-hdr {
-    padding: 1.5mm 2.5mm !important; font-size: 7.5pt !important; font-weight: 700 !important;
+    padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important;
     background: #8B6914 !important; color: white !important;
-    -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+    width: 100% !important;
   }
-  .pro-sem-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 1.2mm !important; padding: 1.2mm !important; background: white !important; }
   .pro-sem-label {
-    font-size: 6.5pt !important; font-weight: 700 !important; padding: 1pt 0 !important;
-    background: #fde68a !important; border: 0.4pt solid #d4cfc5 !important; border-radius: 0 !important;
-    -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
+    font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important;
+    background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important;
+    display: block !important; width: 100% !important;
+  }
+  .pro-year-hdr {
+    padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important;
+    background: #8B6914 !important; color: white !important;
+  }
+  .pro-sem-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 2mm !important; padding: 1.5mm !important; background: white !important; width: 100% !important; }
+  .pro-sem-label {
+    font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important;
+    background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important;
   }
 
-  /* Tables */
-  .pro-table { font-size: 6.5pt !important; table-layout: fixed !important; border-collapse: collapse !important; font-family: 'Times New Roman',Times,serif !important; page-break-inside: avoid !important; }
-  .pro-th { background: #f0ece0 !important; padding: 1pt 2pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #7a5c10 !important; border: 0.4pt solid #ccc !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .pro-table td { border: 0.4pt solid #ddd !important; padding: 0.8pt 2pt !important; font-size: 6.5pt !important; line-height: 1.2 !important; }
-  .pro-code { font-size: 6.5pt !important; font-weight: 700 !important; white-space: nowrap !important; }
-  .pro-units { font-size: 6.5pt !important; text-align: center !important; }
+  /* Tables - wider columns */
+  .pro-table { font-size: 6pt !important; table-layout: auto !important; border-collapse: collapse !important; font-family: 'Times New Roman',Times,serif !important; page-break-inside: avoid !important; width: 100% !important; }
+  .pro-th { background: #f0ece0 !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #7a5c10 !important; border: 0.3pt solid #ccc !important; white-space: nowrap; }
+  .pro-table td { border: 0.3pt solid #ddd !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; line-height: 1.3 !important; }
+  .pro-code { font-size: 6pt !important; font-weight: 700 !important; white-space: nowrap !important; }
+  .pro-units { font-size: 6pt !important; text-align: center !important; white-space: nowrap; }
+  .pro-prereq-col { font-size: 5.5pt !important; white-space: nowrap; }
 
-  /* Grade: hide input, show print value */
+  /* Hide input elements, show grade value */
   .grade-inp, .save-btn, .grade-hint, .lock-badge, .prereq-chain-info { display: none !important; }
-  .grade-print { display: inline-block !important; font-size: 7pt !important; font-weight: 700 !important; }
-  .pro-td-status { display: none !important; }
-  .pro-th-status { display: none !important; }
-  .gpill { font-size: 5.5pt !important; padding: 0.5pt 2pt !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .grade-print { display: inline-block !important; font-size: 6pt !important; font-weight: 700 !important; }
+  .pro-td-status, .pro-th-status { display: none !important; }
+  .gpill { font-size: 5pt !important; padding: 0.3pt 1pt !important; }
 
-  .row-locked td { background: #fffbeb !important; opacity: 1 !important; }
-  .pro-total-row td { background: #f0ece0 !important; font-weight: 700 !important; color: #8B6914 !important; border-top: 1pt solid #B8860B !important; font-size: 6.5pt !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .pro-empty { font-size: 6pt !important; }
+  .row-locked td { background: #fffbeb !important; }
+  .pro-total-row td { background: #f0ece0 !important; font-weight: 700 !important; color: #8B6914 !important; border-top: 0.5pt solid #B8860B !important; font-size: 6pt !important; }
+  .pro-empty { font-size: 5pt !important; }
 
   /* Bridging */
-  .pro-bridging-block { margin-bottom: 1.5mm !important; page-break-inside: avoid !important; }
+  .pro-bridging-block { margin-bottom: 1mm !important; page-break-inside: avoid !important; }
 
-  /* Grand total */
-  .pro-grand-total { font-size: 8pt !important; font-weight: 700 !important; text-align: right !important; padding: 1.5mm 3mm !important; margin: 1.5mm 0 !important; background: #f0ece0 !important; border-top: 1pt solid #B8860B !important; border-bottom: 1pt solid #B8860B !important; color: #8B6914 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  /* Grand total - compact */
+  .pro-grand-total { font-size: 7pt !important; font-weight: 700 !important; text-align: right !important; padding: 1mm 2mm !important; margin: 1mm 0 !important; background: #f0ece0 !important; border-top: 0.5pt solid #B8860B !important; color: #8B6914 !important; }
 
-  /* Sig block */
-  .pro-sig-block { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 8mm !important; padding: 2mm 0 0 !important; border-top: 1pt solid #aaa !important; margin-top: 2mm !important; page-break-inside: avoid !important; }
-  .pro-sig-line { border-bottom: 1pt solid #333 !important; height: 10mm !important; margin-bottom: 1mm !important; }
-  .pro-sig-lbl { font-size: 7pt !important; font-weight: 700 !important; }
-  .pro-sig-sub { font-size: 6.5pt !important; color: #888 !important; }
-  .pro-legend { font-size: 6pt !important; color: #999 !important; margin-top: 1mm !important; }
+  /* Sig block - compact */
+  .pro-sig-block { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 5mm !important; padding: 1mm 0 0 !important; border-top: 0.5pt solid #aaa !important; margin-top: 1mm !important; page-break-inside: avoid !important; }
+  .pro-sig-line { border-bottom: 0.5pt solid #333 !important; height: 6mm !important; margin-bottom: 0.5mm !important; }
+  .pro-sig-lbl { font-size: 6pt !important; font-weight: 700 !important; }
+  .pro-sig-sub { font-size: 5.5pt !important; color: #888 !important; }
+  .pro-legend { font-size: 5pt !important; color: #999 !important; margin-top: 0.5mm !important; }
 }
 </style>
 </head>
@@ -592,7 +679,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   <div class="sidebar-user">
     <div class="sidebar-avatar"><i class="fas fa-user"></i></div>
     <div class="sidebar-user-info">
-      <span class="sidebar-user-name"><?= htmlspecialchars($user_name) ?></span>
+      <span class="sidebar-user-name"><?php echo htmlspecialchars($user_name); ?></span>
       <span class="sidebar-user-role">Instructor</span>
     </div>
   </div>
@@ -616,7 +703,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-date"><i class="fas fa-calendar-alt"></i><span><?= date('F j, Y') ?></span></div>
+      <div class="topbar-date"><i class="fas fa-calendar-alt"></i><span><?php echo date('F j, Y'); ?></span></div>
       <a href="../../../data/logout.php" class="topbar-logout"><i class="fas fa-sign-out-alt"></i><span>Logout</span></a>
     </div>
   </header>
@@ -739,7 +826,7 @@ const GRADE_LABELS = {
   2.00:'Satisfactory',2.25:'Fair',2.50:'Passing',2.75:'Low Passing',
   3.00:'Barely Passing',4.00:'Conditional',5.00:'Failed'
 };
-const YEAR_ORDER = ['1st Year','2nd Year','3rd Year','4th Year'];
+const YEAR_ORDER = ['1st Year','2nd Year','3rd Year','4th Year','Bridging'];
 const YEAR_NUM = {'1st Year':1,'2nd Year':2,'3rd Year':3,'4th Year':4};
 const SEM_NUM  = {'1st Semester':1,'2nd Semester':2};
 
@@ -1016,8 +1103,11 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
 
   loadedSubjects=subjects;
 
-  // Populate gradeMap
+  // Populate gradeMap (all subjects including bridging)
   subjects.forEach(sub => { if(sub.grade_rounded!=null) gradeMap[sub.id]=parseFloat(sub.grade_rounded); });
+
+  // Get Bridging subjects
+  const bridging = subjects.filter(s2 => s2.year_level === 'Bridging');
 
   // Build prereq unlock map
   const prereqUnlockMap=buildPrereqUnlockMap(subjects,gradeMap,prereqSetsData,s.major_id);
@@ -1026,6 +1116,11 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
   window.currentPrereqSetsMap = prereqSetsMap;
 
   const full=`${s.first_name}${s.middle_name?' '+s.middle_name:''} ${s.last_name}${s.suffix?' '+s.suffix:''}`.trim();
+
+  // Get current semester from student standing (moved before hdrHtml)
+  const studentStanding = s.year_level||'1st Year - 1st Semester';
+  const semMatch = studentStanding.match(/(\d+)(st|nd|rd|th)\s*Year.*?(\d+)(st|nd|rd|th)\s*Sem/i);
+  const currentSem = semMatch ? (semMatch[3]=='1'?'1st':'2nd')+' Semester' : '1st Semester';
 
   // Header (same as department page)
   const hdrHtml=`<div class="pro-hdr">
@@ -1037,13 +1132,15 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
       <div class="pro-institute">${esc(phSettings.institute_name)}</div>
       <div class="pro-degree">${esc(phSettings.degree_name)}</div>
       <div class="pro-major-line">Major in <strong>${esc(s.major_name||'—')}</strong></div>
-      <div class="pro-student-line">
-        <strong>${esc(full)}</strong> &nbsp;·&nbsp; ID: ${esc(s.student_id||s.student_number||'—')}
-        &nbsp;·&nbsp; ${esc(s.year_level||'—')} &nbsp;·&nbsp; A.Y. ${esc(ay)}
-      </div>
       <div class="pro-label">&#9733; Student Evaluation Prospectus &#9733;</div>
     </div>
     <img src="../../../media/nbsc_logo.png" class="pro-logo" alt="Institute Logo" onerror="this.style.display='none'">
+  </div>
+  <div class="student-info-strip-print">
+    <div class="sip-item"><span class="sip-label">Student:</span><span class="sip-value">${esc(full)}</span></div>
+    <div class="sip-item"><span class="sip-label">Student ID:</span><span class="sip-value">${esc(s.student_id||s.student_number||'—')}</span></div>
+    <div class="sip-item"><span class="sip-label">Year Level:</span><span class="sip-value">${esc(s.year_level||'—')}</span></div>
+    <div class="sip-item"><span class="sip-label">Semester:</span><span class="sip-value">${esc(currentSem)}</span></div>
   </div>`;
 
   // GWA strip
@@ -1063,7 +1160,7 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     </div>
   </div>`;
 
-  // Build year blocks (same order as department page)
+// Build year blocks (same order as department page)
   const byYear={};
   subjects.forEach(sub=>{
     const y=sub.year_level||'1st Year';
@@ -1071,8 +1168,13 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     byYear[y].push(sub);
   });
 
-  let yearBlocks=''; let grandTotal=0;
+  // Add bridging units to grandTotal
+  const bridgingUnits = (bridging || []).reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
+
+  let yearBlocks=''; let grandTotal=bridgingUnits;
   YEAR_ORDER.forEach(year=>{
+    // Skip Bridging - shown in separate table at bottom
+    if(year==='Bridging') return;
     const all=byYear[year]||[];
     if(!all.length) return;
     const sem1=all.filter(s2=>!s2.semester||s2.semester.includes('1st'));
@@ -1087,52 +1189,68 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
       <div class="pro-sem-row">
         <div>
           <div class="pro-sem-label">${year.toUpperCase()} — First Semester</div>
-       ${buildGradeTable(sem1,s,ay,prereqUnlockMap)}
-     </div>
-     <div>
-       <div class="pro-sem-label">${year.toUpperCase()} — Second Semester</div>
-       ${buildGradeTable(sem2,s,ay,prereqUnlockMap)}
-        </div>
+         ${buildGradeTable(sem1,s,ay,prereqUnlockMap)}
+      </div>
+      <div>
+        <div class="pro-sem-label">${year.toUpperCase()} — Second Semester</div>
+        ${buildGradeTable(sem2,s,ay,prereqUnlockMap)}
+         </div>
       </div>
     </div>`;
-  });
-
-  // Bridging
-  const bridging=subjects.filter(s2=>s2.year_level==='Bridging');
-  let bridgeHtml='';
-  if(bridging.length){
-    const bt=bridging.reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
-    grandTotal+=bt;
-    bridgeHtml=`<div class="pro-bridging-block">
-      <div class="pro-year-block">
-        <div class="pro-year-hdr" style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);">
-          <span><i class="fas fa-exchange-alt" style="margin-right:6px;font-size:11px;"></i>Bridging Subjects</span>
-          <span class="pro-year-total">${fmt(bt)} units</span>
-        </div>
-        <div style="padding:8px 10px 10px;">
-          ${buildGradeTable(bridging,s,ay,prereqUnlockMap)}
-        </div>
-      </div>
-    </div>`;
-  }
-
+});
   const sigHtml=`<div class="pro-sig-block">
     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-lbl">Student's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-lbl">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-lbl">Program Head's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
   </div>
   <div class="pro-legend">
-    <span class="pro-star">★</span> = Prerequisite subject &nbsp;·&nbsp;
     <span style="display:inline-block;width:10px;height:10px;background:var(--amber-l);border-left:3px solid var(--amber);border-radius:2px;vertical-align:middle;"></span>
     = Locked (prerequisite not yet passed)
+  </div>`;
+
+  // Student info strip for screen mode
+  const studentInfoHtml = `<div class="student-info-strip">
+    <div class="si-item"><span class="si-label">Student</span><span class="si-value">${esc(full)}</span></div>
+    <div class="si-item"><span class="si-label">Student ID</span><span class="si-value">${esc(s.student_id||s.student_number||'—')}</span></div>
+    <div class="si-item"><span class="si-label">Year Level</span><span class="si-value">${esc(s.year_level||'1st Year')}</span></div>
+    <div class="si-item"><span class="si-label">Semester</span><span class="si-value">${esc(currentSem)}</span></div>
   </div>`;
 
   const proHtml=`<div class="pro-wrap" id="liveProspectus">
     ${hdrHtml}
     <div class="pro-body">
       ${!subjects.length?`<div class="empty-state"><i class="fas fa-book"></i><h3>No subjects configured</h3><p>Set up the prospectus in Department Management first.</p></div>`:''}
+      ${studentInfoHtml}
       ${yearBlocks}
-      ${bridgeHtml}
+
+      <!-- Bridging Subjects -->
+      <div class="pro-bridging-block" style="margin-top:20px;">
+        <div class="pro-year-block">
+          <div class="pro-year-hdr" style="background:linear-gradient(135deg,var(--gold-d),var(--gold-l));">
+            <span><i class="fas fa-exchange-alt" style="margin-right:6px;font-size:11px;"></i>Bridging Subjects</span>
+            <span class="pro-year-total">${fmt(bridging?bridging.reduce((a,s2)=>a+(parseFloat(s2.units)||0),0):0)} units</span>
+          </div>
+          <div style="padding:10px 12px 12px;">
+            <table class="pro-table">
+              <thead><tr>
+                <th class="pro-th">Code</th>
+                <th class="pro-th">Subject Title</th>
+                <th class="pro-th">Units</th>
+                <th class="pro-th">Bridging For</th>
+              </tr></thead>
+              <tbody>
+                ${bridging?bridging.map(sub=>`<tr>
+                  <td class="pro-code">${esc(sub.subject_code)}</td>
+                  <td>${esc(sub.subject_name)}</td>
+                  <td class="pro-units">${parseFloat(sub.units)||0}</td>
+                  <td>${esc(sub.bridging_for||'—')}</td>
+                </tr>`).join(''):''}
+                <tr class="pro-total-row"><td colspan="2" style="text-align:right;">Total</td><td class="pro-units">${fmt(bridging?bridging.reduce((a,s2)=>a+(parseFloat(s2.units)||0),0):0)}</td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       ${subjects.length?`<div class="pro-grand-total">Grand Total: <strong>${fmt(grandTotal)} units</strong></div>`:''}
       ${sigHtml}
     </div>
@@ -1203,18 +1321,17 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
       <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
       <td class="pro-code">
         ${esc(sub.subject_code)}
-        ${(sub.is_prerequisite||isPrereqSetTarget)?'<span class="pro-star"> ★</span>':''}
       </td>
       <td style="font-size:10px;">${esc(sub.subject_name)}</td>
       <td class="pro-units">${parseFloat(sub.units)||0}</td>
-       <td class="pro-prereq-col">
-         ${window.currentPrereqSetsMap && window.currentPrereqSetsMap[sub.id] 
-           ? `<span class="pro-star">★ </span>${esc(window.currentPrereqSetsMap[sub.id])}` 
-           : (prereqCode ? `<span class="pro-star">★ </span>${esc(prereqCode)}` : '—')}
-         ${isPrereqSetTarget&&!prereqCode&&!window.currentPrereqSetsMap[sub.id]
-           ?'<span class="prereq-chain-info"><i class="fas fa-sitemap" style="font-size:7px;"></i> Set</span>':''}
-       </td>
-    </tr>`;
+<td class="pro-prereq-col">
+          ${window.currentPrereqSetsMap && window.currentPrereqSetsMap[sub.id] 
+            ? esc(window.currentPrereqSetsMap[sub.id])
+            : (prereqCode ? esc(prereqCode) : '—')}
+          ${isPrereqSetTarget&&!prereqCode&&!window.currentPrereqSetsMap[sub.id]
+            ?'<span class="prereq-chain-info"><i class="fas fa-sitemap" style="font-size:7px;"></i> Set</span>':''}
+        </td>
+     </tr>`;
   });
 
   const t=fmt(total);
@@ -1237,9 +1354,11 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
    ON GRADE CHANGE — instant feedback
 ═══════════════════════════════════════════════════════════ */
 function onGradeChange(sid,studentId,majorId,sem,year,ay) {
-  const inp=document.getElementById('g-'+sid);
+  let inp=document.getElementById('g-'+sid);
+  if(!inp)inp=document.getElementById('bg-'+sid);
+  if(!inp){toast('Input not found','error');return;}
   const raw=parseFloat(inp.value);
-  if(isNaN(raw)||raw<1||raw>5) return;
+  if(isNaN(raw)||raw<1||raw>5){toast('Grade must be 1.00–5.00','error');return;}
   const rounded=roundGrade(raw);
   const status=gradeStatus(rounded);
   inp.className='grade-inp '+gClass(status);
@@ -1254,7 +1373,9 @@ function onGradeChange(sid,studentId,majorId,sem,year,ay) {
    SAVE GRADE
 ═══════════════════════════════════════════════════════════ */
 function saveGrade(sid,studentId,majorId,sem,year,ay) {
-  const inp=document.getElementById('g-'+sid);
+  let inp=document.getElementById('g-'+sid);
+  if(!inp)inp=document.getElementById('bg-'+sid);
+  if(!inp){toast('Input field not found','error');return;}
   const raw=parseFloat(inp.value);
   if(isNaN(raw)||raw<1||raw>5){toast('Grade must be 1.00–5.00','error');return;}
   const btn=document.getElementById('sbtn-'+sid);
@@ -1275,8 +1396,11 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
       const rounded=d.grade_rounded; const status=d.status;
       inp.value=parseFloat(rounded).toFixed(2);
       inp.className='grade-inp '+gClass(status); inp.style.boxShadow='';
-      document.getElementById('gl-'+sid).textContent=d.label||gradeLabel(rounded);
-      const pill=document.getElementById('pill-'+sid);
+      let gl=document.getElementById('gl-'+sid);
+      if(!gl)gl=document.getElementById('bgl-'+sid);
+      if(gl)gl.textContent=d.label||gradeLabel(rounded);
+      let pill=document.getElementById('pill-'+sid);
+      if(!pill)pill=document.getElementById('bpill-'+sid);
       if(pill){pill.className=pillClass(status);pill.textContent=statusText(status);}
 
       gradeMap[sid]=parseFloat(rounded);
@@ -1624,7 +1748,7 @@ function esc(str){
       <i class="fas fa-exclamation-triangle" style="font-size:40px;color:#dc2626;"></i>
     </div>
     <h3 style="font-size:20px;font-weight:700;margin-bottom:12px;">Access Restricted</h3>
-    <p style="font-size:14px;color:#6b7280;margin-bottom:20px;"><?= htmlspecialchars($role_access['message']??'No access.') ?></p>
+    <p style="font-size:14px;color:#6b7280;margin-bottom:20px;"><?php echo htmlspecialchars($role_access['message']??'No access.'); ?></p>
     <a href="../../../data/logout.php" style="background:#dc2626;color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:500;">
       <i class="fas fa-sign-out-alt"></i> Logout
     </a>
