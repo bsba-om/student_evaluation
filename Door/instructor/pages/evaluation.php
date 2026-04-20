@@ -406,32 +406,40 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .rgc-none{background:var(--cream2);color:var(--muted);border:1px solid var(--border);}
 
 /* GRADES VIEW MODAL */
-.grades-modal-overlay{position:fixed;inset:0;background:rgba(5,5,15,.85);z-index:10001;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);}
+.grades-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10001;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
 .grades-modal-overlay.open{display:flex;}
-.grades-modal{background:var(--white);border-radius:20px;width:100%;max-width:900px;max-height:92vh;overflow-y:auto;box-shadow:0 32px 80px rgba(0,0,0,.5);animation:modal-in .45s cubic-bezier(.23,1,.32,1);position:relative;}
-.gm-header{background:linear-gradient(145deg,var(--gold-d) 0%,#a87120 50%,#c9a84c 100%);padding:22px 28px 20px;color:#fff;position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:16px;}
-.gm-header::before{content:'';position:absolute;top:-40px;right:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.1);pointer-events:none;}
-.gm-close{position:absolute;top:14px;right:14px;width:36px;height:36px;background:rgba(255,255,255,.18);border:none;border-radius:10px;cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.gm-close:hover{background:rgba(255,255,255,.3);transform:rotate(90deg);}
+.grades-modal{background:var(--white);border-radius:var(--radius);width:100%;max-width:720px;max-height:85vh;box-shadow:var(--shadow-lg);animation:modal-in .4s ease;position:relative;border:1px solid rgba(184,134,11,.2);}
+.gm-header{background:linear-gradient(145deg,var(--gold-d) 0%,#a87120 50%,#c9a84c 100%);padding:18px 24px;color:#fff;position:relative;display:flex;align-items:center;justify-content:space-between;}
+.gm-header::before{content:'';position:absolute;top:-40px;right:-50px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none;}
+.gm-close{width:32px;height:32px;background:rgba(255,255,255,.2);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .25s;}
+.gm-close:hover{background:rgba(255,255,255,.35);transform:rotate(90deg);}
 .gm-title-block{flex:1;}
-.gm-semester-title{font-size:16px;font-weight:800;font-family:'Playfair Display',serif;margin-bottom:4px;}
-.gm-student-name{font-size:12px;opacity:.9;}
-.gm-body{padding:20px 24px;}
-.gm-table-wrap{overflow-x:auto;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
-.gm-table{width:100%;border-collapse:collapse;font-size:12px;min-width:500px;}
-.gm-th{background:linear-gradient(180deg,#fffdf6,#fef9ed);padding:10px 12px;text-align:left;font-weight:700;color:var(--gold-d);border-bottom:2px solid var(--gold-d);white-space:nowrap;}
-.gm-td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.gm-semester-title{font-size:14px;font-weight:800;font-family:'Playfair Display',serif;}
+.gm-student-name{font-size:11px;opacity:.9;margin-top:2px;}
+.gm-body{padding:14px 18px;max-height:calc(85vh - 140px);overflow-y:auto;}
+.gm-body::-webkit-scrollbar{width:4px;}
+.gm-body::-webkit-scrollbar-track{background:var(--cream);}
+.gm-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.gm-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px;}
+.gm-table{width:100%;border-collapse:collapse;font-size:11px;}
+.gm-th{background:var(--gold-d);color:#fff;padding:10px 12px;text-align:left;font-weight:700;border-bottom:2px solid var(--gold);white-space:nowrap;}
+.gm-td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
 .gm-tr:hover td{background:#fef9ed;}
-.gm-code{font-weight:700;color:var(--dark);font-size:11px;}
-.gm-subject{font-size:12px;color:var(--mid);max-width:280px;line-height:1.3;}
+.gm-code{font-weight:700;color:var(--dark);font-size:10px;}
+.gm-subject{font-size:11px;color:var(--mid);}
 .gm-units{text-align:center;font-weight:600;color:var(--dark);}
-.gm-grade{text-align:center;font-weight:800;font-size:14px;font-family:'Playfair Display',serif;}
+.gm-grade{text-align:center;font-weight:800;font-size:13px;font-family:'Playfair Display',serif;}
 .gm-grade.pass{color:var(--green);}
 .gm-grade.fail{color:var(--red);}
 .gm-grade.cond{color:var(--amber);}
-.gm-empty-td{text-align:center;padding:28px;color:var(--muted);font-style:italic;}
-.gm-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;background:var(--cream);border-top:1px solid var(--border);}
-.gm-hint{font-size:11px;color:var(--muted);background:var(--white);padding:8px 12px;border-radius:8px;border:1px solid var(--border);margin-right:auto;}
+.gm-empty-td{text-align:center;padding:20px;color:var(--muted);font-style:italic;}
+.gm-school-header{padding:14px 18px;background:var(--cream);border-bottom:2px solid var(--gold);margin-bottom:12px;text-align:center;}
+.gm-student-info{padding:10px 14px;background:linear-gradient(135deg,#fff,#fafaf8);border-radius:10px;margin-bottom:12px;border:1px solid rgba(184,134,11,.2);box-shadow:0 2px 10px rgba(184,134,11,.1);}
+.gm-summary{padding:12px 16px;background:linear-gradient(145deg,var(--gold-d),#a87120);border-radius:12px;margin-top:14px;box-shadow:0 4px 12px rgba(184,134,11,.3);}
+.gm-summary span{font-size:11px;font-weight:600;color:#fff;}
+.gm-sig-block{margin-top:16px;padding-top:14px;border-top:2px solid var(--border);}
+.gm-footer{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;background:var(--cream);border-top:1px solid var(--border);}
+.gm-hint{font-size:10px;color:var(--muted);margin-right:auto;}
 
 /* ENROLLMENT LIST CHECKBOX CARDS */
 .rm-enroll-card{padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--border);background:var(--cream);transition:all .2s;cursor:pointer;display:block;position:relative;}
@@ -643,24 +651,61 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
       </div>
     </div>
     <div class="gm-body">
+      <div class="gm-school-header" id="gmSchoolHeader" style="display:none;padding:14px 18px;background:var(--cream);border-bottom:2px solid var(--gold);margin-bottom:12px;text-align:center;">
+        <img src="../../../media/LOGO.jpg" style="width:50px;height:50px;object-fit:contain;border-radius:10px;border:2px solid var(--gold-d);margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;" alt="Logo">
+        <div style="font-size:10px;color:var(--gold-d);font-weight:700;text-transform:uppercase;letter-spacing:.5px;" id="gmSchoolName"></div>
+        <div style="font-size:9px;color:var(--muted);" id="gmSchoolAddress"></div>
+        <div style="font-size:10px;font-weight:700;color:var(--gold-d);margin-top:3px;" id="gmInstitute"></div>
+        <div style="font-size:9px;color:var(--mid);" id="gmDegree"></div>
+      </div>
+      <div class="gm-student-info" id="gmStudentInfo" style="display:none;padding:10px 14px;background:linear-gradient(135deg,#fff,#fafaf8);border-radius:10px;margin-bottom:12px;border:1px solid rgba(184,134,11,.2);box-shadow:0 2px 10px rgba(184,134,11,.1);">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;font-size:11px;justify-content:center;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;color:var(--gold-d);">Student:</span> <span style="color:var(--dark);font-weight:600;" id="gmInfoStudent"></span></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;color:var(--gold-d);">Student ID:</span> <span style="color:var(--dark);font-weight:500;" id="gmInfoStudentID"></span></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;color:var(--gold-d);">Year:</span> <span style="color:var(--dark);font-weight:500;" id="gmInfoYearLevel"></span></div>
+          <div style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;color:var(--gold-d);">Semester:</span> <span style="color:var(--dark);font-weight:500;" id="gmInfoSemester"></span></div>
+        </div>
+        <div style="text-align:center;font-size:12px;font-weight:700;padding:8px 12px;background:var(--gold-d);color:#fff;border-radius:8px;" id="gmInfoPeriod"></div>
+      </div>
       <div class="gm-table-wrap">
         <table class="gm-table">
           <thead>
             <tr>
-              <th class="gm-th">Subject Code</th>
-              <th class="gm-th">Subject Name</th>
-              <th class="gm-th" style="text-align:center;">Units</th>
-              <th class="gm-th" style="text-align:center;">Grade</th>
+              <th class="gm-th" style="background:var(--gold-d);color:#fff;">Subject Code</th>
+              <th class="gm-th" style="background:var(--gold-d);color:#fff;">Subject Name</th>
+              <th class="gm-th" style="background:var(--gold-d);color:#fff;text-align:center;">Units</th>
+              <th class="gm-th" style="background:var(--gold-d);color:#fff;text-align:center;">Grade</th>
             </tr>
           </thead>
           <tbody id="gmTableBody"></tbody>
         </table>
       </div>
       <div id="gmEmptyState" class="gm-empty-td" style="display:none;">No grades recorded for this period</div>
+      <div class="gm-summary" id="gmSummary" style="display:none;padding:12px 16px;background:linear-gradient(145deg,var(--gold-d),#a87120);border-radius:12px;margin-top:14px;box-shadow:0 4px 12px rgba(184,134,11,.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+          <span style="font-size:12px;font-weight:600;color:#fff;" id="gmSummaryLeft"></span>
+          <span style="font-size:14px;font-weight:700;color:#fff;font-family:'Playfair Display',serif;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:20px;" id="gmSummaryGWA"></span>
+        </div>
+      </div>
+      <div class="gm-sig-block" id="gmSigBlock" style="display:none;margin-top:16px;padding-top:14px;border-top:2px solid var(--border);">
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px;text-align:center;">
+          <div style="font-size:10px;">
+            <div style="border-bottom:1.5px solid var(--dark);height:24px;margin-bottom:6px;"></div>
+            <div style="font-weight:700;color:var(--gold-d);margin-bottom:4px;">Adviser's Signature</div>
+            <div style="font-weight:600;color:var(--dark);margin-bottom:4px;" id="gmSigAdvisor"></div>
+            <div style="font-size:9px;color:var(--muted);">Date: ___________________</div>
+          </div>
+          <div style="font-size:10px;">
+            <div style="border-bottom:1.5px solid var(--dark);height:24px;margin-bottom:6px;"></div>
+            <div style="font-weight:700;color:var(--gold-d);margin-bottom:4px;">Program Head's Signature</div>
+            <div style="font-weight:600;color:var(--dark);margin-bottom:4px;" id="gmSigPH"></div>
+            <div style="font-size:9px;color:var(--muted);">Date: ___________________</div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="gm-footer">
       <div class="gm-hint" id="gmHint"></div>
-      <button class="btn-gold" onclick="printGradesTable()"><i class="fas fa-print"></i> Print</button>
       <button class="btn-modal-close" onclick="closeGradesModal()"><i class="fas fa-times"></i> Close</button>
     </div>
   </div>
@@ -1018,25 +1063,25 @@ function onFocusChange() {
 function showAlreadyEvaluatedModal(year, sem) {
   const modalHtml = `
     <div class="modal-overlay" id="alreadyEvaluatedOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:15000;display:flex;align-items:center;justify-content:center;padding:20px;">
-      <div style="background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center;">
-        <div style="width:60px;height:60px;margin:0 auto 16px;background:linear-gradient(135deg,var(--amber-l),var(--amber));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;color:#92400e;"><i class="fas fa-exclamation-triangle"></i></div>
-        <h3 style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:8px;">Already Evaluated</h3>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.5;">
+      <div style="background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:26px 30px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border:1px solid rgba(184,134,11,.2);">
+        <div style="width:58px;height:58px;margin:0 auto 16px;background:linear-gradient(135deg,var(--amber-l),var(--amber));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;color:#92400e;"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3 style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:10px;">Already Evaluated</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;">
           <strong>${year} — ${sem}</strong> has already been evaluated and finalized.<br>Do you want to view the grades or continue anyway?
         </p>
-        <div id="evalModalButtons" style="display:flex;gap:10px;justify-content:center;">
-          <button onclick="closeAlreadyEvaluatedModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;">Cancel</button>
-          <button onclick="confirmViewEvaluated('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">View Grades</button>
-          <button onclick="showEditPasswordPrompt('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:600;cursor:pointer;"><i class="fas fa-edit"></i> Edit Grades</button>
+        <div id="evalModalButtons" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="closeAlreadyEvaluatedModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
+          <button onclick="confirmViewEvaluated('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">View Grades</button>
+          <button onclick="showEditPasswordPrompt('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;"><i class="fas fa-edit" style="margin-right:6px;"></i> Edit Grades</button>
         </div>
-        <div id="evalPasswordPrompt" style="display:none;margin-top:16px;text-align:left;">
-          <p style="font-size:12px;color:var(--muted);margin-bottom:8px;">Enter your password to confirm edit mode:</p>
-          <input type="password" id="evalEditPassword" placeholder="Your password" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
-          <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button onclick="cancelEditPasswordPrompt('${year}','${sem}')" style="padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--cream);color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;">Cancel</button>
-            <button onclick="confirmEditWithPassword('${year}','${sem}')" style="padding:8px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:12px;font-weight:600;cursor:pointer;">Confirm</button>
+        <div id="evalPasswordPrompt" style="display:none;margin-top:18px;text-align:left;">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enter your password to confirm edit mode:</p>
+          <input type="password" id="evalEditPassword" placeholder="Your password" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;font-family:'Poppins',sans-serif;">
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="cancelEditPasswordPrompt('${year}','${sem}')" style="padding:8px 16px;border:1px solid var(--border);border-radius:8px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
+            <button onclick="confirmEditWithPassword('${year}','${sem}')" style="padding:8px 16px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Confirm</button>
           </div>
-          <p id="evalPasswordError" style="font-size:11px;color:#dc2626;margin-top:8px;display:none;"></p>
+          <p id="evalPasswordError" style="font-size:11px;color:var(--red);margin-top:10px;display:none;"></p>
         </div>
       </div>
     </div>
@@ -1484,10 +1529,26 @@ function openGradesModal(year, sem) {
   // Build student name
   const m = currentStudent;
   const fullName = `${m.first_name}${m.middle_name?' '+m.middle_name:''} ${m.last_name}${m.suffix?' '+m.suffix:''}`.trim();
+  
+  // Get advisor and program head names from global scope
+  const advisorNameModal = window.advisorName || '';
+  const programHeadNameModal = window.programHeadName || '';
 
   // Update modal header
   document.getElementById('gmSemesterTitle').textContent = `${year} — ${sem} · A.Y. ${currentAY}`;
   document.getElementById('gmStudentName').textContent = fullName;
+  
+  // Show school header
+  const schoolHeader = document.getElementById('gmSchoolHeader');
+  if(phSettings.school_name) {
+    schoolHeader.style.display = 'block';
+    document.getElementById('gmSchoolName').textContent = phSettings.school_name || '';
+    document.getElementById('gmSchoolAddress').textContent = phSettings.school_address || '';
+    document.getElementById('gmInstitute').textContent = phSettings.institute_name || '';
+    document.getElementById('gmDegree').textContent = phSettings.degree_name || '';
+  } else {
+    schoolHeader.style.display = 'none';
+  }
 
   // Build table rows
   const tbody = document.getElementById('gmTableBody');
@@ -1530,8 +1591,28 @@ function openGradesModal(year, sem) {
     }).join('');
 
     // Compute GWA for this semester
+    const gwa = (gradedCount > 0 && totalUnits > 0) ? gwaSum / totalUnits : 0;
+    
+    // Show summary on gold bar
+    const summaryEl = document.getElementById('gmSummary');
+    const summaryLeft = document.getElementById('gmSummaryLeft');
+    const summaryGWA = document.getElementById('gmSummaryGWA');
+    if(gradedCount > 0) {
+      summaryEl.style.display = 'block';
+      summaryLeft.innerHTML = `<strong>${gradedCount}</strong> of <strong>${filteredSubjects.length}</strong> subjects graded · <strong>${totalUnits}</strong> units`;
+      summaryGWA.innerHTML = `GWA: ${gwa.toFixed(2)}`;
+    } else {
+      summaryEl.style.display = 'none';
+    }
+    
+    // Show signature block (Adviser and Program Head only)
+    const sigBlock = document.getElementById('gmSigBlock');
+    document.getElementById('gmSigAdvisor').textContent = advisorNameModal || 'Adviser';
+    document.getElementById('gmSigPH').textContent = programHeadNameModal || 'Program Head';
+    sigBlock.style.display = 'block';
+    
+    // Update hint
     if(gradedCount > 0 && totalUnits > 0) {
-      const gwa = gwaSum / totalUnits;
       document.getElementById('gmHint').innerHTML = `
         <i class="fas fa-chart-line" style="margin-right:4px;color:var(--gold-d);"></i>
         <strong>${gradedCount}</strong> of <strong>${filteredSubjects.length}</strong> subjects graded &nbsp;·&nbsp; 
@@ -1542,6 +1623,27 @@ function openGradesModal(year, sem) {
       document.getElementById('gmHint').innerHTML = `
         <span style="color:var(--muted);"><strong>${gradedCount}</strong> of <strong>${filteredSubjects.length}</strong> subjects graded &nbsp;·&nbsp; <strong>${totalUnits}</strong> total units</span>
       `;
+    }
+    
+    // Show student info
+    const studentInfo = document.getElementById('gmStudentInfo');
+    if(m) {
+      studentInfo.style.display = 'block';
+      document.getElementById('gmInfoStudent').textContent = fullName;
+      // Try multiple possible field names for student ID
+      const studentID = m.student_id || m.student_number || m.id || '-';
+      document.getElementById('gmInfoStudentID').textContent = studentID;
+      // Parse year level - extract just "1st Year", "2nd Year", etc.
+      const yearLevel = m.year_level || '';
+      const yearMatch = yearLevel.match(/(\d+)(st|nd|rd|th)\s*Year/i);
+      const yearDisplay = yearMatch ? yearMatch[0] : (yearLevel || '-');
+      document.getElementById('gmInfoYearLevel').textContent = yearDisplay;
+      // Semester based on selection
+      document.getElementById('gmInfoSemester').textContent = sem;
+      // Display period like "1st Year — 1st Semester · A.Y. 2025-2026"
+      document.getElementById('gmInfoPeriod').textContent = `${yearDisplay} — ${sem} · A.Y. ${currentAY}`;
+    } else {
+      studentInfo.style.display = 'none';
     }
   }
 
@@ -1718,8 +1820,10 @@ function renderProspectus(data) {
   const gwaData = data.gwa_data||{}; const ay = data.academic_year||currentAY;
   const prereqSetsMap = data.prereq_map||{};
   const finalizedSessions = data.finalized_sessions||{};
-  const advisorName = data.advisor_name || '';
-  const programHeadName = data.program_head_name || '';
+  window.advisorName = data.advisor_name || '';
+  window.programHeadName = data.program_head_name || '';
+  const advisorName = window.advisorName;
+  const programHeadName = window.programHeadName;
 
   loadedSubjects = subjects;
   subjects.forEach(sub => { if(sub.grade_rounded != null) gradeMap[sub.id] = parseFloat(sub.grade_rounded); });
