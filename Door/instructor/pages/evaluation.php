@@ -320,6 +320,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .pro-body{padding:12px 14px 14px;}
 .pro-year-block{
   margin-bottom:12px;border:1px solid #e0dbd0;border-radius:10px;overflow:hidden;
+  transition:all .4s cubic-bezier(.23,1,.32,1);
 }
 .pro-year-hdr{
   background:linear-gradient(135deg,var(--gold-d),var(--gold));
@@ -573,55 +574,248 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PRINT  ─ LONG BOND / LEGAL  (216 × 356mm)  single page
+   ★ NEW: FOCUSED EVALUATION — YEAR/SEM FILTER CONTROLS
+═══════════════════════════════════════════════════════════ */
+.eval-focus-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:14px 20px;
+  background:linear-gradient(135deg,#1a1a2e,#16213e);
+  border-radius:var(--radius);margin-bottom:18px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  position:sticky;top:0;z-index:100;
+}
+.eval-focus-bar label{font-size:11px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;}
+.eval-focus-sel{
+  padding:9px 14px;border:1.5px solid rgba(255,255,255,.15);
+  border-radius:10px;background:rgba(255,255,255,.08);
+  font-family:'Poppins',sans-serif;font-size:12px;font-weight:600;
+  color:#fff;cursor:pointer;transition:all .25s ease;min-width:130px;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:30px;
+}
+.eval-focus-sel:hover,.eval-focus-sel:focus{border-color:var(--gold-l);background:rgba(212,168,67,.15);outline:none;}
+.eval-focus-sel option{background:#1a1a2e;color:#fff;}
+.focus-clear-btn{
+  padding:9px 16px;border:1.5px solid rgba(255,255,255,.2);border-radius:10px;
+  background:transparent;color:rgba(255,255,255,.6);font-family:'Poppins',sans-serif;
+  font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;gap:6px;
+}
+.focus-clear-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+.focus-active-badge{
+  padding:6px 14px;border-radius:20px;background:rgba(212,168,67,.25);
+  border:1px solid var(--gold-l);color:var(--gold-l);font-size:11px;font-weight:700;
+  display:flex;align-items:center;gap:6px;animation:pulse-badge .6s ease;
+}
+@keyframes pulse-badge{0%{transform:scale(.9);opacity:.7;}100%{transform:scale(1);opacity:1;}}
+
+/* Finalize button in focus bar */
+.btn-finalize{
+  padding:10px 20px;border:none;border-radius:10px;cursor:pointer;
+  font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;
+  background:linear-gradient(135deg,var(--green),#15803d);color:#fff;
+  display:inline-flex;align-items:center;gap:8px;
+  box-shadow:0 4px 16px rgba(22,163,74,.4);
+  transition:all .28s cubic-bezier(.23,1,.32,1);
+  margin-left:auto;
+}
+.btn-finalize:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(22,163,74,.5);}
+.btn-finalize:disabled{opacity:.4;cursor:not-allowed;transform:none !important;}
+
+/* Finalized badge overlay on table */
+.sem-finalized-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 14px;background:rgba(22,163,74,.12);
+  border:1.5px solid var(--green-b);border-radius:20px;
+  color:#166534;font-size:11px;font-weight:700;margin-bottom:8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: YEAR BLOCK BLUR/FOCUS STATE
+═══════════════════════════════════════════════════════════ */
+.pro-year-block{
+  transition:all .4s cubic-bezier(.23,1,.32,1);
+  position:relative;
+}
+.pro-year-block.yr-blurred{
+  filter:blur(3px) grayscale(60%);
+  opacity:.35;
+  pointer-events:none;
+  user-select:none;
+}
+.pro-year-block.yr-blurred::after{
+  content:'';position:absolute;inset:0;
+  background:rgba(240,236,224,.4);z-index:10;
+  border-radius:10px;pointer-events:none;
+}
+.pro-year-block.yr-active{
+  filter:none;opacity:1;pointer-events:all;
+  box-shadow:0 0 0 3px var(--gold-l),0 8px 32px rgba(184,134,11,.2);
+  border-color:var(--gold-l);
+}
+/* Specific semester column blur */
+.pro-sem-col.sem-blurred{
+  filter:blur(2px) grayscale(50%);
+  opacity:.3;pointer-events:none;
+  transition:all .35s ease;
+}
+.pro-sem-col.sem-active{
+  filter:none;opacity:1;pointer-events:all;
+}
+
+/* Finalized table overlay */
+.finalized-lock-overlay{
+  position:absolute;inset:0;z-index:20;
+  background:rgba(240,253,244,.6);
+  border-radius:inherit;pointer-events:none;
+  border:2px solid var(--green-b);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: FINALIZATION RESULT MODAL
+═══════════════════════════════════════════════════════════ */
+.result-modal-overlay{
+  position:fixed;inset:0;background:rgba(5,5,15,.8);
+  z-index:10000;display:none;align-items:center;
+  justify-content:center;padding:16px;
+  backdrop-filter:blur(6px);
+}
+.result-modal-overlay.open{display:flex;}
+.result-modal{
+  background:var(--white);border-radius:24px;
+  width:100%;max-width:680px;
+  box-shadow:0 40px 100px rgba(0,0,0,.5);
+  overflow:hidden;animation:modal-in .45s cubic-bezier(.23,1,.32,1);
+  position:relative;
+}
+@keyframes modal-in{
+  from{opacity:0;transform:scale(.88) translateY(24px);}
+  to{opacity:1;transform:scale(1) translateY(0);}
+}
+.rm-header{
+  padding:28px 32px 24px;
+  position:relative;overflow:hidden;
+  display:flex;align-items:flex-start;gap:20px;
+}
+.rm-header.rm-pass{background:linear-gradient(135deg,#052e16,#14532d,#166534);}
+.rm-header.rm-fail{background:linear-gradient(135deg,#450a0a,#7f1d1d,#991b1b);}
+.rm-header.rm-cond{background:linear-gradient(135deg,#431407,#7c2d12,#9a3412);}
+.rm-header::before{
+  content:'';position:absolute;top:-60px;right:-80px;
+  width:260px;height:260px;border-radius:50%;
+  background:rgba(255,255,255,.06);pointer-events:none;
+}
+.rm-icon{
+  width:72px;height:72px;border-radius:20px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+.rm-icon.pass-icon{background:rgba(134,239,172,.25);}
+.rm-icon.fail-icon{background:rgba(252,165,165,.25);}
+.rm-icon.cond-icon{background:rgba(253,230,138,.25);}
+.rm-header-text{flex:1;}
+.rm-semester-tag{
+  display:inline-block;padding:3px 12px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);margin-bottom:8px;
+}
+.rm-verdict{font-size:28px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.2;margin-bottom:6px;}
+.rm-verdict-sub{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;}
+.rm-gwa-chip{
+  margin-top:10px;display:inline-flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:20px;background:rgba(255,255,255,.15);
+  color:#fff;font-size:12px;font-weight:700;
+}
+.rm-body{padding:24px 32px 28px;}
+.rm-close{
+  position:absolute;top:16px;right:16px;
+  width:36px;height:36px;background:rgba(255,255,255,.15);border:none;
+  border-radius:10px;cursor:pointer;color:#fff;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;z-index:10;
+}
+.rm-close:hover{background:rgba(255,255,255,.28);transform:rotate(90deg);}
+
+/* Subject list in modal */
+.rm-subject-list{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:8px;margin-bottom:20px;max-height:240px;overflow-y:auto;
+  padding-right:4px;
+}
+.rm-subject-list::-webkit-scrollbar{width:4px;}
+.rm-subject-list::-webkit-scrollbar-track{background:var(--cream);}
+.rm-subject-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+.rm-sub-card{
+  padding:10px 12px;border-radius:10px;border:1px solid var(--border);
+  background:var(--cream);transition:all .2s;
+}
+.rm-sub-card:hover{background:var(--amber-l);border-color:var(--amber-b);}
+.rm-sub-code{font-size:12px;font-weight:700;color:var(--dark);}
+.rm-sub-name{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3;}
+.rm-sub-units{font-size:9px;color:var(--gold-d);font-weight:600;margin-top:3px;}
+.rm-retake-card{
+  padding:10px 12px;border-radius:10px;border-left:4px solid var(--red);
+  border:1px solid var(--red-b);background:var(--red-l);
+}
+.rm-retake-card .rm-sub-code{color:#991b1b;}
+.rm-retake-card .rm-sub-name{color:#b91c1c;}
+
+/* Modal action buttons */
+.rm-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border);}
+.btn-promote{
+  padding:12px 24px;border:none;border-radius:12px;cursor:pointer;
+  font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;
+  background:linear-gradient(135deg,var(--green),#15803d);color:#fff;
+  display:inline-flex;align-items:center;gap:10px;
+  box-shadow:0 6px 20px rgba(22,163,74,.4);
+  transition:all .3s cubic-bezier(.23,1,.32,1);
+  flex:1;justify-content:center;
+}
+.btn-promote:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(22,163,74,.55);}
+.btn-modal-close{
+  padding:12px 20px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;
+  font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;
+  background:var(--white);color:var(--mid);
+  display:inline-flex;align-items:center;gap:8px;
+  transition:all .2s;
+}
+.btn-modal-close:hover{background:var(--cream);border-color:var(--border2);}
+
+/* Promotion success animation */
+.promote-success{
+  text-align:center;padding:32px 24px;
+  animation:fadeInUp .5s ease forwards;
+}
+.promote-success i{font-size:52px;color:var(--green);margin-bottom:14px;display:block;}
+.promote-success h3{font-size:18px;font-weight:800;color:var(--dark);margin-bottom:8px;font-family:'Playfair Display',serif;}
+.promote-success p{font-size:13px;color:var(--muted);}
+
+/* Progress bar in modal */
+.rm-grade-breakdown{
+  display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;
+}
+.rm-grade-chip{
+  padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.rgc-pass{background:var(--green-l);color:#166534;border:1px solid var(--green-b);}
+.rgc-fail{background:var(--red-l);color:#991b1b;border:1px solid var(--red-b);}
+.rgc-cond{background:var(--amber-l);color:#92400e;border:1px solid var(--amber-b);}
+.rgc-none{background:var(--cream2);color:var(--muted);border:1px solid var(--border);}
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT  ─ A4 portrait, 5mm margins
 ═══════════════════════════════════════════════════════════ */
 @media print {
-
-  /* ─ Page setup ─ */
-  @page {
-    size: A4 portrait;
-    margin: 5mm;
-  }
-
-  /* ─ Hide everything except the print target ─ */
+  @page { size: A4 portrait; margin: 5mm; }
   body > * { display: none !important; }
   #printTarget { display: block !important; }
-
-  html, body {
-    margin: 0 !important; padding: 0 !important;
-    width: 100% !important; background: white !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  #printTarget {
-    width: 100% !important; max-width: 210mm !important; margin: 0 !important;
-    position: static !important;
-  }
-
-  /* ─ Pro-wrap ─ */
-  .pro-wrap {
-    width: 100% !important; max-width: 200mm !important;
-    border: none !important; box-shadow: none !important;
-    border-radius: 0 !important; background: white !important;
-    font-size: 7pt !important;
-    font-family: 'Times New Roman', Times, serif !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  /* Header - bigger for A4 */
-  .pro-hdr {
-    display: flex !important; flex-direction: row !important;
-    align-items: center !important; justify-content: space-between !important;
-    padding: 3mm 3mm 2mm !important;
-    border-top: 2.5pt solid #8B6914 !important;
-    border-bottom: 1.5pt solid #8B6914 !important;
-    background: white !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    width: 100% !important;
-  }
+  html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  #printTarget { width: 100% !important; max-width: 210mm !important; margin: 0 !important; position: static !important; }
+  .pro-wrap { width: 100% !important; max-width: 200mm !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; background: white !important; font-size: 7pt !important; font-family: 'Times New Roman', Times, serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  .pro-hdr { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 3mm 3mm 2mm !important; border-top: 2.5pt solid #8B6914 !important; border-bottom: 1.5pt solid #8B6914 !important; background: white !important; width: 100% !important; }
   .pro-logo { width: 22mm !important; height: 22mm !important; border: 1.5pt solid #8B6914 !important; border-radius: 2pt !important; flex-shrink: 0 !important; }
   .pro-title-block { flex: 1 1 auto !important; text-align: center !important; padding: 0 3mm !important; }
   .pro-school { font-size: 14pt !important; font-weight: 700 !important; font-family: 'Times New Roman',serif !important; }
@@ -631,72 +825,32 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   .pro-major-line { font-size: 10pt !important; font-weight: 700 !important; }
   .pro-student-line { font-size: 9pt !important; color: #333 !important; }
   .pro-label { font-size: 8pt !important; padding: 1.5pt 8pt !important; border: 1pt solid #8B6914 !important; color: #8B6914 !important; }
-
-  /* Print student info strip */
   .student-info-strip-print { display: flex !important; justify-content: space-between !important; padding: 1.5mm 2mm !important; background: #fafafa !important; border: 0.5pt solid #ccc !important; margin-bottom: 1mm !important; }
   .sip-item { display: flex !important; gap: 2mm !important; }
   .sip-label { font-size: 9pt !important; font-weight: 700 !important; color: #333 !important; }
   .sip-value { font-size: 9pt !important; }
-  
-  /* Show student info strip in print, hide interactive elements */
-  .gwa-strip, .student-info-strip, .session-bar, .eval-hdr, .eval-tabs { display: none !important; }
+  .gwa-strip, .student-info-strip, .session-bar, .eval-hdr, .eval-tabs, .eval-focus-bar { display: none !important; }
   .student-info-strip-print { display: flex !important; }
-
-  /* Body */
   .pro-body { padding: 1mm 2mm 0 !important; overflow: visible !important; width: 100% !important; }
-
-/* Year blocks - compact */
-  .pro-year-block {
-    margin-bottom: 1mm !important; border: 0.3pt solid #bbb !important;
-    border-radius: 0 !important; overflow: hidden !important;
-    page-break-inside: avoid !important; break-inside: avoid !important;
-    width: 100% !important;
-  }
-  .pro-year-hdr {
-    padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important;
-    background: #8B6914 !important; color: white !important;
-    width: 100% !important;
-  }
-  .pro-sem-label {
-    font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important;
-    background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important;
-    display: block !important; width: 100% !important;
-  }
-  .pro-year-hdr {
-    padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important;
-    background: #8B6914 !important; color: white !important;
-  }
+  .pro-year-block { margin-bottom: 1mm !important; border: 0.3pt solid #bbb !important; border-radius: 0 !important; overflow: hidden !important; page-break-inside: avoid !important; break-inside: avoid !important; width: 100% !important; filter: none !important; opacity: 1 !important; box-shadow: none !important; }
+  .pro-year-hdr { padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important; background: #8B6914 !important; color: white !important; width: 100% !important; }
+  .pro-sem-label { font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important; background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important; display: block !important; width: 100% !important; }
   .pro-sem-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 2mm !important; padding: 1.5mm !important; background: white !important; width: 100% !important; }
-  .pro-sem-label {
-    font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important;
-    background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important;
-  }
-
-  /* Tables - wider columns */
   .pro-table { font-size: 6pt !important; table-layout: auto !important; border-collapse: collapse !important; font-family: 'Times New Roman',Times,serif !important; page-break-inside: avoid !important; width: 100% !important; }
   .pro-th { background: #f0ece0 !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #7a5c10 !important; border: 0.3pt solid #ccc !important; white-space: nowrap; }
   .pro-table td { border: 0.3pt solid #ddd !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; line-height: 1.3 !important; }
   .pro-code { font-size: 6pt !important; font-weight: 700 !important; white-space: nowrap !important; }
   .pro-units { font-size: 6pt !important; text-align: center !important; white-space: nowrap; }
   .pro-prereq-col { font-size: 5.5pt !important; white-space: nowrap; }
-
-  /* Hide input elements, show grade value */
-  .grade-inp, .save-btn, .grade-hint, .lock-badge, .prereq-chain-info { display: none !important; }
+  .grade-inp, .save-btn, .grade-hint, .lock-badge, .prereq-chain-info, .sem-finalized-badge, .finalized-lock-overlay, .btn-finalize { display: none !important; }
   .grade-print { display: inline-block !important; font-size: 6pt !important; font-weight: 700 !important; }
   .pro-td-status, .pro-th-status { display: none !important; }
   .gpill { font-size: 5pt !important; padding: 0.3pt 1pt !important; }
-
   .row-locked td { background: #fffbeb !important; }
   .pro-total-row td { background: #f0ece0 !important; font-weight: 700 !important; color: #8B6914 !important; border-top: 0.5pt solid #B8860B !important; font-size: 6pt !important; }
   .pro-empty { font-size: 5pt !important; }
-
-  /* Bridging */
   .pro-bridging-block { margin-bottom: 1mm !important; page-break-inside: avoid !important; }
-
-  /* Grand total - compact */
   .pro-grand-total { font-size: 7pt !important; font-weight: 700 !important; text-align: right !important; padding: 1mm 2mm !important; margin: 1mm 0 !important; background: #f0ece0 !important; border-top: 0.5pt solid #B8860B !important; color: #8B6914 !important; }
-
-  /* Sig block - compact */
   .pro-sig-block { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 5mm !important; padding: 1mm 0 0 !important; border-top: 0.5pt solid #aaa !important; margin-top: 1mm !important; page-break-inside: avoid !important; }
   .pro-sig-line { border-bottom: 0.5pt solid #333 !important; height: 6mm !important; margin-bottom: 0.5mm !important; }
   .pro-sig-lbl { font-size: 6pt !important; font-weight: 700 !important; }
@@ -800,10 +954,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
         <div class="eval-hdr-sub" id="evalSub">—</div>
       </div>
       <div class="eval-hdr-actions">
-        <button class="hdr-btn" onclick="switchEvalTab('prospectus')"><i class="fas fa-scroll"></i> Prospectus</button>
-        <button class="hdr-btn" onclick="switchEvalTab('advisement')"><i class="fas fa-lightbulb"></i> Advisement</button>
         <button class="hdr-btn hdr-btn-solid" onclick="printProspectus()"><i class="fas fa-print"></i> Print</button>
-        <button class="hdr-btn" onclick="finalizeEval()"><i class="fas fa-check-circle"></i> Finalize</button>
         <button class="hdr-close" onclick="closeEval()"><i class="fas fa-times"></i></button>
       </div>
     </div>
@@ -852,6 +1003,16 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     ★ NEW: FINALIZATION RESULT MODAL
+══════════════════════════════════════════════════════════ -->
+<div class="result-modal-overlay" id="resultModal">
+  <div class="result-modal" id="resultModalInner">
+    <button class="rm-close" onclick="closeResultModal()"><i class="fas fa-times"></i></button>
+    <div id="resultModalContent"></div>
+  </div>
+</div>
+
 <!-- Hidden print target -->
 <div id="printTarget" style="display:none;"></div>
 
@@ -876,6 +1037,7 @@ const GRADE_LABELS = {
 const YEAR_ORDER = ['1st Year','2nd Year','3rd Year','4th Year','Bridging'];
 const YEAR_NUM = {'1st Year':1,'2nd Year':2,'3rd Year':3,'4th Year':4};
 const SEM_NUM  = {'1st Semester':1,'2nd Semester':2};
+const YEAR_LABELS = ['1st Year','2nd Year','3rd Year','4th Year'];
 
 let phSettings = {
   school_name:'Northern Bukidnon State College',
@@ -885,10 +1047,16 @@ let phSettings = {
 };
 
 let currentStudent = null;
-let loadedSubjects  = [];   // full prospectus template subjects, sorted
-let prereqSetsData  = [];   // prereq sets from department
-let gradeMap        = {};   // subject_id → rounded grade (float|null)
+let loadedSubjects  = [];
+let prereqSetsData  = [];
+let gradeMap        = {};
 let currentAY       = '2025-2026';
+
+// ★ NEW: Focus state
+let focusYear  = '';   // e.g. '1st Year' or ''
+let focusSem   = '';   // e.g. '1st Semester' or ''
+// ★ NEW: Finalization registry  { 'YearLevel|Semester' : true }
+let finalizedMap = {};
 
 /* ═══════════════════════════════════════════════════════════
    GRADE HELPERS
@@ -910,25 +1078,16 @@ function statusText(s)  { return {passed:'Passed',failed:'Failed',conditional:'C
 
 /* ═══════════════════════════════════════════════════════════
    PREREQUISITE LOGIC
-   Two layers:
-   1. subject.prerequisite (text code) — direct prerequisite code
-   2. prereqSetsData — department-created prerequisite SETS
-      A prereq SET means: all subjects in the set must be PASSED
-      before the target_subject_id can be taken.
 ═══════════════════════════════════════════════════════════ */
 function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
-  // subject_code → subject
   const byCode = {};
   subjects.forEach(s => { if(s.subject_code) byCode[s.subject_code.trim().toUpperCase()] = s; });
-  // subject_id → subject
   const byId = {};
   subjects.forEach(s => { byId[s.id] = s; });
 
-  // Build: target_subject_id → [ array of prerequisite subjects that must all be passed ]
-  const setPrereqs = {};  // target_id → [prerequisite subject objects]
+  const setPrereqs = {};
   if(Array.isArray(prereqSets)) {
     prereqSets.forEach(set => {
-      // Only apply sets for this student's major
       if(set.major_id && parseInt(set.major_id) !== parseInt(studentMajorId)) return;
       if(!set.target_subject_id) return;
       const tid = parseInt(set.target_subject_id);
@@ -942,7 +1101,6 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
 
   const result = {};
   subjects.forEach(s => {
-    // Layer 1: direct prerequisite code
     const prereqCode = (s.prerequisite||'').trim().toUpperCase();
     let directLocked = false;
     let directPrereqSubj = null;
@@ -954,7 +1112,6 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
       }
     }
 
-    // Layer 2: prereq set
     const setPrereqList = setPrereqs[parseInt(s.id)]||[];
     let setLocked = false;
     let setBlockedBy = [];
@@ -978,11 +1135,7 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
   return result;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   STUDENT'S CURRENT YEAR/SEMESTER from year_level string
-═══════════════════════════════════════════════════════════ */
 function parseStudentStanding(yearLevelStr) {
-  // yearLevelStr like "2nd Year - 1st Semester" or "3rd Year" or "2nd Year, 2nd Semester"
   let yr = 1, sem = 1;
   const yrMatch = yearLevelStr.match(/(\d+)(st|nd|rd|th)\s*Year/i);
   if(yrMatch) yr = parseInt(yrMatch[1]);
@@ -991,7 +1144,6 @@ function parseStudentStanding(yearLevelStr) {
   return {yr, sem};
 }
 
-/* Next semester to advise for */
 function getNextSemester(yr, sem) {
   if(sem===1) return {yr, sem:2};
   return {yr:yr+1, sem:1};
@@ -1023,7 +1175,6 @@ function loadMentees() {
       return;
     }
 
-    // Stats
     const total=d.mentees.length;
     const graded=d.mentees.filter(m=>m.graded_count>0).length;
     const done=d.mentees.filter(m=>m.graded_count>0&&m.graded_count>=m.total_subjects).length;
@@ -1053,7 +1204,6 @@ function loadMentees() {
       const pct=m.total_subjects>0?Math.round(m.graded_count/m.total_subjects*100):0;
       const gFrom=m.avatar_gradient_from||'#3b82f6';
       const gTo=m.avatar_gradient_to||'#60a5fa';
-
       const yrNum = (m.year_level || '0').replace(/[^0-9]/g, '');
       const semester = (m.year_level || '').includes('2nd Semester') ? '2nd Semester' : '1st Semester';
       html+=`<div class="mentee-card"
@@ -1088,12 +1238,7 @@ function loadMentees() {
 }
 loadMentees();
 
-function filterMentees() {
-  const q=document.getElementById('menteeSearch').value.toLowerCase();
-  document.querySelectorAll('.mentee-card').forEach(c=>{
-    c.style.display=c.dataset.name.includes(q)?'':'none';
-  });
-}
+function filterMentees() { applyFilters(); }
 
 let currentYearFilter = 'all';
 function filterMenteeYear(y) {
@@ -1104,26 +1249,14 @@ function filterMenteeYear(y) {
 
 function applyFilters() {
   const q = document.getElementById('menteeSearch').value.toLowerCase();
-  const yearSelect = document.getElementById('filterYearLevel');
-  const semSelect = document.getElementById('filterSemester');
-  const selectedYear = yearSelect ? yearSelect.value : '';
-  const selectedSem = semSelect ? semSelect.value : '';
-  const cards = document.querySelectorAll('.mentee-card');
-  if(cards.length === 0) return;
-  cards.forEach(c=>{
+  document.querySelectorAll('.mentee-card').forEach(c=>{
     const name = c.dataset.name || '';
     const yl = c.dataset.year || '0';
     const filterYear = currentYearFilter;
     const matchesSearch = name.includes(q);
     const matchesYearBtn = filterYear === 'all' || yl === filterYear;
-    const matchesYearDropdown = selectedYear === '' || yl === selectedYear;
-    const matchesSem = selectedSem === '' || (c.dataset.semester || '').includes(selectedSem);
-    c.style.display = (matchesSearch && matchesYearBtn && matchesYearDropdown && matchesSem) ? '' : 'none';
+    c.style.display = (matchesSearch && matchesYearBtn) ? '' : 'none';
   });
-}
-
-function filterMentees() {
-  applyFilters();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1143,6 +1276,7 @@ function switchEvalTab(tab) {
 function openEval(m) {
   if(typeof m==='string') m=JSON.parse(m);
   currentStudent=m; gradeMap={}; loadedSubjects=[]; prereqSetsData=[];
+  focusYear=''; focusSem=''; finalizedMap={};
   document.getElementById('evalOverlay').classList.add('open');
   switchEvalTab('prospectus');
 
@@ -1154,7 +1288,6 @@ function openEval(m) {
   document.getElementById('tab-advisement-body').innerHTML=
     `<div class="empty-state"><div class="spinner"></div></div>`;
 
-  // Fetch eval data + prereq sets simultaneously
   const fd1=new FormData(); fd1.append('action','get_student_evaluation'); fd1.append('student_id',m.id); fd1.append('academic_year',currentAY);
   const fd2=new FormData(); fd2.append('action','get_prereq_sets');
 
@@ -1173,38 +1306,412 @@ function openEval(m) {
   });
 }
 
-function closeEval() { document.getElementById('evalOverlay').classList.remove('open'); }
+function closeEval() {
+  document.getElementById('evalOverlay').classList.remove('open');
+  focusYear=''; focusSem='';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: FOCUS BAR — injects the dark year/sem selector bar
+═══════════════════════════════════════════════════════════ */
+function buildFocusBar() {
+  return `<div class="eval-focus-bar" id="evalFocusBar">
+    <label><i class="fas fa-filter" style="margin-right:5px;opacity:.6;"></i>Focus View</label>
+    <select class="eval-focus-sel" id="focusYearSel" onchange="onFocusChange()">
+      <option value="">— All Years —</option>
+      <option value="1st Year">1st Year</option>
+      <option value="2nd Year">2nd Year</option>
+      <option value="3rd Year">3rd Year</option>
+      <option value="4th Year">4th Year</option>
+      <option value="Bridging">Bridging</option>
+    </select>
+    <select class="eval-focus-sel" id="focusSemSel" onchange="onFocusChange()">
+      <option value="">— All Semesters —</option>
+      <option value="1st Semester">1st Semester</option>
+      <option value="2nd Semester">2nd Semester</option>
+    </select>
+    <div id="focusActiveBadge" style="display:none;" class="focus-active-badge">
+      <i class="fas fa-eye"></i> <span id="focusBadgeText">—</span>
+    </div>
+    <button class="focus-clear-btn" onclick="clearFocus()" id="focusClearBtn" style="display:none;">
+      <i class="fas fa-times"></i> Clear Filter
+    </button>
+    <button class="btn-finalize" id="btnFinalize" disabled onclick="triggerFinalize()" style="display:none;">
+      <i class="fas fa-lock"></i> Finalize Evaluation
+    </button>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: ON FOCUS CHANGE — updates blur/active states
+═══════════════════════════════════════════════════════════ */
+function onFocusChange() {
+  focusYear  = document.getElementById('focusYearSel')?.value  || '';
+  focusSem   = document.getElementById('focusSemSel')?.value   || '';
+  applyFocusVisuals();
+}
+
+function clearFocus() {
+  focusYear = ''; focusSem = '';
+  const ys = document.getElementById('focusYearSel');
+  const ss = document.getElementById('focusSemSel');
+  if(ys) ys.value = '';
+  if(ss) ss.value = '';
+  applyFocusVisuals();
+}
+
+function applyFocusVisuals() {
+  const hasFilter = !!(focusYear || focusSem);
+
+  // Badge & clear button
+  const badge   = document.getElementById('focusActiveBadge');
+  const clearBtn= document.getElementById('focusClearBtn');
+  const badgeT  = document.getElementById('focusBadgeText');
+  if(badge)  badge.style.display  = hasFilter ? 'flex' : 'none';
+  if(clearBtn) clearBtn.style.display = hasFilter ? 'flex' : 'none';
+  if(badgeT) badgeT.textContent = [focusYear, focusSem].filter(Boolean).join(' · ');
+
+  // Year blocks
+  document.querySelectorAll('.pro-year-block[data-year]').forEach(block => {
+    const blockYear = block.dataset.year;
+    const yearMatch = !focusYear || blockYear === focusYear;
+
+    if(!hasFilter) {
+      block.classList.remove('yr-blurred','yr-active');
+    } else if(yearMatch) {
+      block.classList.remove('yr-blurred');
+      block.classList.add('yr-active');
+    } else {
+      block.classList.add('yr-blurred');
+      block.classList.remove('yr-active');
+    }
+
+    // Semester columns within this year block
+    if(yearMatch && focusSem) {
+      block.querySelectorAll('.pro-sem-col').forEach(col => {
+        const colSem = col.dataset.sem || '';
+        if(colSem === focusSem || !focusSem) {
+          col.classList.remove('sem-blurred');
+          col.classList.add('sem-active');
+        } else {
+          col.classList.add('sem-blurred');
+          col.classList.remove('sem-active');
+        }
+      });
+    } else {
+      block.querySelectorAll('.pro-sem-col').forEach(col => {
+        col.classList.remove('sem-blurred','sem-active');
+      });
+    }
+  });
+
+  // Show/hide finalize button
+  const fkey   = `${focusYear}|${focusSem}`;
+  const btnFin = document.getElementById('btnFinalize');
+  if(btnFin) {
+    const isFinalized = finalizedMap[fkey];
+    if(focusYear && focusSem) {
+      btnFin.style.display = 'flex';
+      if(isFinalized) {
+        btnFin.disabled = true;
+        btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
+        btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
+      } else {
+        btnFin.disabled = false;
+        btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
+        btnFin.style.background = '';
+      }
+    } else {
+      btnFin.style.display = 'none';
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: TRIGGER FINALIZE — validation, then lock & modal
+═══════════════════════════════════════════════════════════ */
+function triggerFinalize() {
+  if(!focusYear || !focusSem) {
+    toast('Please select both a Year and Semester to finalize.','error'); return;
+  }
+  const fkey = `${focusYear}|${focusSem}`;
+  if(finalizedMap[fkey]) { toast('This period is already finalized.','info'); return; }
+
+  // Gather subjects for the selected year+sem
+  const targeted = loadedSubjects.filter(s =>
+    s.year_level === focusYear &&
+    (s.semester||'').includes(focusSem === '1st Semester' ? '1st' : '2nd')
+  );
+
+  if(!targeted.length) { toast('No subjects found for this year/semester.','error'); return; }
+
+  // Check all have grades
+  const missing = targeted.filter(s => gradeMap[s.id] == null);
+  if(missing.length) {
+    toast(`${missing.length} subject(s) still have no grade. Please enter all grades before finalizing.`,'error',4000);
+    // Flash the missing inputs
+    missing.forEach(s => {
+      const inp = document.getElementById('g-'+s.id);
+      if(inp) { inp.style.animation='none'; inp.style.borderColor='var(--red)'; inp.style.boxShadow='0 0 0 3px rgba(220,38,38,.3)'; setTimeout(()=>{inp.style.borderColor='';inp.style.boxShadow='';},2800); }
+    });
+    return;
+  }
+
+  if(!confirm(`Finalize evaluation for ${focusYear} — ${focusSem}?\n\nThis will lock the grades for this period and cannot be undone.`)) return;
+
+  // Lock inputs for this period
+  targeted.forEach(s => {
+    const inp  = document.getElementById('g-'+s.id);
+    const sbtn = document.getElementById('sbtn-'+s.id);
+    if(inp)  { inp.disabled = true; inp.style.cursor='not-allowed'; }
+    if(sbtn) { sbtn.disabled = true; }
+  });
+
+  finalizedMap[fkey] = true;
+  applyFocusVisuals();
+
+  // Show finalized badge on both semester columns
+  document.querySelectorAll('.pro-year-block[data-year="'+focusYear+'"]').forEach(block => {
+    block.querySelectorAll('.pro-sem-col').forEach(col => {
+      if(col.dataset.sem === focusSem) {
+        let badge = col.querySelector('.sem-finalized-badge');
+        if(!badge) {
+          badge = document.createElement('div');
+          badge.className = 'sem-finalized-badge';
+          badge.innerHTML = `<i class="fas fa-check-circle"></i> Finalized`;
+          col.insertBefore(badge, col.firstChild);
+        }
+      }
+    });
+  });
+
+  toast(`${focusYear} — ${focusSem} finalized successfully!`,'success',3000);
+
+  // Short delay then show result modal
+  setTimeout(() => showResultModal(targeted, focusYear, focusSem), 700);
+
+  // Persist via server if possible
+  const fd = new FormData();
+  fd.append('action','finalize_session');
+  fd.append('student_id', currentStudent.id);
+  fd.append('major_id', currentStudent.major_id||0);
+  fd.append('academic_year', currentAY);
+  fd.append('year_level', focusYear);
+  fd.append('semester', focusSem);
+  fd.append('notes', document.getElementById('sessionNotes')?.value||'');
+  fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: SHOW RESULT MODAL
+═══════════════════════════════════════════════════════════ */
+function showResultModal(subjects, yearLabel, semLabel) {
+  // Compute semester GWA and pass/fail analysis
+  let tp=0, tu=0, up=0, fp=0, cp=0, np=0;
+  const passedSubs=[], failedSubs=[], condSubs=[], noGradeSubs=[];
+
+  subjects.forEach(s => {
+    const raw = gradeMap[s.id];
+    if(raw == null) { np++; noGradeSubs.push(s); return; }
+    const rounded = roundGrade(parseFloat(raw));
+    const units = parseFloat(s.units)||0;
+    const status = gradeStatus(rounded);
+    tp += rounded * units;
+    tu += units;
+    if(status==='passed')      { up+=units; passedSubs.push({...s, grade:rounded}); }
+    else if(status==='failed') { fp+=units; failedSubs.push({...s, grade:rounded}); }
+    else                       { cp+=units; condSubs.push({...s, grade:rounded}); }
+  });
+
+  const semGWA = tu > 0 ? (tp/tu) : null;
+  const hasFailed = failedSubs.length > 0 || condSubs.length > 0;
+  const allPassed = failedSubs.length === 0 && condSubs.length === 0 && noGradeSubs.length === 0;
+
+  let verdict, headerClass, iconClass, iconContent, verdictSub;
+
+  if(allPassed) {
+    verdict='Student PASSED';
+    headerClass='rm-pass';
+    iconClass='pass-icon';
+    iconContent='🎓';
+    verdictSub=`All ${passedSubs.length} subjects passed with a semester GWA of <strong>${semGWA?.toFixed(2)||'—'}</strong>. The student is eligible for promotion.`;
+  } else if(condSubs.length > 0 && failedSubs.length === 0) {
+    verdict='CONDITIONAL Status';
+    headerClass='rm-cond';
+    iconClass='cond-icon';
+    iconContent='⚠️';
+    verdictSub=`${condSubs.length} subject(s) received a conditional grade (4.00) requiring a removal examination.`;
+  } else {
+    verdict='Student DID NOT PASS';
+    headerClass='rm-fail';
+    iconClass='fail-icon';
+    iconContent='📋';
+    verdictSub=`${failedSubs.length} subject(s) failed. The student must retake failed subjects.`;
+  }
+
+  // Next semester subjects for promotion
+  const {yr:cYr,sem:cSem} = parseStudentStanding(`${yearLabel} - ${semLabel}`);
+  const {yr:nYr,sem:nSem} = getNextSemester(cYr, cSem);
+  const nextYearLabel = YEAR_LABELS[nYr-1] || '—';
+  const nextSemLabel  = nSem===1 ? '1st Semester' : '2nd Semester';
+
+  const nextSemSubs = loadedSubjects.filter(s => {
+    if(!allPassed) return false;
+    const sYr  = YEAR_NUM[s.year_level]||0;
+    const sSem = SEM_NUM[s.semester]||0;
+    return sYr===nYr && sSem===nSem;
+  });
+
+  // Grade breakdown chips
+  const breakdownHtml = `<div class="rm-grade-breakdown">
+    <span class="rm-grade-chip rgc-pass"><i class="fas fa-check"></i> ${passedSubs.length} Passed</span>
+    ${failedSubs.length?`<span class="rm-grade-chip rgc-fail"><i class="fas fa-times"></i> ${failedSubs.length} Failed</span>`:''}
+    ${condSubs.length?`<span class="rm-grade-chip rgc-cond"><i class="fas fa-exclamation"></i> ${condSubs.length} Conditional</span>`:''}
+    ${noGradeSubs.length?`<span class="rm-grade-chip rgc-none"><i class="fas fa-minus"></i> ${noGradeSubs.length} No Grade</span>`:''}
+  </div>`;
+
+  let bodyHtml = '';
+
+  if(allPassed && nextSemSubs.length) {
+    bodyHtml += `<div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
+      <i class="fas fa-calendar-alt" style="color:var(--green);margin-right:7px;"></i>
+      Eligible subjects for <strong>${nextSemLabel} — ${nextYearLabel}</strong>
+    </div>
+    <div class="rm-subject-list">
+      ${nextSemSubs.map(s=>`<div class="rm-sub-card">
+        <div class="rm-sub-code">${esc(s.subject_code)}</div>
+        <div class="rm-sub-name">${esc(s.subject_name)}</div>
+        <div class="rm-sub-units"><i class="fas fa-book" style="font-size:8px;margin-right:3px;"></i>${parseFloat(s.units)||0} units</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  if(failedSubs.length) {
+    bodyHtml += `<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px;margin-top:${allPassed?'16px':'0'}px;">
+      <i class="fas fa-redo" style="margin-right:7px;"></i>Subjects to Retake
+    </div>
+    <div class="rm-subject-list">
+      ${failedSubs.map(s=>`<div class="rm-retake-card">
+        <div class="rm-sub-code">${esc(s.subject_code)}</div>
+        <div class="rm-sub-name">${esc(s.subject_name)}</div>
+        <div style="font-size:9px;font-weight:700;color:var(--red);margin-top:3px;">Grade: ${s.grade.toFixed(2)} — Failed</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  if(condSubs.length) {
+    bodyHtml += `<div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px;margin-top:14px;">
+      <i class="fas fa-exclamation-triangle" style="margin-right:7px;"></i>Conditional — Removal Exam Required
+    </div>
+    <div class="rm-subject-list">
+      ${condSubs.map(s=>`<div class="rm-sub-card" style="border-left:4px solid var(--amber);">
+        <div class="rm-sub-code">${esc(s.subject_code)}</div>
+        <div class="rm-sub-name">${esc(s.subject_name)}</div>
+        <div style="font-size:9px;font-weight:700;color:var(--amber);margin-top:3px;">Grade: ${s.grade.toFixed(2)} — Conditional (4.00)</div>
+      </div>`).join('')}
+    </div>`;
+  }
+
+  // Action buttons
+  let actionsHtml = `<div class="rm-actions">`;
+  if(allPassed) {
+    actionsHtml += `<button class="btn-promote" onclick="promoteStudent('${yearLabel}','${semLabel}','${nextYearLabel}','${nextSemLabel}')">
+      <i class="fas fa-arrow-up"></i> Promote to ${nextSemLabel} — ${nextYearLabel}
+    </button>`;
+  } else {
+    actionsHtml += `<div style="flex:1;padding:12px 16px;background:var(--red-l);border-radius:10px;border:1px solid var(--red-b);">
+      <div style="font-size:12px;font-weight:700;color:#991b1b;margin-bottom:4px;"><i class="fas fa-info-circle"></i> Promotion Not Available</div>
+      <div style="font-size:11px;color:#b91c1c;">Student must pass all subjects or complete removal exams before promotion.</div>
+    </div>`;
+  }
+  actionsHtml += `<button class="btn-modal-close" onclick="closeResultModal()"><i class="fas fa-times"></i> Close</button></div>`;
+
+  const modalHtml = `
+    <div class="rm-header ${headerClass}">
+      <div class="rm-icon ${iconClass}">${iconContent}</div>
+      <div class="rm-header-text">
+        <div class="rm-semester-tag">${esc(yearLabel)} · ${esc(semLabel)} · A.Y. ${esc(currentAY)}</div>
+        <div class="rm-verdict">${verdict}</div>
+        <div class="rm-verdict-sub">${verdictSub}</div>
+        ${semGWA!=null?`<div class="rm-gwa-chip"><i class="fas fa-chart-line"></i> Semester GWA: ${semGWA.toFixed(2)}</div>`:''}
+      </div>
+    </div>
+    <div class="rm-body">
+      ${breakdownHtml}
+      ${bodyHtml}
+      ${actionsHtml}
+    </div>`;
+
+  document.getElementById('resultModalContent').innerHTML = modalHtml;
+  document.getElementById('resultModal').classList.add('open');
+}
+
+function closeResultModal() {
+  document.getElementById('resultModal').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ★ NEW: PROMOTE STUDENT
+═══════════════════════════════════════════════════════════ */
+function promoteStudent(fromYear, fromSem, toYear, toSem) {
+  const fd = new FormData();
+  fd.append('action','promote_student');
+  fd.append('student_id', currentStudent.id);
+  fd.append('from_year', fromYear);
+  fd.append('from_sem', fromSem);
+  fd.append('to_year', toYear);
+  fd.append('to_sem', toSem);
+  fd.append('academic_year', currentAY);
+
+  // Optimistic update — show success immediately while server saves
+  const content = document.getElementById('resultModalContent');
+  content.innerHTML = `<div class="promote-success">
+    <i class="fas fa-check-circle"></i>
+    <h3>Student Promoted!</h3>
+    <p>
+      <strong>${esc(currentStudent.first_name)} ${esc(currentStudent.last_name)}</strong>
+      has been promoted to <strong>${esc(toSem)} — ${esc(toYear)}</strong>.
+    </p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted);">The student's academic record has been updated.</p>
+    <div style="margin-top:20px;">
+      <button class="btn btn-gold" onclick="closeResultModal();loadMentees();">
+        <i class="fas fa-check"></i> Done
+      </button>
+    </div>
+  </div>`;
+
+  // Update local data
+  if(currentStudent) currentStudent.year_level = `${toYear} - ${toSem}`;
+  document.getElementById('evalSub').textContent =
+    `${currentStudent.major_name||'No major'} · ${toYear} — ${toSem} · A.Y. ${currentAY}`;
+
+  toast(`Promoted to ${toSem} — ${toYear}!`, 'success', 3500);
+
+  // Server persist
+  fetch(EVAL_PROC, {method:'POST', body:fd}).catch(()=>{});
+}
 
 /* ═══════════════════════════════════════════════════════════
    RENDER PROSPECTUS (mirrors department page structure)
 ═══════════════════════════════════════════════════════════ */
- function renderProspectus(data) {
+function renderProspectus(data) {
   const s=data.student; const subjects=data.subjects||[];
   const gwaData=data.gwa_data||{}; const ay=data.academic_year||currentAY;
   const prereqSetsMap = data.prereq_map || {};
 
   loadedSubjects=subjects;
-
-  // Populate gradeMap (all subjects including bridging)
   subjects.forEach(sub => { if(sub.grade_rounded!=null) gradeMap[sub.id]=parseFloat(sub.grade_rounded); });
 
-  // Get Bridging subjects
   const bridging = subjects.filter(s2 => s2.year_level === 'Bridging');
-
-  // Build prereq unlock map
   const prereqUnlockMap=buildPrereqUnlockMap(subjects,gradeMap,prereqSetsData,s.major_id);
-  
-  // Pass prereqSetsMap to buildGradeTable
   window.currentPrereqSetsMap = prereqSetsMap;
 
   const full=`${s.first_name}${s.middle_name?' '+s.middle_name:''} ${s.last_name}${s.suffix?' '+s.suffix:''}`.trim();
 
-  // Get current semester from student standing (moved before hdrHtml)
   const studentStanding = s.year_level||'1st Year - 1st Semester';
   const semMatch = studentStanding.match(/(\d+)(st|nd|rd|th)\s*Year.*?(\d+)(st|nd|rd|th)\s*Sem/i);
   const currentSem = semMatch ? (semMatch[3]=='1'?'1st':'2nd')+' Semester' : '1st Semester';
 
-  // Header (same as department page)
   const hdrHtml=`<div class="pro-hdr">
     <img src="../../../media/LOGO.jpg" class="pro-logo" alt="School Logo">
     <div class="pro-title-block">
@@ -1225,7 +1732,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     <div class="sip-item"><span class="sip-label">Semester:</span><span class="sip-value">${esc(currentSem)}</span></div>
   </div>`;
 
-  // GWA strip
   const gwaHtml=`<div class="gwa-strip">
     <div class="gwa-main">
       <div class="gwa-val" id="liveGWA">${gwaData.gwa!=null?parseFloat(gwaData.gwa).toFixed(2):'—'}</div>
@@ -1234,22 +1740,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsTaken">${gwaData.total_units||0}</div><div class="gwa-stat-lbl">Units Taken</div></div>
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsPassed">${gwaData.units_passed||0}</div><div class="gwa-stat-lbl">Units Passed</div></div>
     <div class="gwa-stat"><div class="gwa-stat-val" id="liveUnitsFailed" style="color:var(--red);">${(gwaData.total_units||0)-(gwaData.units_passed||0)}</div><div class="gwa-stat-lbl">w/ Issues</div></div>
-    <div style="display:flex;gap:8px;align-items:center;margin-left:auto;">
-      <select id="panelYearLevel" onchange="filterSubjectsByPanel()" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;color:#374151;background:#fff;cursor:pointer;min-width:100px;">
-        <option value="">All Years</option>
-        <option value="1st Year">1st Year</option>
-        <option value="2nd Year">2nd Year</option>
-        <option value="3rd Year">3rd Year</option>
-        <option value="4th Year">4th Year</option>
-        <option value="Bridging">Bridging</option>
-      </select>
-      <select id="panelSemester" onchange="filterSubjectsByPanel()" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:500;color:#374151;background:#fff;cursor:pointer;min-width:100px;">
-        <option value="">All Semesters</option>
-        <option value="1st Semester">1st Semester</option>
-        <option value="2nd Semester">2nd Semester</option>
-      </select>
-      <span id="evalStatus" style="padding:4px 10px;background:#f3f4f6;border-radius:6px;font-size:11px;font-weight:600;color:#6b7280;"></span>
-    </div>
     <div class="gwa-hint">
       Enter grade (1.00–5.00) → click <strong>save</strong><br>
       <span style="background:var(--amber-l);padding:1px 6px;border-radius:4px;font-size:10px;color:#92400e;font-weight:600;">
@@ -1258,7 +1748,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     </div>
   </div>`;
 
-// Build year blocks (same order as department page)
   const byYear={};
   subjects.forEach(sub=>{
     const y=sub.year_level||'1st Year';
@@ -1266,12 +1755,10 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     byYear[y].push(sub);
   });
 
-  // Add bridging units to grandTotal
   const bridgingUnits = (bridging || []).reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
-
   let yearBlocks=''; let grandTotal=bridgingUnits;
+
   YEAR_ORDER.forEach(year=>{
-    // Skip Bridging - shown in separate table at bottom
     if(year==='Bridging') return;
     const all=byYear[year]||[];
     if(!all.length) return;
@@ -1285,17 +1772,18 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
         <span class="pro-year-total">${fmt(t)} units</span>
       </div>
       <div class="pro-sem-row">
-        <div>
+        <div class="pro-sem-col" data-sem="1st Semester">
           <div class="pro-sem-label">${year.toUpperCase()} — First Semester</div>
-         ${buildGradeTable(sem1,s,ay,prereqUnlockMap)}
-      </div>
-      <div>
-        <div class="pro-sem-label">${year.toUpperCase()} — Second Semester</div>
-        ${buildGradeTable(sem2,s,ay,prereqUnlockMap)}
-         </div>
+          ${buildGradeTable(sem1,s,ay,prereqUnlockMap)}
+        </div>
+        <div class="pro-sem-col" data-sem="2nd Semester">
+          <div class="pro-sem-label">${year.toUpperCase()} — Second Semester</div>
+          ${buildGradeTable(sem2,s,ay,prereqUnlockMap)}
+        </div>
       </div>
     </div>`;
-});
+  });
+
   const sigHtml=`<div class="pro-sig-block">
     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-lbl">Student's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-lbl">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
@@ -1306,7 +1794,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     = Locked (prerequisite not yet passed)
   </div>`;
 
-  // Student info strip for screen mode
   const studentInfoHtml = `<div class="student-info-strip">
     <div class="si-item"><span class="si-label">Student</span><span class="si-value">${esc(full)}</span></div>
     <div class="si-item"><span class="si-label">Student ID</span><span class="si-value">${esc(s.student_id||s.student_number||'—')}</span></div>
@@ -1320,10 +1807,9 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
       ${!subjects.length?`<div class="empty-state"><i class="fas fa-book"></i><h3>No subjects configured</h3><p>Set up the prospectus in Department Management first.</p></div>`:''}
       ${studentInfoHtml}
       ${yearBlocks}
-
       <!-- Bridging Subjects -->
       <div class="pro-bridging-block" style="margin-top:20px;">
-        <div class="pro-year-block">
+        <div class="pro-year-block" data-year="Bridging">
           <div class="pro-year-hdr" style="background:linear-gradient(135deg,var(--gold-d),var(--gold-l));">
             <span><i class="fas fa-exchange-alt" style="margin-right:6px;font-size:11px;"></i>Bridging Subjects</span>
             <span class="pro-year-total">${fmt(bridging?bridging.reduce((a,s2)=>a+(parseFloat(s2.units)||0),0):0)} units</span>
@@ -1370,20 +1856,21 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
             </table>
           </div>
         </div>
-
+      </div>
       ${subjects.length?`<div class="pro-grand-total">Grand Total: <strong>${fmt(grandTotal)} units</strong></div>`:''}
       ${sigHtml}
     </div>
   </div>`;
 
-  document.getElementById('tab-prospectus-body').innerHTML=gwaHtml+proHtml;
+  // ★ Focus bar prepended above the GWA strip
+  document.getElementById('tab-prospectus-body').innerHTML = buildFocusBar() + gwaHtml + proHtml;
   buildAdvisement();
 }
 
 /* ═══════════════════════════════════════════════════════════
-   BUILD GRADE TABLE (mirrors department pro-table exactly)
+   BUILD GRADE TABLE
 ═══════════════════════════════════════════════════════════ */
- function buildGradeTable(subjects, student, ay, prereqUnlockMap) {
+function buildGradeTable(subjects, student, ay, prereqUnlockMap) {
   if(!subjects?.length) return `<table class="pro-table">
     <thead><tr>
       <th class="pro-th" style="width:54px;">Grade</th>
@@ -1406,7 +1893,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
     const isLocked=!pi.unlocked;
     total+=parseFloat(sub.units)||0;
 
-    // Build lock tooltip
     let lockDesc='';
     if(isLocked){
       const parts=[];
@@ -1415,7 +1901,6 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
       lockDesc=parts.join(', ');
     }
 
-    // Show prereq set badge if this subject is in a prereq set as a target
     const isPrereqSetTarget=Array.isArray(prereqSetsData)&&prereqSetsData.some(set=>
       set.major_id==currentStudent?.major_id&&parseInt(set.target_subject_id)===parseInt(sub.id)
     );
@@ -1439,19 +1924,17 @@ function closeEval() { document.getElementById('evalOverlay').classList.remove('
         </div>
       </td>
       <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
-      <td class="pro-code">
-        ${esc(sub.subject_code)}
-      </td>
+      <td class="pro-code">${esc(sub.subject_code)}</td>
       <td style="font-size:10px;">${esc(sub.subject_name)}</td>
       <td class="pro-units">${parseFloat(sub.units)||0}</td>
-<td class="pro-prereq-col">
-          ${window.currentPrereqSetsMap && window.currentPrereqSetsMap[sub.id] 
-            ? esc(window.currentPrereqSetsMap[sub.id])
-            : (prereqCode ? esc(prereqCode) : '—')}
-          ${isPrereqSetTarget&&!prereqCode&&!window.currentPrereqSetsMap[sub.id]
-            ?'<span class="prereq-chain-info"><i class="fas fa-sitemap" style="font-size:7px;"></i> Set</span>':''}
-        </td>
-     </tr>`;
+      <td class="pro-prereq-col">
+        ${window.currentPrereqSetsMap && window.currentPrereqSetsMap[sub.id]
+          ? esc(window.currentPrereqSetsMap[sub.id])
+          : (prereqCode ? esc(prereqCode) : '—')}
+        ${isPrereqSetTarget&&!prereqCode&&!window.currentPrereqSetsMap?.[sub.id]
+          ?'<span class="prereq-chain-info"><i class="fas fa-sitemap" style="font-size:7px;"></i> Set</span>':''}
+      </td>
+    </tr>`;
   });
 
   const t=fmt(total);
@@ -1516,7 +1999,6 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
       const rounded=d.grade_rounded; const status=d.status;
       inp.value=parseFloat(rounded).toFixed(2);
       inp.className='grade-inp '+gClass(status); inp.style.boxShadow='';
-      // Also update grade-print span for print view
       const printSpan=inp.nextElementSibling;
       if(printSpan&&printSpan.classList.contains('grade-print')){printSpan.textContent=parseFloat(rounded).toFixed(2);printSpan.style.display='inline-block';}
       let gl=document.getElementById('gl-'+sid);
@@ -1529,7 +2011,7 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
       gradeMap[sid]=parseFloat(rounded);
       refreshLockStates();
       recalcGWA();
-      buildAdvisement(true);  // silent rebuild
+      buildAdvisement(true);
       toast(`Saved: ${d.label||gradeLabel(rounded)} (${parseFloat(rounded).toFixed(2)})`,'success');
     } else {
       btn.innerHTML='<i class="fas fa-save"></i>';
@@ -1539,9 +2021,9 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   REFRESH LOCK STATES after each grade save
+   REFRESH LOCK STATES
 ═══════════════════════════════════════════════════════════ */
- function refreshLockStates() {
+function refreshLockStates() {
   if(!loadedSubjects.length) return;
   const prereqUnlockMap=buildPrereqUnlockMap(loadedSubjects,gradeMap,prereqSetsData,currentStudent?.major_id);
   loadedSubjects.forEach(sub=>{
@@ -1550,7 +2032,14 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
     const inp=document.getElementById('g-'+sub.id);
     const sbtn=document.getElementById('sbtn-'+sub.id);
     const lockEl=row.querySelector('.lock-badge');
-    if(pi.unlocked){
+
+    // Respect finalized state — don't re-enable finalized inputs
+    const subYear = sub.year_level || '';
+    const subSem  = sub.semester   || '';
+    const fkey = `${subYear}|${subSem.includes('1st')?'1st Semester':'2nd Semester'}`;
+    const isFinalized = finalizedMap[fkey];
+
+    if(pi.unlocked && !isFinalized){
       row.classList.remove('row-locked');
       if(inp){inp.disabled=false;inp.title='1.00 to 5.00';}
       if(sbtn){sbtn.disabled=false;}
@@ -1565,7 +2054,7 @@ function saveGrade(sid,studentId,majorId,sem,year,ay) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RECALCULATE GWA (live, client-side)
+   RECALCULATE GWA (live)
 ═══════════════════════════════════════════════════════════ */
 function recalcGWA() {
   let tp=0,tu=0,up=0;
@@ -1588,8 +2077,6 @@ function recalcGWA() {
 
 /* ═══════════════════════════════════════════════════════════
    BUILD ADVISEMENT
-   Year-level-aware: advises based on NEXT semester from
-   the student's current standing.
 ═══════════════════════════════════════════════════════════ */
 function buildAdvisement(silent=false) {
   if(!currentStudent) return;
@@ -1609,7 +2096,7 @@ function buildAdvisement(silent=false) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   RENDER ADVISEMENT — year-level-aware with next sem logic
+   RENDER ADVISEMENT
 ═══════════════════════════════════════════════════════════ */
 function renderAdvisement(d) {
   const adv=d.advisement||{};
@@ -1626,20 +2113,16 @@ function renderAdvisement(d) {
   const blocked=adv.blocked||[];
   const done   =adv.completed||[];
 
-  // Filter recommended to only show next semester's subjects
   const nextRec=rec.filter(s2=>{
     const sYr=YEAR_NUM[s2.year_level]||1;
     const sSem=SEM_NUM[s2.semester]||1;
     return sYr===nYr&&sSem===nSem;
   });
-  // Subjects that are recommended but not for next sem
   const laterRec=rec.filter(s2=>!nextRec.includes(s2));
 
-  // Update advisement badge
   const badge=document.getElementById('advBadge');
   if(badge){ badge.style.display=nextRec.length?'inline-flex':'none'; badge.textContent=nextRec.length; }
 
-  // ── Summary strip ──
   let html=`<div class="summary-strip">
     <div class="sum-card sum-done"><div class="sum-num">${done.length}</div><div class="sum-lbl">Completed</div></div>
     <div class="sum-card sum-rec"><div class="sum-num">${nextRec.length}</div><div class="sum-lbl">Enroll Next</div></div>
@@ -1648,7 +2131,6 @@ function renderAdvisement(d) {
     <div class="sum-card sum-block"><div class="sum-num">${blocked.length}</div><div class="sum-lbl">Blocked</div></div>
   </div>`;
 
-  // ── Context banner ──
   html+=`<div class="context-banner">
     <div class="context-title"><i class="fas fa-calendar-alt" style="margin-right:6px;"></i>
       Enrollment Recommendation for <strong>${nextSemLabel} — ${nextYearLabel} (${nextAY})</strong>
@@ -1659,7 +2141,6 @@ function renderAdvisement(d) {
     </div>
   </div>`;
 
-  // ── NEXT SEMESTER — Can Enroll ──
   if(nextRec.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-green"><i class="fas fa-check-circle"></i> Recommended for ${nextSemLabel} — ${nextYearLabel} <span style="opacity:.7;font-size:11px;">(${nextRec.length})</span></div>
@@ -1678,7 +2159,6 @@ function renderAdvisement(d) {
     html+=`</div></div>`;
   }
 
-  // ── Must Retake ──
   if(retake.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-red"><i class="fas fa-redo"></i> Must Retake — Failed <span style="opacity:.7;font-size:11px;">(${retake.length})</span></div>
@@ -1695,7 +2175,6 @@ function renderAdvisement(d) {
     html+=`</div></div>`;
   }
 
-  // ── Conditional ──
   if(condl.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-amber"><i class="fas fa-exclamation-triangle"></i> Conditional — Removal Exam Required <span style="opacity:.7;font-size:11px;">(${condl.length})</span></div>
@@ -1712,7 +2191,6 @@ function renderAdvisement(d) {
     html+=`</div></div>`;
   }
 
-  // ── Blocked with full prereq chain ──
   if(blocked.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-slate"><i class="fas fa-lock"></i> Blocked — Prerequisite Not Yet Passed <span style="opacity:.7;font-size:11px;">(${blocked.length})</span></div>
@@ -1721,7 +2199,6 @@ function renderAdvisement(d) {
       const prereqCode=(sub.prerequisite||'').trim().toUpperCase();
       const prereqSubj=(loadedSubjects||[]).find(ls=>ls.subject_code.trim().toUpperCase()===prereqCode);
       const prereqGrade=prereqSubj&&gradeMap[prereqSubj.id]!=null?gradeMap[prereqSubj.id]:null;
-      // Also check prereq sets
       const setData=Array.isArray(prereqSetsData)?prereqSetsData.filter(set=>
         set.major_id==currentStudent?.major_id&&parseInt(set.target_subject_id)===parseInt(sub.id)
       ):[];
@@ -1764,7 +2241,6 @@ function renderAdvisement(d) {
     html+=`</div></div>`;
   }
 
-  // ── Later recommended (not next sem) ──
   if(laterRec.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-blue"><i class="fas fa-calendar-plus"></i> Available in Future Semesters <span style="opacity:.7;font-size:11px;">(${laterRec.length})</span></div>
@@ -1780,7 +2256,6 @@ function renderAdvisement(d) {
     html+=`</div></div>`;
   }
 
-  // ── Completed ──
   if(done.length){
     html+=`<div class="adv-section">
       <div class="adv-sec-title ast-blue"><i class="fas fa-graduation-cap"></i> Completed Subjects <span style="opacity:.7;font-size:11px;">(${done.length})</span></div>
@@ -1804,7 +2279,7 @@ function renderAdvisement(d) {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   PRINT — LONG BOND PAPER, SINGLE PAGE
+   PRINT
 ═══════════════════════════════════════════════════════════ */
 function printProspectus() {
   const el=document.getElementById('liveProspectus');
@@ -1813,7 +2288,6 @@ function printProspectus() {
   const pt=document.getElementById('printTarget');
   pt.innerHTML=el.outerHTML;
 
-  // Prepare for print: show grade-print span, hide inputs
   pt.querySelectorAll('.grade-inp').forEach(inp=>{
     const span=inp.nextElementSibling;
     if(span&&span.classList.contains('grade-print')) span.style.display='inline-block';
@@ -1825,110 +2299,31 @@ function printProspectus() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   FINALIZE
+   FINALIZE EVAL (from Notes tab — finalize whole session)
 ═══════════════════════════════════════════════════════════ */
 function finalizeEval() {
   if(!currentStudent) return;
-  if(!confirm('Finalize this evaluation session? A permanent session record will be created.')) return;
-  const notes=document.getElementById('sessionNotes')?.value||'';
-  const fd=new FormData();
-  fd.append('action','finalize_session'); fd.append('student_id',currentStudent.id);
-  fd.append('major_id',currentStudent.major_id||0);
-  fd.append('academic_year',currentAY); fd.append('notes',notes);
-  fetch(EVAL_PROC,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
-    toast(d.message||'Finalized!',d.success?'success':'error');
-    if(d.success&&d.gwa?.gwa){ const el=document.getElementById('liveGWA'); if(el) el.textContent=parseFloat(d.gwa.gwa).toFixed(2); }
-  });
+  if(!focusYear || !focusSem) {
+    toast('Switch to the Prospectus tab, select a Year and Semester, then use the Finalize button.','info',4500);
+    switchEvalTab('prospectus');
+    return;
+  }
+  triggerFinalize();
 }
 
 /* ═══════════════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════════════ */
 function fmt(v){ return v%1===0?v:parseFloat(v).toFixed(1); }
-
-function parseStudentStanding(str) {
-  let yr=1,sem=1;
-  const m=str.match(/(\d+)(st|nd|rd|th)?\s*Year/i);
-  if(m) yr=parseInt(m[1]);
-  if(/2nd\s*Sem/i.test(str)) sem=2;
-  else if(/1st\s*Sem/i.test(str)) sem=1;
-  return {yr,sem};
-}
-function getNextSemester(yr,sem) {
-  if(sem===1) return {yr,sem:2};
-  return {yr:yr+1,sem:1};
-}
 function esc(str){
   if(!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function filterSubjectsByPanel() {
-  const yrSelect = document.getElementById('panelYearLevel');
-  const semSelect = document.getElementById('panelSemester');
-  const statusEl = document.getElementById('evalStatus');
-  const selectedYear = yrSelect ? yrSelect.value : '';
-  const selectedSem = semSelect ? semSelect.value : '';
-  
-  document.querySelectorAll('.pro-year-block').forEach(block => {
-    const blockYear = block.dataset.year || '';
-    const matchesYear = selectedYear === '' || blockYear === selectedYear;
-    block.style.display = matchesYear ? '' : 'none';
-  });
-  
-  let totalSubjects = 0;
-  let gradedSubjects = 0;
-  
-  if (selectedYear || selectedSem) {
-    document.querySelectorAll('.pro-year-block').forEach(block => {
-      const blockYear = block.dataset.year || '';
-      const matchesYear = selectedYear === '' || blockYear === selectedYear;
-      if (matchesYear) {
-        block.querySelectorAll('.pro-subject-row, .pro-row').forEach(row => {
-          const gradeInput = row.querySelector('input[type="number"]') || row.querySelector('.grade-input');
-          const gradeSelect = row.querySelector('select');
-          const isLocked = row.querySelector('.fa-lock') || row.classList.contains('locked-row');
-          let hasGrade = false;
-          if (gradeInput && gradeInput.value) hasGrade = true;
-          if (gradeSelect && gradeSelect.value && gradeSelect.value !== '') hasGrade = true;
-          
-          const semText = block.textContent || '';
-          const isFirstSem = semText.includes('First Semester');
-          const isSecondSem = semText.includes('Second Semester');
-          
-          let countThis = true;
-          if (selectedSem === '1st Semester' && !isFirstSem) countThis = false;
-          if (selectedSem === '2nd Semester' && !isSecondSem) countThis = false;
-          
-          if (countThis && !isLocked) {
-            totalSubjects++;
-            if (hasGrade) gradedSubjects++;
-          }
-        });
-      }
-    });
-    
-    if (totalSubjects > 0) {
-      const pct = Math.round((gradedSubjects / totalSubjects) * 100);
-      if (pct === 100) {
-        statusEl.innerHTML = '<i class="fas fa-check-circle" style="color:#10b981;"></i> Fully Evaluated';
-        statusEl.style.background = '#d1fae5';
-        statusEl.style.color = '#065f46';
-      } else if (pct > 0) {
-        statusEl.innerHTML = '<i class="fas fa-spinner" style="color:#f59e0b;"></i> ' + gradedSubjects + '/' + totalSubjects + ' (' + pct + '%)';
-        statusEl.style.background = '#fef3c7';
-        statusEl.style.color = '#92400e';
-      } else {
-        statusEl.innerHTML = '<i class="fas fa-clock" style="color:#6b7280;"></i> Not Started';
-        statusEl.style.background = '#f3f4f6';
-        statusEl.style.color = '#6b7280';
-      }
-    } else {
-      statusEl.innerHTML = '';
-    }
-  } else {
-    statusEl.innerHTML = '';
-  }
-}
+
+// Close modal on backdrop click
+document.getElementById('resultModal').addEventListener('click', function(e) {
+  if(e.target === this) closeResultModal();
+});
 </script>
 
 <?php if($show_role_modal): ?>
