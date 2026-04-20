@@ -808,7 +808,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                         <i class="fas fa-layer-group"></i> All <span class="tab-count" id="cnt-all">(<?php echo count($students); ?>)</span>
                     </button>
                     <?php for ($y = 1; $y <= 4; $y++): 
-                        $cnt = count(array_filter($students, fn($s) => preg_match('/'.$y.'/', $s['year_level']??'')));
+                        $cnt = count(array_filter($students, fn($s) => isset($s['year_level']) && preg_match('/^'.$y.'(st|nd|rd|th)\s*Year/i', $s['year_level'])));
                     ?>
                     <button class="year-tab" data-year="<?php echo $y; ?>" onclick="filterYear('<?php echo $y; ?>')">
                         <i class="fas fa-graduation-cap"></i> Year <?php echo $y; ?> <span class="tab-count" id="cnt-<?php echo $y; ?>">(<?php echo $cnt; ?>)</span>
@@ -834,7 +834,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                         $fullName = getFullName($s);
                         $initials = getInitials($s);
                         $gradient = getGradient($s);
-                        preg_match('/(\d+)/', $s['year_level']??'', $matches);
+                        preg_match('/^(\d+)(st|nd|rd|th)\s*Year/i', $s['year_level']??'', $matches);
                         $yearNum = $matches[1] ?? '';
                     ?>
                     <div class="s-card"
@@ -895,7 +895,7 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                             $fullName = getFullName($s);
                             $initials = getInitials($s);
                             $gradient = getGradient($s);
-                            preg_match('/(\d+)/', $s['year_level']??'', $matches);
+                            preg_match('/^(\d+)(st|nd|rd|th)\s*Year/i', $s['year_level']??'', $matches);
                             $yearNum = $matches[1] ?? '';
                         ?>
                         <tr class="stu-row"

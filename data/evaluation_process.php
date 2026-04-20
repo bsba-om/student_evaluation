@@ -761,7 +761,39 @@ if ($action === 'finalize_session') {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  FALLBACK
+//  ACTION: promote_student
+//  Updates the student's year_level when promoted to next year/semester
 // ═══════════════════════════════════════════════════════════════════════════
+
+if ($action === 'promote_student') {
+    $student_id    = intval($_POST['student_id']    ?? 0);
+    $to_year     = trim($_POST['to_year']     ?? '');
+    $to_sem     = trim($_POST['to_sem']     ?? '');
+
+    if (!$student_id || !$to_year || !$to_sem) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+
+    try {
+        // Update student's year_level in the database
+        $new_year_level = "{$to_year} - {$to_sem}";
+        $stmt = $pdo->prepare("UPDATE students SET year_level = ?, updated_at = NOW() WHERE id = ?");
+        $stmt->execute([$new_year_level, $student_id]);
+
+        echo json_encode([
+            'success'     => true,
+            'message'     => 'Student promoted to ' . htmlspecialchars($new_year_level),
+            'year_level'   => $new_year_level,
+        ]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FALLBACK
+// ═══════════════════════════════════════════════════════════════════
 
 echo json_encode(['success' => false, 'message' => 'Unknown action: ' . htmlspecialchars($action)]);

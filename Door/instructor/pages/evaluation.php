@@ -1231,18 +1231,28 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
   fd.append('to_year',toYear); fd.append('to_sem',toSem);
   fd.append('academic_year',currentAY);
 
-  document.getElementById('resultModalContent').innerHTML = `<div class="promote-success">
-    <i class="fas fa-check-circle"></i>
-    <h3>Student Promoted!</h3>
-    <p><strong>${esc(currentStudent.first_name)} ${esc(currentStudent.last_name)}</strong> has been promoted to <strong>${esc(toSem)} — ${esc(toYear)}</strong>.</p>
-    <p style="margin-top:8px;font-size:12px;color:var(--muted);">The student's academic record has been updated.</p>
-    <div style="margin-top:20px;"><button class="btn btn-gold" onclick="closeResultModal();loadMentees();"><i class="fas fa-check"></i> Done</button></div>
-  </div>`;
-
-  if(currentStudent) currentStudent.year_level = `${toYear} - ${toSem}`;
-  document.getElementById('evalSub').textContent = `${currentStudent.major_name||'No major'} · ${toYear} — ${toSem} · A.Y. ${currentAY}`;
-  toast(`Promoted to ${toSem} — ${toYear}!`,'success',3500);
-  fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
+  fetch(EVAL_PROC,{method:'POST',body:fd})
+    .then(res => res.json())
+    .then(data => {
+      if(data.success) {
+        if(currentStudent) currentStudent.year_level = `${toYear} - ${toSem}`;
+        document.getElementById('evalSub').textContent = `${currentStudent.major_name||'No major'} · ${toYear} — ${toSem} · A.Y. ${currentAY}`;
+        document.getElementById('resultModalContent').innerHTML = `<div class="promote-success">
+          <i class="fas fa-check-circle"></i>
+          <h3>Student Promoted!</h3>
+          <p><strong>${esc(currentStudent.first_name)} ${esc(currentStudent.last_name)}</strong> has been promoted to <strong>${esc(toSem)} — ${esc(toYear)}</strong>.</p>
+          <p style="margin-top:8px;font-size:12px;color:var(--muted);">The student's academic record has been updated.</p>
+          <div style="margin-top:20px;"><button class="btn btn-gold" onclick="closeResultModal();loadMentees();"><i class="fas fa-check"></i> Done</button></div>
+        </div>`;
+        toast(`Promoted to ${toSem} — ${toYear}!`,'success',3500);
+      } else {
+        toast(data.message || 'Failed to promote student','error');
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      toast('Error promoting student','error');
+    });
 }
 
 /* ═══════════════════════════════════════════════════════════
