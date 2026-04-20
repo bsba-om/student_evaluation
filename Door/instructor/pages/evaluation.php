@@ -1414,9 +1414,18 @@ function renderProspectus(data) {
   const s = data.student; const subjects = data.subjects||[];
   const gwaData = data.gwa_data||{}; const ay = data.academic_year||currentAY;
   const prereqSetsMap = data.prereq_map||{};
+  const finalizedSessions = data.finalized_sessions||{};
 
   loadedSubjects = subjects;
   subjects.forEach(sub => { if(sub.grade_rounded != null) gradeMap[sub.id] = parseFloat(sub.grade_rounded); });
+
+  // Populate finalizedMap from backend data
+  finalizedMap = {};
+  Object.keys(finalizedSessions).forEach(key => {
+    const [year, sem] = key.split('|');
+    const fkey = `${year}|${sem}`;
+    finalizedMap[fkey] = true;
+  });
 
   const bridging = subjects.filter(s2 => s2.year_level === 'Bridging');
   const prereqUnlockMap = buildPrereqUnlockMap(subjects, gradeMap, prereqSetsData, s.major_id);

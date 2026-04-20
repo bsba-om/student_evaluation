@@ -489,15 +489,32 @@ if ($action === 'get_student_evaluation') {
             }
         } catch (PDOException $e) {}
 
+        // Fetch finalized sessions
+        $finalizedSessions = [];
+        try {
+            $stmtFS = $pdo->prepare("
+                SELECT id, year_level, semester, academic_year, session_status, gwa
+                FROM evaluation_sessions
+                WHERE student_id = ? AND session_status = 'finalized'
+                ORDER BY academic_year DESC, FIELD(semester,'1st Semester','2nd Semester'), year_level
+            ");
+            $stmtFS->execute([$student_id]);
+            foreach ($stmtFS->fetchAll(PDO::FETCH_ASSOC) as $fs) {
+                $key = $fs['year_level'] . '|' . $fs['semester'];
+                $finalizedSessions[$key] = $fs;
+            }
+        } catch (PDOException $e) {}
+
         echo json_encode([
-            'success'       => true,
-            'student'       => $student,
-            'subjects'      => $merged,         // sorted exactly as department page
-            'gwa_data'      => $gwaData,
-            'prev_gwa_data' => $prevGwaData,
-            'academic_year' => $academic_year,
-            'prereq_map'    => $prereqMap,
-            'ph_settings'   => load_ph_settings($pdo),
+            'success'            => true,
+            'student'          => $student,
+            'subjects'         => $merged,
+            'gwa_data'         => $gwaData,
+            'prev_gwa_data'   => $prevGwaData,
+            'academic_year'   => $academic_year,
+            'prereq_map'      => $prereqMap,
+            'ph_settings'     => load_ph_settings($pdo),
+            'finalized_sessions' => $finalizedSessions,
         ]);
 
     } catch (PDOException $e) {
@@ -814,25 +831,26 @@ if ($action === 'finalize_session') {
     $student_id    = intval($_POST['student_id']    ?? 0);
     $major_id      = intval($_POST['major_id']      ?? 0);
     $academic_year = $_POST['academic_year']        ?? '2025-2026';
+    $year_level    = $_POST['year_level']          ?? '1st Year';
     $semester      = $_POST['semester']             ?? '1st Semester';
     $notes         = trim($_POST['notes']           ?? '');
 
     try {
-        // Compute GWA from all saved grades
+        // Compute GWA from grades for this specific year_level and semester
         $stmt = $pdo->prepare("
             SELECT sg.grade_rounded, s.units
             FROM student_grades sg
             JOIN subjects s ON sg.subject_id = s.id
-            WHERE sg.student_id = ? AND sg.grade_rounded IS NOT NULL
+            WHERE sg.student_id = ? AND sg.year_level = ? AND sg.semester = ? AND sg.grade_rounded IS NOT NULL
         ");
-        $stmt->execute([$student_id]);
+        $stmt->execute([$student_id, $year_level, $semester]);
         $gwaData = compute_gwa($stmt->fetchAll(PDO::FETCH_ASSOC));
 
         $stmt2 = $pdo->prepare("
             INSERT INTO evaluation_sessions
-                (instructor_id, student_id, major_id, academic_year, semester,
+                (instructor_id, student_id, major_id, academic_year, year_level, semester,
                  session_status, gwa, total_units_taken, total_units_passed, notes)
-            VALUES (?,?,?,?,?,'finalized',?,?,?,?)
+            VALUES (?,?,?,?,?,?,'finalized',?,?,?,?)
             ON DUPLICATE KEY UPDATE
                 session_status    = 'finalized',
                 gwa               = VALUES(gwa),
@@ -842,7 +860,7 @@ if ($action === 'finalize_session') {
                 updated_at        = NOW()
         ");
         $stmt2->execute([
-            $instructor_id, $student_id, $major_id, $academic_year, $semester,
+            $instructor_id, $student_id, $major_id, $academic_year, $year_level, $semester,
             $gwaData['gwa'], $gwaData['total_units'], $gwaData['units_passed'], $notes
         ]);
 
@@ -883,6 +901,35 @@ if ($action === 'promote_student') {
             'message'     => 'Student promoted to ' . htmlspecialchars($new_year_level),
             'year_level'   => $new_year_level,
         ]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  ACTION: verify_password
+//  Verifies instructor password for editing finalized grades
+// ═══════════════════════════════════════════════════════════════════
+
+if ($action === 'verify_password') {
+    $password = trim($_POST['password'] ?? '');
+    
+    if (!$password) {
+        echo json_encode(['success' => false, 'message' => 'Password required']);
+        exit;
+    }
+    
+    try {
+        $stmt = $pdo->prepare("SELECT id, password FROM users WHERE id = ? AND role = 'instructor' LIMIT 1");
+        $stmt->execute([$instructor_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($user && password_verify($password, $user['password'])) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Invalid password']);
+        }
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
