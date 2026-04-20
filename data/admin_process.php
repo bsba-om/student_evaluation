@@ -1,4 +1,14 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
+
+function jsonResponse($data) {
+    while (ob_get_level()) { ob_end_clean(); }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
 // Start session with consistent cookie path
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
@@ -9,7 +19,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once 'config.php';
+require_once __DIR__ . '/config.php';
 
 // Ensure admin_promotions table exists (no status column)
 if ($pdo) {

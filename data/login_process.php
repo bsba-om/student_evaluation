@@ -1,6 +1,15 @@
 <?php
-header('Content-Type: application/json');
-require_once 'config.php';
+error_reporting(0);
+ini_set('display_errors', 0);
+
+function jsonResponse($data) {
+    while (ob_get_level()) { ob_end_clean(); }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+require_once __DIR__ . '/config.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([

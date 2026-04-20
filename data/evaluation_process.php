@@ -12,14 +12,30 @@
 //  5. Semester Sequencing  — no future-year subjects if current year has pending
 // ════════════════════════════════════════════════════════════════════════════
 
-header('Content-Type: application/json');
+error_reporting(0);
+ini_set('display_errors', 0);
+
+function jsonResponse($data) {
+    while (ob_get_level()) { ob_end_clean(); }
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+function jsonError($message, $code = 400) {
+    jsonResponse(['success' => false, 'message' => $message]);
+}
+
 require_once __DIR__ . '/session_security.php';
 require_once __DIR__ . '/config.php';
 
+if (!$pdo) {
+    jsonError('Database connection failed');
+}
+
 $role_access = check_role_access('instructor');
 if (!$role_access['allowed']) {
-    echo json_encode(['success' => false, 'message' => 'Access denied']);
-    exit;
+    jsonResponse(['success' => false, 'message' => 'Access denied']);
 }
 
 $instructor_id = $_SESSION['user_id'] ?? 0;
@@ -71,6 +87,78 @@ function compute_gwa(array $rows): array {
         'total_units'  => $totalUnits,
         'units_passed' => $unitsPassed,
     ];
+}
+
+/**
+ * Get previous semester GWA for anomaly detection
+ * Compares current semester GWA with previous semester GWA
+ */
+function get_previous_semester_gwa(PDO $pdo, int $student_id, string $year_level, string $semester): ?array {
+    // Parse current year and semester
+    $current = parse_standing("$year_level - $semester");
+    
+    // Determine previous semester
+    if ($current['sem'] === 2) {
+        // Previous semester is 1st semester of same year
+        $prev_year = $current['yr'];
+        $prev_sem = 1;
+    } else {
+        // Previous semester is 2nd semester of previous year
+        $prev_year = $current['yr'] - 1;
+        $prev_sem = 2;
+    }
+    
+    if ($prev_year < 1) return null;
+    
+    $year_labels = [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year'];
+    $sem_labels = [1 => '1st Semester', 2 => '2nd Semester'];
+    
+    $prev_year_label = $year_labels[$prev_year] ?? null;
+    $prev_sem_label = $sem_labels[$prev_sem] ?? null;
+    
+    if (!$prev_year_label || !$prev_sem_label) return null;
+    
+    try {
+        // Get grades for previous semester
+        $stmt = $pdo->prepare("
+            SELECT sg.grade_rounded, s.units
+            FROM student_grades sg
+            JOIN major_subjects ms ON sg.subject_id = ms.subject_id
+            JOIN subjects s ON sg.subject_id = s.id
+            WHERE sg.student_id = ?
+            AND ms.year_level = ?
+            AND ms.semester = ?
+            AND sg.grade_rounded IS NOT NULL
+            ORDER BY sg.graded_at DESC
+        ");
+        
+        // Use latest grade per subject
+        $seen = [];
+        $rows = [];
+        $stmt->execute([$student_id, $prev_year_label, $prev_sem_label]);
+        
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $g) {
+            if (!isset($seen[$g['subject_id']])) {
+                $seen[$g['subject_id']] = true;
+                $rows[] = $g;
+            }
+        }
+        
+        if (empty($rows)) return null;
+        
+        $gwaData = compute_gwa(array_map(function($r) {
+            return ['grade_rounded' => $r['grade_rounded'], 'units' => $r['units']];
+        }, $rows));
+        
+        return [
+            'gwa' => $gwaData['gwa'],
+            'year_level' => $prev_year_label,
+            'semester' => $prev_sem_label,
+            'total_units' => $gwaData['total_units'],
+        ];
+    } catch (PDOException $e) {
+        return null;
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -379,6 +467,14 @@ if ($action === 'get_student_evaluation') {
         // ── GWA ──
         $gwaData = compute_gwa(array_filter($merged, fn($s) => $s['grade_rounded'] !== null));
 
+        // ── Previous semester GWA for anomaly detection ──
+        $student_year = $student['year_level'] ?? '1st Year - 1st Semester';
+        $parts = explode(' - ', $student_year);
+        $current_year = $parts[0] ?? '1st Year';
+        $current_sem = $parts[1] ?? '1st Semester';
+        
+        $prevGwaData = get_previous_semester_gwa($pdo, $student_id, $current_year, $current_sem);
+
         // ── Prereq map for JS rendering (subject_id → prereq set code) ──
         $prereqMap = [];
         try {
@@ -398,6 +494,7 @@ if ($action === 'get_student_evaluation') {
             'student'       => $student,
             'subjects'      => $merged,         // sorted exactly as department page
             'gwa_data'      => $gwaData,
+            'prev_gwa_data' => $prevGwaData,
             'academic_year' => $academic_year,
             'prereq_map'    => $prereqMap,
             'ph_settings'   => load_ph_settings($pdo),
