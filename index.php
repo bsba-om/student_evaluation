@@ -220,7 +220,7 @@ if (file_exists($config_path)) {
                      <label class="field-label">Email</label>
                      <div class="input-wrapper">
                          <i class="fas fa-envelope input-icon"></i>
-                         <input type="email" id="loginEmail" placeholder="Enter your email" required>
+                         <input type="email" id="loginEmail" placeholder="Enter your email" maxlength="50" required>
                          <div class="input-focus-line"></div>
                      </div>
                  </div>
@@ -229,7 +229,7 @@ if (file_exists($config_path)) {
                      <label class="field-label">Password</label>
                      <div class="input-wrapper">
                          <i class="fas fa-lock input-icon"></i>
-                         <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                         <input type="password" id="loginPassword" placeholder="Enter your password" maxlength="50" required>
                          <button type="button" class="toggle-password" id="toggleLoginPassword">
                              <i class="fas fa-eye"></i>
                          </button>
@@ -326,7 +326,7 @@ if (file_exists($config_path)) {
                      <label class="field-label" for="regEmail">Email Address</label>
                      <div class="input-wrapper">
                          <i class="fas fa-envelope input-icon"></i>
-                         <input type="email" id="regEmail" name="email" placeholder="e.g. name@school.edu" required>
+                         <input type="email" id="regEmail" name="email" placeholder="e.g. name@school.edu" maxlength="50" required>
                          <div class="input-focus-line"></div>
                      </div>
                  </div>
@@ -344,7 +344,7 @@ if (file_exists($config_path)) {
                      <label class="field-label" for="regPassword">Password</label>
                      <div class="input-wrapper">
                          <i class="fas fa-lock input-icon"></i>
-                         <input type="password" id="regPassword" name="password" placeholder="At least 6 characters" required minlength="6">
+                         <input type="password" id="regPassword" name="password" placeholder="At least 6 characters" maxlength="50" required minlength="6">
                          <button type="button" class="toggle-password" id="toggleRegPassword">
                              <i class="fas fa-eye"></i>
                          </button>
