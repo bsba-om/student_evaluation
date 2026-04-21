@@ -642,6 +642,389 @@ if (!$show_role_modal) {
             box-shadow: 0 8px 28px rgba(212, 168, 67, 0.5);
         }
 
+        /* Search Bar Styles */
+        .search-section {
+            margin-bottom: 24px;
+            position: relative;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .search-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+
+        .search-container i {
+            position: absolute;
+            left: 20px;
+            font-size: 18px;
+            color: var(--gold-dark);
+            z-index: 2;
+            transition: color 0.2s ease;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 50px 16px 52px;
+            border: 2px solid var(--border-light);
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--dark-text);
+            background: var(--white);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--gold-light);
+            box-shadow: 0 0 0 4px rgba(212, 168, 67, 0.12), 0 4px 12px rgba(0, 0, 0, 0.08);
+            background: var(--cream);
+        }
+
+        .search-input:focus + i,
+        .search-container:focus-within i {
+            color: var(--gold-dark);
+        }
+
+        .search-input::placeholder {
+            color: var(--light-text);
+            font-weight: 400;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: var(--cream);
+            border-radius: 50%;
+            color: var(--light-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            z-index: 2;
+        }
+
+        .search-clear:hover {
+            background: var(--danger);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        /* Search Results Container */
+        .search-results-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--white);
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            margin-top: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-results-container.show {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        .search-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+            background: var(--cream);
+            border-radius: 12px 12px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .search-results-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--light-text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-results-count {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--gold-dark);
+            background: rgba(212, 168, 67, 0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .search-results-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item:hover,
+        .search-result-item:focus {
+            background: var(--cream);
+            outline: none;
+            padding-left: 20px;
+        }
+
+        .search-result-item:focus {
+            box-shadow: inset 0 0 0 2px var(--gold-light);
+        }
+
+        .search-result-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
+        }
+
+        .search-result-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .search-result-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--dark-text);
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .search-result-meta {
+            font-size: 12px;
+            color: var(--light-text);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-result-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .search-result-meta i {
+            font-size: 10px;
+            color: var(--gold-dark);
+        }
+
+        .search-no-results {
+            padding: 40px 20px;
+            text-align: center;
+            color: var(--light-text);
+        }
+
+        .search-no-results i {
+            font-size: 36px;
+            margin-bottom: 10px;
+            opacity: 0.4;
+            color: var(--gold-light);
+        }
+
+        .search-no-results p {
+            font-size: 14px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Search highlight */
+        .search-highlight {
+            background: rgba(212, 168, 67, 0.2);
+            padding: 0 2px;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Student Info Panel */
+        .student-info-panel {
+            margin-top: 16px;
+            margin-bottom: 24px;
+        }
+
+        .student-info-card {
+            background: var(--white);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(184, 134, 11, 0.2);
+            border: 1px solid var(--border-light);
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .student-info-header {
+            background: linear-gradient(135deg, var(--gold-dark), var(--gold), var(--gold-light));
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+        }
+
+        .student-avatar-large {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-dark);
+            font-size: 26px;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            flex-shrink: 0;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .student-info-title {
+            flex: 1;
+        }
+
+        .student-info-title h3 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--white);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .student-info-title span {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .student-info-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            color: var(--gold-dark);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: 16px;
+            right: 16px;
+        }
+
+        .student-info-close:hover {
+            background: var(--white);
+            transform: rotate(90deg);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .student-info-body {
+            padding: 24px;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-light);
+            align-items: center;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            width: 120px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--light-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .info-label i {
+            color: var(--gold-dark);
+            font-size: 14px;
+        }
+
+        .info-value {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--dark-text);
+        }
+
         /* Tab Navigation */
         .tabs-nav {
             display: flex;
@@ -1451,6 +1834,74 @@ if (!$show_role_modal) {
             </div>
             <?php endif; ?>
 
+            <!-- Search Bar -->
+            <div class="search-section">
+                <div class="search-container">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="studentSearchInput" placeholder="Search students by name, ID, or email..." class="search-input" autocomplete="off">
+                    <button class="search-clear" id="clearSearch" style="display: none;" tabindex="-1">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="searchResults" class="search-results-container">
+                    <div class="search-results-header" id="searchResultsHeader" style="display: none;">
+                        <span class="search-results-title">Search Results</span>
+                        <span class="search-results-count" id="searchResultsCount"></span>
+                    </div>
+                    <div id="searchResultsList" class="search-results-list"></div>
+                </div>
+            </div>
+
+            <!-- Student Info Display Container -->
+            <div id="studentInfoPanel" class="student-info-panel" style="display: none;">
+                <div class="student-info-card">
+                    <div class="student-info-header">
+                        <div class="student-avatar-large" id="infoAvatar">--</div>
+                        <div class="student-info-title">
+                            <h3 id="infoName">Student Name</h3>
+                            <span id="infoStudentId">STU-000</span>
+                        </div>
+                        <button class="student-info-close" onclick="closeStudentPanel()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="student-info-body">
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-id-card"></i> Student ID</div>
+                            <div class="info-value" id="infoIdValue">STU-000</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-user"></i> First Name</div>
+                            <div class="info-value" id="infoFirstName">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-user"></i> Middle Name</div>
+                            <div class="info-value" id="infoMiddleName">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-user"></i> Last Name</div>
+                            <div class="info-value" id="infoLastName">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-user-tag"></i> Suffix</div>
+                            <div class="info-value" id="infoSuffix">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-envelope"></i> Email</div>
+                            <div class="info-value" id="infoEmail">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-book"></i> Major</div>
+                            <div class="info-value" id="infoMajor">--</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label"><i class="fas fa-calendar-alt"></i> Year Level</div>
+                            <div class="info-value" id="infoYearLevel">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Year Level Cards -->
             <div class="year-level-section">
                 <?php 
@@ -1766,6 +2217,245 @@ if (!$show_role_modal) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('studentInfoCard');
+                if (modal && modal.classList.contains('active')) {
+                    toggleStudentInfo();
+                }
+            }
+        });
+
+        // =======================
+        // GLOBAL SEARCH FUNCTIONALITY - ENHANCED
+        // =======================
+        const globalSearchInput = document.getElementById('studentSearchInput');
+        const searchResultsContainer = document.getElementById('searchResults');
+        const searchResultsList = document.getElementById('searchResultsList');
+        const searchResultsHeader = document.getElementById('searchResultsHeader');
+        const searchResultsCount = document.getElementById('searchResultsCount');
+        const clearSearchBtn = document.getElementById('clearSearch');
+
+        let searchTimeout = null;
+        let currentResults = [];
+        let selectedIndex = -1;
+
+        // Search input event listeners
+        globalSearchInput?.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(performGlobalSearch, 300);
+            
+            // Show clear button
+            clearSearchBtn.style.display = this.value.length > 0 ? 'flex' : 'none';
+            
+            // Reset selected index
+            selectedIndex = -1;
+        });
+
+        globalSearchInput?.addEventListener('focus', function() {
+            if (this.value.trim().length >= 2) {
+                performGlobalSearch();
+            } else if (this.value.trim().length > 0) {
+                // Show message to type at least 2 chars
+                showSearchMessage('Type at least 2 characters to search');
+            }
+        });
+
+        // Keyboard navigation
+        globalSearchInput?.addEventListener('keydown', function(e) {
+            const items = searchResultsList.querySelectorAll('.search-result-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelectedItem(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, 0);
+                updateSelectedItem(items);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0 && items[selectedIndex]) {
+                    items[selectedIndex].click();
+                } else if (items.length > 0) {
+                    // Select first item if none selected
+                    items[0].click();
+                }
+            } else if (e.key === 'Escape') {
+                searchResultsContainer.classList.remove('show');
+                clearSearchBtn.style.display = 'none';
+                globalSearchInput.blur();
+            }
+        });
+
+        function updateSelectedItem(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.focus();
+                    item.style.background = 'var(--cream)';
+                    item.style.paddingLeft = '20px';
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.style.background = '';
+                    item.style.paddingLeft = '';
+                }
+            });
+        }
+
+        clearSearchBtn?.addEventListener('click', function(e) {
+            e.preventDefault();
+            globalSearchInput.value = '';
+            searchResultsContainer.classList.remove('show');
+            clearSearchBtn.style.display = 'none';
+            globalSearchInput.focus();
+            selectedIndex = -1;
+        });
+
+        async function performGlobalSearch() {
+            const query = globalSearchInput.value.trim();
+            
+            if (query.length < 2) {
+                if (query.length > 0) {
+                    showSearchMessage('Type at least 2 characters to search');
+                } else {
+                    searchResultsContainer.classList.remove('show');
+                }
+                return;
+            }
+            
+            try {
+                const response = await fetch('../../data/student_manage.php?action=search&q=' + encodeURIComponent(query));
+                const data = await response.json();
+                
+                if (data.success && data.students.length > 0) {
+                    displayGlobalSearchResults(data.students, query);
+                } else {
+                    showNoGlobalResults();
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                showNoGlobalResults();
+            }
+        }
+
+        function displayGlobalSearchResults(students, query) {
+            // Update header count
+            searchResultsCount.textContent = students.length + ' student' + (students.length !== 1 ? 's' : '');
+            searchResultsHeader.style.display = 'flex';
+            
+            searchResultsList.innerHTML = students.map((student, index) => {
+                const highlightedName = highlightMatch(student.first_name + ' ' + student.last_name, query) +
+                                       ' ' +
+                                       highlightMatch(student.student_id, query);
+                const highlightedEmail = highlightMatch(student.email, query);
+                const highlightedMajor = highlightMatch(student.major_display || student.major_name || 'N/A', query);
+                const highlightedYear = student.year_level ? highlightMatch(student.year_level, query) : '';
+                
+                return `
+                    <div class="search-result-item" tabindex="0" role="button" data-student-id="${student.id}" onclick="viewStudentDetails(${student.id})" onkeypress="if(event.key==='Enter'){event.preventDefault();viewStudentDetails(${student.id})}">
+                        <div class="search-result-avatar">${student.initials}</div>
+                        <div class="search-result-info">
+                            <div class="search-result-name">${highlightedName}</div>
+                            <div class="search-result-meta">
+                                <span><i class="fas fa-envelope"></i> ${highlightedEmail}</span>
+                                <span><i class="fas fa-book"></i> ${highlightedMajor}</span>
+                                ${student.year_level ? `<span><i class="fas fa-calendar-alt"></i> ${highlightedYear}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            searchResultsContainer.classList.add('show');
+            
+            // Add keyboard focus handling
+            const items = searchResultsList.querySelectorAll('.search-result-item');
+            items.forEach((item, index) => {
+                item.addEventListener('mouseenter', () => {
+                    selectedIndex = index;
+                    updateSelectedItem(items);
+                });
+            });
+        }
+
+        function highlightMatch(text, query) {
+            if (!text) return '';
+            const regex = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+            return text.toString().replace(regex, '<span class="search-highlight">$1</span>');
+        }
+
+        function showSearchMessage(message) {
+            searchResultsHeader.style.display = 'none';
+            searchResultsList.innerHTML = `
+                <div class="search-no-results">
+                    <i class="fas fa-info-circle"></i>
+                    <p>${message}</p>
+                </div>
+            `;
+            searchResultsContainer.classList.add('show');
+        }
+
+        function showNoGlobalResults() {
+            searchResultsHeader.style.display = 'none';
+            searchResultsList.innerHTML = `
+                <div class="search-no-results">
+                    <i class="fas fa-search"></i>
+                    <p>No students found matching your search</p>
+                </div>
+            `;
+            searchResultsContainer.classList.add('show');
+        }
+
+        function closeStudentPanel() {
+            document.getElementById('studentInfoPanel').style.display = 'none';
+            globalSearchInput.focus();
+        }
+
+        async function displayStudentDetails(student) {
+            // Close search results
+            searchResultsContainer.classList.remove('show');
+            
+            // Generate initials
+            const initials = (student.first_name?.[0] || '') + (student.last_name?.[0] || '');
+            
+            // Show info panel
+            const infoPanel = document.getElementById('studentInfoPanel');
+            infoPanel.style.display = 'block';
+            
+            // Populate data
+            document.getElementById('infoAvatar').textContent = initials.toUpperCase() || 'NA';
+            document.getElementById('infoName').textContent = (student.first_name || '') + ' ' + (student.last_name || '');
+            document.getElementById('infoStudentId').textContent = student.student_id || 'N/A';
+            document.getElementById('infoIdValue').textContent = student.student_id || 'N/A';
+            document.getElementById('infoFirstName').textContent = student.first_name || '--';
+            document.getElementById('infoMiddleName').textContent = student.middle_name || '--';
+            document.getElementById('infoLastName').textContent = student.last_name || '--';
+            document.getElementById('infoSuffix').textContent = student.suffix || '--';
+            document.getElementById('infoEmail').textContent = student.email || '--';
+            document.getElementById('infoMajor').textContent = student.major_display || student.major_name || '--';
+            document.getElementById('infoYearLevel').textContent = student.year_level || '--';
+            
+            // Smooth scroll to panel
+            infoPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        async function viewStudentDetails(studentId) {
+            try {
+                const response = await fetch('../../data/student_manage.php?action=get&id=' + studentId);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayStudentDetails(data.student);
+                } else {
+                    alert('Error loading student data');
+                }
+            } catch (error) {
+                console.error('Load error:', error);
+                alert('Error loading student data');
+            }
         }
 
         // Close modal on escape key

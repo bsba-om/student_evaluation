@@ -84,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'search') {
                     'last_name' => $s['last_name'],
                     'student_id' => $s['student_id'],
                     'email' => $s['email'],
+                    'year_level' => $s['year_level'] ?? '',
                     'major_display' => $s['major_display'] ?? $s['major_name'] ?? 'N/A',
                     'initials' => $initials ?: 'NA'
                 ];
