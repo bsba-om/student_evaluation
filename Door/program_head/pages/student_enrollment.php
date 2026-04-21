@@ -489,6 +489,12 @@ if (!$show_role_modal) {
             z-index: 100;
         }
 
+        .filter-section .search-section {
+            margin-bottom: 0;
+            flex: 1;
+            margin-top: 0;
+        }
+
         .search-wrapper {
             position: relative;
         }
@@ -512,16 +518,33 @@ if (!$show_role_modal) {
 
         .search-input {
             width: 100%;
-            padding: 18px 56px 18px 54px;
+            padding: 12px 44px 12px 44px;
             border: 2px solid var(--border-light);
-            border-radius: var(--radius-lg);
+            border-radius: var(--radius-sm);
             font-family: 'Poppins', sans-serif;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 500;
             color: var(--dark-text);
             background: var(--white);
             transition: all var(--transition-normal);
             box-shadow: var(--shadow-sm);
+        }
+
+        .filter-section .search-input {
+            padding: 10px 44px 10px 44px;
+            font-size: 14px;
+        }
+
+        .filter-section .search-icon {
+            left: 14px;
+            font-size: 16px;
+        }
+
+        .filter-section .search-clear {
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            font-size: 12px;
         }
 
         .search-input:focus {
@@ -2406,7 +2429,7 @@ if (!$show_role_modal) {
                 </div>
             </div>
 
-            <!-- Major Filter -->
+            <!-- Filter and Search Section -->
             <?php if (isset($majors) && count($majors) > 0): ?>
             <div class="filter-section">
                 <div class="filter-label">
@@ -2419,11 +2442,28 @@ if (!$show_role_modal) {
                     <option value="<?php echo $major['id']; ?>"><?php echo htmlspecialchars($major['display_name']); ?></option>
                     <?php endforeach; ?>
                 </select>
+                <div class="search-section" style="flex: 1; margin-top: 0; margin-left: 16px;">
+                    <div class="search-wrapper">
+                        <div class="search-container">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" id="studentSearchInput" placeholder="Search students by name, ID, or email..." class="search-input" autocomplete="off" spellcheck="false">
+                            <button class="search-clear" id="clearSearch" tabindex="-1">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="typeaheadDropdown" class="typeahead-dropdown">
+                            <div class="typeahead-header" id="typeaheadHeader" style="display: none;">
+                                <span class="typeahead-header-title">Search Results</span>
+                                <span class="typeahead-header-count" id="typeaheadCount"></span>
+                            </div>
+                            <div id="typeaheadList" class="typeahead-list"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <?php endif; ?>
-
-            <!-- Search Bar with Typeahead -->
-            <div class="search-section">
+            <?php else: ?>
+            <!-- Search Bar with Typeahead (when no majors) -->
+            <div class="search-section" style="margin-bottom: 28px;">
                 <div class="search-wrapper">
                     <div class="search-container">
                         <i class="fas fa-search search-icon"></i>
@@ -2441,6 +2481,7 @@ if (!$show_role_modal) {
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <!-- Student Info Display Container (Hidden - using modal instead) -->
             <div id="studentInfoPanel" class="student-info-panel" style="display: none;">
