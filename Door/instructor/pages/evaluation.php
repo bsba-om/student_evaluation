@@ -445,7 +445,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
  @media print {
    @page { size: A4 portrait; margin: 8mm; }
    body > * { display: none !important; }
-   #printTarget, #gradesPrintTarget { 
+   #printTarget { 
      display: block !important; 
      visibility: visible !important; 
      position: static !important;
@@ -455,10 +455,8 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
      height: auto !important;
      background: white !important;
    }
-   #gradesPrintTarget { display: block !important; }
-   #gradesPrintTarget * { visibility: visible !important; opacity: 1 !important; }
    html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-   #printTarget, #gradesPrintTarget { width: 100% !important; max-width: 200mm !important; margin: 0 auto !important; position: static !important; }
+   #printTarget { width: 100% !important; max-width: 200mm !important; margin: 0 auto !important; position: static !important; }
   .pro-wrap { width: 100% !important; max-width: 200mm !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; background: white !important; font-size: 7pt !important; font-family: 'Times New Roman', Times, serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .pro-hdr { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 3mm 3mm 2mm !important; border-top: 2.5pt solid #8B6914 !important; border-bottom: 1.5pt solid #8B6914 !important; background: white !important; width: 100% !important; }
   .pro-logo { width: 22mm !important; height: 22mm !important; border: 1.5pt solid #8B6914 !important; border-radius: 2pt !important; flex-shrink: 0 !important; }
@@ -505,57 +503,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   .pro-sig-date { font-size: 7pt !important; color: #666 !important; }
    .pro-legend { font-size: 6pt !important; color: #999 !important; margin-top: 1mm !important; }
    
-   /* GRADES MODAL PRINT STYLES */
-   body > * { display: none !important; }
-   #gradesPrintTarget { display: block !important; }
-   #gradesPrintTarget * { display: block !important; visibility: visible !important; }
-   #gradesPrintTarget .grades-modal { 
-     width: 100% !important; 
-     max-width: 190mm !important; 
-     margin: 0 auto !important; 
-     padding: 0 !important; 
-     box-shadow: none !important; 
-     border: none !important; 
-     background: white !important;
-     position: static !important;
-     transform: none !important;
-     overflow: visible !important;
-   }
-   #gradesPrintTarget .gm-body {
-     max-height: none !important;
-     overflow: visible !important;
-     padding: 5mm !important;
-   }
-   #gradesPrintTarget .gm-school-header,
-   #gradesPrintTarget .gm-student-info,
-   #gradesPrintTarget .gm-table-wrap,
-   #gradesPrintTarget .gm-summary,
-   #gradesPrintTarget .gm-sig-block {
-     display: block !important;
-     visibility: visible !important;
-   }
-   #gradesPrintTarget .gm-footer,
-   #gradesPrintTarget .gm-hint,
-   #gradesPrintTarget .btn-modal-close {
-     display: none !important;
-   }
-   #gradesPrintTarget .gm-table {
-     width: 100% !important;
-     font-size: 10pt !important;
-     page-break-inside: avoid !important;
-   }
-   #gradesPrintTarget .gm-th {
-     background: #8B6914 !important;
-     color: white !important;
-     -webkit-print-color-adjust: exact !important;
-     print-color-adjust: exact !important;
-   }
-   #gradesPrintTarget .gm-summary {
-     background: #8B6914 !important;
-     color: white !important;
-     -webkit-print-color-adjust: exact !important;
-     print-color-adjust: exact !important;
-   }
+
  }
 </style>
 </head>
@@ -655,36 +603,36 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
         <button class="hdr-close" onclick="closeEval()"><i class="fas fa-times"></i></button>
       </div>
     </div>
-    <div class="eval-tabs">
-      <button class="eval-tab active" id="tab-prospectus" onclick="switchEvalTab('prospectus')">
-        <i class="fas fa-scroll"></i> Prospectus
-      </button>
-      <button class="eval-tab" id="tab-advisement" onclick="switchEvalTab('advisement')">
-        <i class="fas fa-lightbulb"></i> Advisement
-        <span id="advBadge" style="display:none;background:var(--green);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;">0</span>
-      </button>
-      <button class="eval-tab" id="tab-notes" onclick="switchEvalTab('notes')">
-        <i class="fas fa-sticky-note"></i> Session Notes
-      </button>
-    </div>
-    <div class="eval-body" id="tab-prospectus-body">
-      <div class="empty-state"><div class="spinner"></div></div>
-    </div>
-    <div class="eval-body" id="tab-advisement-body" style="display:none;">
-      <div class="empty-state"><div class="spinner"></div></div>
-    </div>
-    <div class="eval-body" id="tab-notes-body" style="display:none;">
-      <div class="session-bar" style="margin-top:0;">
-        <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
-          <i class="fas fa-clipboard" style="color:var(--gold-d);margin-right:7px;"></i>Evaluation Session Notes
-        </div>
-        <textarea id="sessionNotes" placeholder="Record observations, advisor recommendations, or any notes for this evaluation session…" style="min-height:120px;"></textarea>
-        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-          <button class="btn btn-blue" onclick="switchEvalTab('advisement')"><i class="fas fa-lightbulb"></i> View Advisement</button>
-          <button class="btn btn-green" onclick="finalizeEval()"><i class="fas fa-check-circle"></i> Finalize Session</button>
-        </div>
-      </div>
-    </div>
+     <div class="eval-tabs">
+       <button class="eval-tab active" id="tab-prospectus" onclick="switchEvalTab('prospectus')">
+         <i class="fas fa-scroll"></i> Prospectus
+       </button>
+       <button class="eval-tab" id="tab-advisement" onclick="switchEvalTab('advisement')">
+         <i class="fas fa-lightbulb"></i> Advisement
+         <span id="advBadge" style="display:none;background:var(--green);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;">0</span>
+       </button>
+       <button class="eval-tab" id="tab-notes" onclick="switchEvalTab('notes')">
+         <i class="fas fa-sticky-note"></i> Session Notes
+       </button>
+     </div>
+     <div class="eval-body" id="tab-prospectus-body">
+       <div class="empty-state"><div class="spinner"></div></div>
+     </div>
+     <div class="eval-body" id="tab-advisement-body" style="display:none;">
+       <div class="empty-state"><div class="spinner"></div></div>
+     </div>
+     <div class="eval-body" id="tab-notes-body" style="display:none;">
+       <div class="session-bar" style="margin-top:0;">
+         <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
+           <i class="fas fa-clipboard" style="color:var(--gold-d);margin-right:7px;"></i>Evaluation Session Notes
+         </div>
+         <textarea id="sessionNotes" placeholder="Record observations, advisor recommendations, or any notes for this evaluation session…" style="min-height:120px;"></textarea>
+         <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+           <button class="btn btn-blue" onclick="switchEvalTab('advisement')"><i class="fas fa-lightbulb"></i> View Advisement</button>
+           <button class="btn btn-green" onclick="finalizeEval()"><i class="fas fa-check-circle"></i> Finalize Session</button>
+         </div>
+       </div>
+     </div>
   </div>
 </div>
 
@@ -767,7 +715,6 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 </div>
 
  <div id="printTarget" style="display:none;"></div>
- <div id="gradesPrintTarget" style="display:none;"></div>
 
 <div class="toast" id="toast">
   <div class="toast-icon" id="toastIcon"><i class="fas fa-check"></i></div>
@@ -962,20 +909,22 @@ function applyFilters() {
   });
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TAB SWITCHER
-═══════════════════════════════════════════════════════════ */
-function switchEvalTab(tab) {
-  ['prospectus','advisement','notes'].forEach(t => {
-    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
-    document.getElementById(`tab-${t}-body`).style.display = t === tab ? 'block' : 'none';
-  });
-  if(tab === 'advisement' && currentStudent) buildAdvisement();
-}
 
-/* ═══════════════════════════════════════════════════════════
-   OPEN / CLOSE EVAL
-═══════════════════════════════════════════════════════════ */
+
+ /* ═══════════════════════════════════════════════════════════
+    TAB SWITCHER
+ ═══════════════════════════════════════════════════════════ */
+ function switchEvalTab(tab) {
+   ['prospectus','advisement','notes'].forEach(t => {
+     document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+     document.getElementById(`tab-${t}-body`).style.display = t === tab ? 'block' : 'none';
+   });
+   if(tab === 'advisement' && currentStudent) buildAdvisement();
+ }
+ 
+ /* ═══════════════════════════════════════════════════════════
+    OPEN / CLOSE EVAL
+ ═══════════════════════════════════════════════════════════ */
 function openEval(m) {
   if(typeof m === 'string') m = JSON.parse(m);
   currentStudent = m; gradeMap = {}; loadedSubjects = []; prereqSetsData = [];
@@ -2500,66 +2449,232 @@ function renderAdvisement(d) {
  }
  
  function printGradesModal() {
-   const modal = document.querySelector('.grades-modal');
-   if(!modal) { toast('No grades to print.','error'); return; }
+   // Get all content directly from current modal
+   const schoolHeader = document.getElementById('gmSchoolHeader').cloneNode(true);
+   const studentInfo = document.getElementById('gmStudentInfo').cloneNode(true);
+   const tableWrap = document.querySelector('.gm-table-wrap').cloneNode(true);
+   const summary = document.getElementById('gmSummary').cloneNode(true);
+   const sigBlock = document.getElementById('gmSigBlock').cloneNode(true);
    
-   // Create print target for grades modal
-   let printTarget = document.getElementById('gradesPrintTarget');
-   if(!printTarget) {
-     printTarget = document.createElement('div');
-     printTarget.id = 'gradesPrintTarget';
-     document.body.appendChild(printTarget);
-   }
+   // Create new window for printing
+   const printWindow = window.open('', '_blank');
    
-   // Clone modal content
-   printTarget.innerHTML = modal.outerHTML;
+   printWindow.document.write(`
+     <!DOCTYPE html>
+     <html>
+     <head>
+       <title>Grade Report</title>
+       <style>
+         @page { size: A4 portrait; margin: 12mm 10mm 12mm 10mm; }
+         * {
+           font-family: 'Times New Roman', Times, serif;
+           line-height: 1.4;
+           box-sizing: border-box;
+         }
+         body {
+           margin: 0;
+           padding: 0;
+           background: white;
+         }
+         .gm-school-header {
+           text-align: center;
+           border-bottom: 2pt solid #8B6914;
+           padding-bottom: 4mm;
+           margin-bottom: 4mm;
+         }
+         .gm-school-header img {
+           width: 18mm;
+           height: 18mm;
+           object-fit: contain;
+           margin: 0 auto 2mm auto;
+           display: block;
+         }
+         #gmSchoolName {
+           font-size: 14pt;
+           font-weight: bold;
+           text-transform: uppercase;
+           letter-spacing: 0.5pt;
+           margin-bottom: 1mm;
+         }
+         #gmSchoolAddress {
+           font-size: 10pt;
+           font-style: italic;
+           margin-bottom: 1mm;
+         }
+         #gmInstitute {
+           font-size: 11pt;
+           font-weight: bold;
+           margin-bottom: 1mm;
+         }
+         #gmDegree {
+           font-size: 10pt;
+           font-weight: 600;
+           color: #8B6914;
+         }
+         .gm-student-info {
+           border: 1pt solid #ddd;
+           padding: 4mm;
+           margin-bottom: 4mm;
+           background: #fafafa;
+         }
+         .gm-student-info > div:first-child {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 3mm;
+           margin-bottom: 3mm;
+         }
+         .gm-student-info > div:first-child div {
+           display: flex;
+           align-items: center;
+           gap: 4px;
+         }
+         #gmInfoPeriod {
+           text-align: center;
+           font-size: 12pt;
+           font-weight: bold;
+           background: #8B6914;
+           color: white;
+           padding: 2mm;
+           display: block;
+         }
+         .gm-student-info span {
+           font-size: 10pt;
+         }
+         .gm-table-wrap {
+           page-break-inside: avoid;
+         }
+         .gm-table {
+           width: 100%;
+           border-collapse: collapse;
+           font-size: 10pt;
+         }
+         .gm-th {
+           background: #8B6914;
+           color: white;
+           padding: 2.5mm 2mm;
+           font-weight: bold;
+           text-align: left;
+           border: 1pt solid #8B6914;
+         }
+         .gm-td {
+           padding: 2mm 2mm;
+           border: 1pt solid #ccc;
+           vertical-align: middle;
+         }
+         .gm-grade {
+           text-align: center;
+           font-weight: bold;
+         }
+         .gm-units {
+           text-align: center;
+         }
+         .gm-tr:nth-child(even) {
+           background: #f8f8f8;
+         }
+         .gm-summary {
+           background: #8B6914;
+           color: white;
+           padding: 3mm;
+           margin-top: 3mm;
+         }
+         .gm-summary div {
+           display: flex;
+           justify-content: space-between;
+           align-items: center;
+         }
+         #gmSummaryLeft {
+           font-size: 10pt;
+         }
+         #gmSummaryGWA {
+           font-size: 14pt;
+           font-weight: bold;
+           background: rgba(255,255,255,0.15);
+           padding: 1mm 3mm;
+           border-radius: 10pt;
+         }
+         .gm-sig-block {
+           margin-top: 8mm;
+           padding-top: 4mm;
+           border-top: 1pt solid #8B6914;
+         }
+         .gm-sig-block > div {
+           display: grid;
+           grid-template-columns: 1fr 1fr;
+           gap: 15mm;
+         }
+         .gm-sig-block > div > div {
+           text-align: center;
+           display: block;
+         }
+         #gmSigAdvisor,
+         #gmSigPH {
+           font-size: 14pt;
+           font-weight: bold;
+           margin-bottom: -5mm;
+           display: block;
+           position: relative;
+           z-index: 1;
+         }
+         .gm-sig-block div > div > div:nth-child(2) {
+           border-bottom: 1pt solid #333;
+           height: 6mm;
+           margin-bottom: 1mm;
+           display: block;
+         }
+         .gm-sig-block div > div > div:nth-child(3) {
+           font-weight: bold;
+           color: #8B6914;
+           font-size: 10pt;
+           display: block;
+         }
+         .gm-sig-block div > div > div:nth-child(4) {
+           font-size: 9pt;
+           color: #666;
+           display: block;
+         }
+       </style>
+     </head>
+     <body>
+     </body>
+     </html>
+   `);
    
-   // Force display all elements
-   const elements = printTarget.querySelectorAll('*');
+   printWindow.document.close();
+   
+   // Add content to print window
+   printWindow.document.body.appendChild(schoolHeader);
+   printWindow.document.body.appendChild(studentInfo);
+   printWindow.document.body.appendChild(tableWrap);
+   printWindow.document.body.appendChild(summary);
+   printWindow.document.body.appendChild(sigBlock);
+   
+   // Clean up styles
+   const elements = printWindow.document.body.querySelectorAll('*');
    elements.forEach(el => {
-     el.style.display = el.tagName === 'STYLE' || el.tagName === 'SCRIPT' ? 'none' : 'block';
+     el.style.display = '';
      el.style.visibility = 'visible';
      el.style.opacity = '1';
+     el.style.margin = '';
+     el.style.padding = '';
+     el.removeAttribute('style');
    });
    
-   // Show all print-only elements
-   const gmSchoolHeader = printTarget.querySelector('#gmSchoolHeader');
-   const gmStudentInfo = printTarget.querySelector('#gmStudentInfo');
-   const gmSummary = printTarget.querySelector('#gmSummary');
-   const gmSigBlock = printTarget.querySelector('#gmSigBlock');
-   
-   if(gmSchoolHeader) { gmSchoolHeader.style.display = 'block'; gmSchoolHeader.style.visibility = 'visible'; }
-   if(gmStudentInfo) { gmStudentInfo.style.display = 'block'; gmStudentInfo.style.visibility = 'visible'; }
-   if(gmSummary) { gmSummary.style.display = 'block'; gmSummary.style.visibility = 'visible'; }
-   if(gmSigBlock) { gmSigBlock.style.display = 'block'; gmSigBlock.style.visibility = 'visible'; }
-   
-   // Fix gm-body to be visible
-   const gmBody = printTarget.querySelector('.gm-body');
-   if(gmBody) {
-     gmBody.style.maxHeight = 'none';
-     gmBody.style.overflow = 'visible';
-     gmBody.style.display = 'block';
-   }
-   
-   // Remove UI buttons
-   const footer = printTarget.querySelector('.gm-footer');
-   if(footer) footer.remove();
-   
-   // Ensure print target is visible
-   printTarget.style.display = 'block';
-   printTarget.style.position = 'absolute';
-   printTarget.style.top = '0';
-   printTarget.style.left = '0';
-   printTarget.style.width = '100%';
-   
    setTimeout(() => {
-     window.print();
-     
-     window.addEventListener('afterprint', () => { 
-       printTarget.innerHTML = ''; 
-       printTarget.style.display = 'none';
-     }, {once:true});
-   }, 100);
+     printWindow.print();
+     // Close window after print dialog is closed (both on print or cancel)
+     printWindow.addEventListener('afterprint', () => {
+       setTimeout(() => {
+         printWindow.close();
+       }, 100);
+     });
+     // Fallback for browsers that don't support afterprint
+     printWindow.addEventListener('mousemove', function closeWindow() {
+       setTimeout(() => {
+         printWindow.close();
+       }, 500);
+       printWindow.removeEventListener('mousemove', closeWindow);
+     });
+   }, 300);
  }
 
 /* ═══════════════════════════════════════════════════════════
