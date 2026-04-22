@@ -10,6 +10,7 @@ $total_instructors = 0;
 $completed_evaluations = 0;
 $active_courses = 0;
 $avg_rating = 0;
+$total_students = 0;
 
 // Get total instructors
 try {
@@ -87,7 +88,7 @@ try {
                 FROM evaluations e 
                 JOIN instructors i ON e.instructor_id = i.id 
                 JOIN courses c ON e.course_id = c.id 
-                ORDER BY e.evaluation_date DESC LIMIT 3";
+                ORDER BY e.evaluation_date DESC LIMIT 5";
         $stmt = $pdo->query($sql);
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $recent_evaluations[] = $row;
@@ -131,11 +132,9 @@ try {
     $stmt = $pdo->query("SELECT year_level, COUNT(*) as count FROM students WHERE year_level IS NOT NULL AND year_level != '' GROUP BY year_level ORDER BY year_level");
     $raw_year_levels = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
-    // Normalize year levels: combine "3rd Year" and "3rd Year - 2nd Semester"
     $yearLevels = [];
     foreach ($raw_year_levels as $year) {
         $base_year = $year['year_level'];
-        // Check if it contains "3rd Year" to combine all 3rd year variants
         if (strpos($base_year, '3rd Year') !== false) {
             $base_year = '3rd Year';
         }
@@ -147,7 +146,6 @@ try {
         }
     }
     
-    // Convert back to array format and sort by year order
     $year_order = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
     $sorted_yearLevels = [];
     foreach ($year_order as $year) {
@@ -162,6 +160,19 @@ try {
 } catch (PDOException $e) {
     $yearLevels = [];
 }
+
+// Fetch recent instructor activities
+$recent_instructors = [];
+try {
+    $stmt = $pdo->query("SELECT id, first_name, last_name, status, email FROM instructors ORDER BY id DESC LIMIT 4");
+    $recent_instructors = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $recent_instructors = [];
+}
+
+// Calculate evaluation completion rate
+$eval_completion_rate = $total_instructors > 0 ? round(($completed_evaluations / max($total_instructors, 1)) * 100) : 0;
+$eval_completion_rate = min($eval_completion_rate, 100);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -177,269 +188,6 @@ try {
     <link rel="stylesheet" href="./style/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <style>
-        /* Additional Professional Dashboard Styles */
-        .stats-highlight {
-            background: linear-gradient(135deg, var(--gold-gradient) 0%, var(--gold-gradient-dark) 100%);
-            padding: 2px;
-            border-radius: 18px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .stats-highlight::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-            animation: shimmer 3s ease-in-out infinite;
-        }
-        
-        @keyframes shimmer {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(180deg); }
-        }
-        
-        .stat-card-inner {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 24px;
-            height: 100%;
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Department Overview Improvements */
-        .dept-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-        }
-        
-        .dept-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 24px;
-            border: 1px solid var(--border-light);
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .dept-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--gold-gradient);
-        }
-        
-        .dept-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-gold);
-            border-color: var(--gold-light);
-        }
-        
-        .dept-card-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 16px;
-        }
-        
-        .dept-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
-        }
-        
-        .dept-icon.majors { background: var(--gold-gradient); }
-        .dept-icon.courses { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
-        .dept-icon.students { background: linear-gradient(135deg, #10b981, #34d399); }
-        
-        .dept-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark-text);
-            margin-bottom: 4px;
-        }
-        
-        .dept-subtitle {
-            font-size: 12px;
-            color: var(--light-text);
-            font-weight: 500;
-        }
-        
-        .dept-value {
-            font-size: 36px;
-            font-weight: 800;
-            color: var(--gold-dark);
-            margin: 16px 0;
-            text-align: center;
-        }
-        
-        .dept-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px 20px;
-            background: var(--cream);
-            border: 1px solid var(--border-light);
-            border-radius: 10px;
-            color: var(--dark-text);
-            text-decoration: none;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-        }
-        
-        .dept-link:hover {
-            background: var(--gold-gradient);
-            color: white;
-            border-color: var(--gold-primary);
-            transform: translateY(-2px);
-        }
-        
-        /* Student Year Cards */
-        .year-cards-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-top: 20px;
-        }
-        
-        .year-stat-card {
-            background: linear-gradient(135deg, var(--cream) 0%, var(--white) 100%);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            border: 1px solid var(--border-light);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .year-stat-card::before {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: var(--gold-gradient);
-            transform: scaleX(0);
-            transition: transform 0.3s ease;
-        }
-        
-        .year-stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 24px rgba(212, 168, 67, 0.15);
-        }
-        
-        .year-stat-card:hover::before {
-            transform: scaleX(1);
-        }
-        
-        .year-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--light-text);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-        }
-        
-        .year-value {
-            font-size: 32px;
-            font-weight: 800;
-            color: var(--dark-text);
-            line-height: 1;
-        }
-        
-        .year-bar {
-            height: 4px;
-            background: var(--off-white);
-            border-radius: 2px;
-            margin-top: 12px;
-            overflow: hidden;
-        }
-        
-        .year-progress {
-            height: 100%;
-            background: var(--gold-gradient);
-            border-radius: 2px;
-            transition: width 0.8s ease;
-        }
-        
-        /* Section Headers */
-        .section-header-modern {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid var(--border-light);
-        }
-        
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--dark-text);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .section-title i {
-            color: var(--gold-dark);
-        }
-        
-        .section-action {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--gold-dark);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: gap 0.2s ease;
-        }
-        
-        .section-action:hover {
-            gap: 10px;
-        }
-        
-        /* Quick Stats Row */
-        .quick-stats-row {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin-bottom: 24px;
-        }
-        
-        @media (max-width: 1200px) {
-            .quick-stats-row {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .quick-stats-row {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 
 <body class="dashboard-page">
@@ -544,6 +292,14 @@ try {
                         <div class="welcome-banner-role">Program Head</div>
                         <h1>Welcome back, <?php echo htmlspecialchars($user_name); ?>!</h1>
                         <p>Monitor instructor performance, manage evaluations, and track department progress all in one place.</p>
+                        <div class="welcome-actions">
+                            <a href="pages/instructors.php" class="welcome-btn">
+                                <i class="fas fa-chalkboard-teacher"></i> Manage Instructors
+                            </a>
+                            <a href="pages/reports.php" class="welcome-btn outline">
+                                <i class="fas fa-chart-bar"></i> View Reports
+                            </a>
+                        </div>
                     </div>
                     <div class="welcome-banner-right">
                         <div class="welcome-stats-mini">
@@ -567,7 +323,7 @@ try {
             <!-- Quick Stats Row -->
             <section class="stats-section">
                 <div class="quick-stats-row">
-                    <div class="stats-highlight">
+                    <a href="pages/instructors.php" class="stats-highlight clickable-stat">
                         <div class="stat-card-inner">
                             <div class="stat-card-icon-wrap gold">
                                 <i class="fas fa-chalkboard-teacher"></i>
@@ -575,11 +331,16 @@ try {
                             <div class="stat-card-data">
                                 <div class="stat-card-value"><?php echo $total_instructors; ?></div>
                                 <div class="stat-card-label">Total Instructors</div>
+                                <div class="stat-card-sub">
+                                    <span class="sub-on-duty"><i class="fas fa-circle"></i> <?php echo $on_duty; ?> On Duty</span>
+                                    <span class="sub-on-leave"><i class="fas fa-circle"></i> <?php echo $on_leave; ?> On Leave</span>
+                                </div>
                             </div>
+                            <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
                         </div>
-                    </div>
+                    </a>
                     
-                    <div class="stats-highlight">
+                    <a href="pages/reports.php" class="stats-highlight clickable-stat">
                         <div class="stat-card-inner">
                             <div class="stat-card-icon-wrap green">
                                 <i class="fas fa-check-circle"></i>
@@ -587,11 +348,15 @@ try {
                             <div class="stat-card-data">
                                 <div class="stat-card-value"><?php echo $completed_evaluations; ?></div>
                                 <div class="stat-card-label">Completed Evaluations</div>
+                                <div class="stat-card-sub">
+                                    <span class="sub-rate"><i class="fas fa-chart-line"></i> <?php echo $eval_completion_rate; ?>% Completion Rate</span>
+                                </div>
                             </div>
+                            <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
                         </div>
-                    </div>
+                    </a>
                     
-                    <div class="stats-highlight">
+                    <a href="pages/student_enrollment.php" class="stats-highlight clickable-stat">
                         <div class="stat-card-inner">
                             <div class="stat-card-icon-wrap blue">
                                 <i class="fas fa-user-graduate"></i>
@@ -599,11 +364,15 @@ try {
                             <div class="stat-card-data">
                                 <div class="stat-card-value"><?php echo $total_students; ?></div>
                                 <div class="stat-card-label">Total Students</div>
+                                <div class="stat-card-sub">
+                                    <span class="sub-years"><i class="fas fa-layer-group"></i> <?php echo count($yearLevels); ?> Year Levels</span>
+                                </div>
                             </div>
+                            <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
                         </div>
-                    </div>
+                    </a>
                     
-                    <div class="stats-highlight">
+                    <a href="pages/departments.php" class="stats-highlight clickable-stat">
                         <div class="stat-card-inner">
                             <div class="stat-card-icon-wrap purple">
                                 <i class="fas fa-book"></i>
@@ -611,9 +380,13 @@ try {
                             <div class="stat-card-data">
                                 <div class="stat-card-value"><?php echo $active_courses; ?></div>
                                 <div class="stat-card-label">Active Courses</div>
+                                <div class="stat-card-sub">
+                                    <span class="sub-majors"><i class="fas fa-building"></i> <?php echo count($majors); ?> Majors</span>
+                                </div>
                             </div>
+                            <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </section>
 
@@ -631,32 +404,11 @@ try {
                 </div>
             </section>
 
-            <script>
-                function updateTime() {
-                    const now = new Date();
-                    const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
-                    const timeString = now.toLocaleTimeString('en-US', options);
-                    const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }));
-                    
-                    const greetingEl = document.getElementById('time-greeting');
-                    if (hour >= 5 && hour < 12) greetingEl.textContent = 'Morning';
-                    else if (hour >= 12 && hour < 17) greetingEl.textContent = 'Afternoon';
-                    else if (hour >= 17 && hour < 21) greetingEl.textContent = 'Evening';
-                    else greetingEl.textContent = 'Night';
-                    
-                    document.getElementById('current-time').textContent = timeString;
-                    const dateOptions = { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
-                    document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', dateOptions);
-                }
-                updateTime();
-                setInterval(updateTime, 1000);
-            </script>
-
             <!-- Main Content Grid -->
             <section class="main-grid-section">
                 <div class="dashboard-grid">
                     <!-- Department Overview Card -->
-                    <div class="content-card">
+                    <div class="content-card wide-card">
                         <div class="content-card-header">
                             <div class="card-header-left">
                                 <h3><i class="fas fa-building"></i> Department Overview</h3>
@@ -673,6 +425,9 @@ try {
                                     </div>
                                     <p>No departments found</p>
                                     <span>Add departments to get started</span>
+                                    <a href="pages/departments.php" class="btn-primary" style="margin-top: 16px; display: inline-flex;">
+                                        <i class="fas fa-plus"></i> Add Department
+                                    </a>
                                 </div>
                             <?php else: ?>
                                 <!-- Department Stats Row -->
@@ -733,7 +488,7 @@ try {
                                             }
                                             $percentage = $total_students > 0 ? min(100, round(($student_count / $total_students) * 100)) : 0;
                                         ?>
-                                        <div class="dept-card">
+                                        <a href="pages/departments.php" class="dept-card">
                                             <div class="dept-card-header">
                                                 <div class="dept-icon majors">
                                                     <i class="fas fa-graduation-cap"></i>
@@ -751,7 +506,7 @@ try {
                                             <div class="dept-link" style="margin-top: 12px;">
                                                 <i class="fas fa-eye"></i> View Details
                                             </div>
-                                        </div>
+                                        </a>
                                         <?php endforeach; ?>
                                     </div>
                                     
@@ -764,53 +519,88 @@ try {
                                     <?php endif; ?>
                                 </div>
 
-                                <!-- Students by Year -->
-                                <?php if (!empty($yearLevels)): ?>
-                                <div class="year-levels-section">
-                                    <div class="section-header-modern">
-                                        <h4 class="section-title">
-                                            <i class="fas fa-users"></i> Students by Year Level
-                                        </h4>
-                                    </div>
-                                    <div class="year-labels-grid">
-                                        <?php foreach ($yearLevels as $year): 
-                                            $count = intval($year['count']);
-                                        ?>
-                                        <div class="year-label-badge">
-                                            <i class="fas fa-calendar-alt"></i>
-                                            <span class="year-name"><?php echo htmlspecialchars($year['year_level']); ?></span>
-                                            <span class="year-count"><?php echo $count; ?></span>
-                                        </div>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                                <?php endif; ?>
+                                 <!-- Students by Year -->
+                                 <?php if (!empty($yearLevels)): ?>
+                                 <div class="dept-majors-section">
+                                     <div class="section-header-modern">
+                                         <h4 class="section-title">
+                                             <i class="fas fa-layer-group"></i> Students by Year Level
+                                         </h4>
+                                         <a href="pages/student_enrollment.php" class="section-action">
+                                             View Enrollment <i class="fas fa-arrow-right"></i>
+                                         </a>
+                                     </div>
+                                     
+                                     <div class="dept-majors-grid year-majors-grid">
+                                         <?php 
+                                         $year_colors = [
+                                             '1st Year' => ['bg_class' => 'year-green', 'icon' => 'fa-user-graduate'],
+                                             '2nd Year' => ['bg_class' => 'year-blue', 'icon' => 'fa-user-graduate'],
+                                             '3rd Year' => ['bg_class' => 'year-purple', 'icon' => 'fa-user-graduate'],
+                                             '4th Year' => ['bg_class' => 'year-amber', 'icon' => 'fa-user-graduate']
+                                         ];
+                                         $max_count = 0;
+                                         foreach ($yearLevels as $y) {
+                                             if (intval($y['count']) > $max_count) $max_count = intval($y['count']);
+                                         }
+                                         foreach ($yearLevels as $index => $year): 
+                                             $count = intval($year['count']);
+                                             $bar_pct = $max_count > 0 ? round(($count / $max_count) * 100) : 0;
+                                             $pct_total = $total_students > 0 ? round(($count / $total_students) * 100) : 0;
+                                             $year_key = $year['year_level'];
+                                             $colors = $year_colors[$year_key] ?? $year_colors['1st Year'];
+                                         ?>
+                                         <a href="pages/student_enrollment.php?year=<?php echo urlencode($year['year_level']); ?>" class="dept-card year-dept-card">
+                                             <div class="dept-card-header">
+                                                 <div class="dept-icon <?php echo $colors['bg_class']; ?>">
+                                                     <i class="fas <?php echo $colors['icon']; ?>"></i>
+                                                 </div>
+                                                 <span class="status-badge active"><?php echo htmlspecialchars($year['year_level']); ?></span>
+                                             </div>
+                                             <h4 class="dept-title"><?php echo htmlspecialchars($year['year_level']); ?></h4>
+                                             <p class="dept-subtitle">Enrollment</p>
+                                             <div class="dept-value"><?php echo $count; ?></div>
+                                              <div class="progress-bar">
+                                                  <div class="progress" style="width: <?php echo $bar_pct; ?>%;"></div>
+                                              </div>
+                                          </a>
+                                         <?php endforeach; ?>
+                                     </div>
+                                 </div>
+                                 <?php endif; ?>
                             <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Right Column: Calendar + Reports -->
+                    <!-- Right Column: Calendar + Performance -->
                     <div class="right-column-grid">
                         <!-- Calendar Card -->
                         <div class="content-card">
                             <div class="content-card-header">
                                 <h3><i class="fas fa-calendar-alt"></i> Calendar</h3>
+                                <button onclick="goToToday()" class="calendar-today-btn" title="Go to today">
+                                    <i class="fas fa-crosshairs"></i> Today
+                                </button>
                             </div>
                             <div class="content-card-body">
                                 <div class="calendar-widget">
                                     <div class="calendar-header">
-                                        <button onclick="changeMonth(-1)" class="calendar-nav-btn">
+                                        <button onclick="changeMonth(-1)" class="calendar-nav-btn" title="Previous month">
                                             <i class="fas fa-chevron-left"></i>
                                         </button>
                                         <div id="calendar-title" class="calendar-month">January 2024</div>
-                                        <button onclick="changeMonth(1)" class="calendar-nav-btn">
+                                        <button onclick="changeMonth(1)" class="calendar-nav-btn" title="Next month">
                                             <i class="fas fa-chevron-right"></i>
                                         </button>
                                     </div>
                                     <div class="calendar-day-names">
-                                        <?php $days = ['S','M','T','W','T','F','S']; foreach($days as $d): ?>
-                                        <span><?php echo $d; ?></span>
-                                        <?php endforeach; ?>
+                                        <span>Sun</span>
+                                        <span>Mon</span>
+                                        <span>Tue</span>
+                                        <span>Wed</span>
+                                        <span>Thu</span>
+                                        <span>Fri</span>
+                                        <span>Sat</span>
                                     </div>
                                     <div id="calendar-days" class="calendar-days"></div>
                                 </div>
@@ -818,50 +608,71 @@ try {
                                 <div class="instructor-status-section">
                                     <div class="status-title">Instructor Status</div>
                                     <div class="status-grid">
-                                        <div class="status-item on-duty">
+                                        <a href="pages/instructors.php?filter=on+duty" class="status-item on-duty">
                                             <div class="status-icon"><i class="fas fa-briefcase"></i></div>
                                             <div class="status-value"><?php echo $on_duty; ?></div>
                                             <div class="status-label">On Duty</div>
-                                        </div>
-                                        <div class="status-item on-leave">
+                                        </a>
+                                        <a href="pages/instructors.php?filter=on+leave" class="status-item on-leave">
                                             <div class="status-icon"><i class="fas fa-bed"></i></div>
                                             <div class="status-value"><?php echo $on_leave; ?></div>
                                             <div class="status-label">On Leave</div>
-                                        </div>
-                                        <div class="status-item on-travel">
+                                        </a>
+                                        <a href="pages/instructors.php?filter=on+travel" class="status-item on-travel">
                                             <div class="status-icon"><i class="fas fa-plane"></i></div>
                                             <div class="status-value"><?php echo $on_travel; ?></div>
                                             <div class="status-label">On Travel</div>
-                                        </div>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Reports Card -->
+                        <!-- Performance Overview Card -->
                         <div class="content-card">
                             <div class="content-card-header gold-header">
                                 <h3><i class="fas fa-chart-line"></i> Performance Overview</h3>
+                                <a href="pages/reports.php" class="view-all">
+                                    Full Report <i class="fas fa-arrow-right"></i>
+                                </a>
                             </div>
                             <div class="content-card-body">
                                 <div class="performance-summary">
                                     <div class="perf-stat">
                                         <span class="perf-label">Average Rating</span>
                                         <span class="perf-value"><?php echo number_format($avg_rating, 1); ?>/5.0</span>
+                                        <div class="perf-stars">
+                                            <?php 
+                                            $full_stars = floor($avg_rating);
+                                            $half_star = ($avg_rating - $full_stars) >= 0.5;
+                                            for ($i = 0; $i < 5; $i++):
+                                                if ($i < $full_stars): ?>
+                                                    <i class="fas fa-star"></i>
+                                                <?php elseif ($i === $full_stars && $half_star): ?>
+                                                    <i class="fas fa-star-half-alt"></i>
+                                                <?php else: ?>
+                                                    <i class="far fa-star"></i>
+                                                <?php endif;
+                                            endfor; ?>
+                                        </div>
                                     </div>
                                     <div class="perf-stat">
                                         <span class="perf-label">Completion Rate</span>
-                                        <span class="perf-value"><?php echo $total_instructors > 0 ? round(($completed_evaluations / $total_instructors) * 100) : 0; ?>%</span>
+                                        <span class="perf-value"><?php echo $eval_completion_rate; ?>%</span>
+                                        <div class="perf-progress-mini">
+                                            <div class="perf-progress-bar" style="width: <?php echo $eval_completion_rate; ?>%"></div>
+                                        </div>
                                     </div>
                                 </div>
                                 
                                 <?php if (!empty($dept_performance)): ?>
                                 <div class="perf-list">
-                                    <?php foreach (array_slice($dept_performance, 0, 3) as $dept): ?>
+                                    <div class="perf-list-title">Department Ratings</div>
+                                    <?php foreach (array_slice($dept_performance, 0, 4) as $dept): ?>
                                     <div class="perf-item">
                                         <div class="perf-info">
                                             <span class="perf-name"><?php echo htmlspecialchars($dept['department']); ?></span>
-                                            <span class="perf-rating"><?php echo number_format($dept['avg_rating'], 1); ?></span>
+                                            <span class="perf-rating"><?php echo number_format($dept['avg_rating'], 1); ?>/5.0</span>
                                         </div>
                                         <div class="progress-bar">
                                             <div class="progress" style="width: <?php echo ($dept['avg_rating'] / 5) * 100; ?>%"></div>
@@ -869,6 +680,14 @@ try {
                                     </div>
                                     <?php endforeach; ?>
                                 </div>
+                                <?php else: ?>
+                                    <div class="empty-state-small">
+                                        <i class="fas fa-chart-pie"></i>
+                                        <p>No performance data yet</p>
+                                        <a href="pages/reports.php" class="btn-primary" style="margin-top: 12px; font-size: 12px; padding: 10px 18px;">
+                                            <i class="fas fa-plus"></i> Start Evaluation
+                                        </a>
+                                    </div>
                                 <?php endif; ?>
                                 
                                 <a href="pages/reports.php" class="view-all centered-link">
@@ -879,83 +698,190 @@ try {
                     </div>
                 </div>
             </section>
-
-            <!-- Recent Activity -->
-            <section class="activity-section">
-                <div class="section-header-modern">
-                    <h2 class="section-title">
-                        <i class="fas fa-history"></i> Recent Activity
-                    </h2>
-                </div>
-                <div class="activity-grid">
-                    <!-- Recent Evaluations -->
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h3><i class="fas fa-star"></i> Recent Evaluations</h3>
-                        </div>
-                        <div class="content-card-body">
-                            <?php if (empty($recent_evaluations)): ?>
-                                <div class="empty-state-small">
-                                    <i class="fas fa-inbox"></i>
-                                    <p>No evaluations yet</p>
-                                </div>
-                            <?php else: ?>
-                                <div class="eval-list">
-                                    <?php foreach ($recent_evaluations as $eval): ?>
-                                        <div class="eval-item">
-                                            <div class="eval-avatar">
-                                                <i class="fas fa-user-tie"></i>
-                                            </div>
-                                            <div class="eval-info">
-                                                <div class="eval-name"><?php echo htmlspecialchars($eval['instructor_name']); ?></div>
-                                                <div class="eval-course"><?php echo htmlspecialchars($eval['course_name']); ?></div>
-                                            </div>
-                                            <div class="eval-rating">
-                                                <div class="rating-badge">
-                                                    <i class="fas fa-star"></i> <?php echo number_format($eval['rating'], 1); ?>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-
-                    <!-- Department Performance -->
-                    <div class="content-card">
-                        <div class="content-card-header">
-                            <h3><i class="fas fa-chart-line"></i> Department Performance</h3>
-                        </div>
-                        <div class="content-card-body">
-                            <?php if (empty($dept_performance)): ?>
-                                <div class="empty-state-small">
-                                    <i class="fas fa-chart-pie"></i>
-                                    <p>No performance data</p>
-                                </div>
-                            <?php else: ?>
-                                <div class="performance-list">
-                                    <?php foreach (array_slice($dept_performance, 0, 4) as $dept): ?>
-                                        <div class="performance-item">
-                                            <div class="performance-info">
-                                                <span class="performance-name"><?php echo htmlspecialchars($dept['department']); ?></span>
-                                                <span class="performance-value"><?php echo number_format($dept['avg_rating'], 1); ?>/5.0</span>
-                                            </div>
-                                            <div class="progress-bar">
-                                                <div class="progress" style="width: <?php echo ($dept['avg_rating'] / 5) * 100; ?>%"></div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </div>
-            </section>
         </main>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="../../function/dashboard.js"></script>
     <script src="../../function/session_guard.js"></script>
+    <script>
+    // ==========================================
+    // CALENDAR FUNCTIONALITY - Fully Working
+    // ==========================================
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    function renderCalendar() {
+        const calendarTitle = document.getElementById('calendar-title');
+        const calendarDays = document.getElementById('calendar-days');
+        
+        if (!calendarTitle || !calendarDays) return;
+
+        // Update title
+        calendarTitle.textContent = monthNames[currentMonth] + ' ' + currentYear;
+
+        // Get first day of month and total days
+        const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+        const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+        
+        // Today's date for highlighting
+        const today = new Date();
+        const isCurrentMonth = (today.getMonth() === currentMonth && today.getFullYear() === currentYear);
+
+        // Build calendar HTML
+        let html = '';
+        
+        // Empty cells for days before the 1st
+        for (let i = 0; i < firstDay; i++) {
+            html += '<div class="calendar-day empty"></div>';
+        }
+        
+        // Day cells
+        for (let day = 1; day <= totalDays; day++) {
+            const isToday = isCurrentMonth && day === today.getDate();
+            const isWeekend = (new Date(currentYear, currentMonth, day).getDay() === 0 || 
+                              new Date(currentYear, currentMonth, day).getDay() === 6);
+            
+            let classes = 'calendar-day';
+            if (isToday) classes += ' today';
+            if (isWeekend) classes += ' weekend';
+            
+            html += '<div class="' + classes + '" data-day="' + day + '" onclick="selectDay(' + day + ')">' + day + '</div>';
+        }
+        
+        calendarDays.innerHTML = html;
+    }
+
+    function changeMonth(direction) {
+        currentMonth += direction;
+        if (currentMonth > 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else if (currentMonth < 0) {
+            currentMonth = 11;
+            currentYear--;
+        }
+        renderCalendar();
+    }
+
+    function goToToday() {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        renderCalendar();
+        showToast('Calendar set to today', 'info');
+    }
+
+    function selectDay(day) {
+        // Remove previous selection
+        document.querySelectorAll('.calendar-day.selected').forEach(function(el) {
+            el.classList.remove('selected');
+        });
+        // Add selection
+        const dayEl = document.querySelector('.calendar-day[data-day="' + day + '"]');
+        if (dayEl) {
+            dayEl.classList.add('selected');
+        }
+        const selectedDate = monthNames[currentMonth] + ' ' + day + ', ' + currentYear;
+        showToast('Selected: ' + selectedDate, 'info');
+    }
+
+    // Initialize calendar on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        renderCalendar();
+    });
+
+    // ==========================================
+    // TIME UPDATE
+    // ==========================================
+    function updateTime() {
+        const now = new Date();
+        const options = { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+        const timeString = now.toLocaleTimeString('en-US', options);
+        const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }));
+        
+        const greetingEl = document.getElementById('time-greeting');
+        if (hour >= 5 && hour < 12) greetingEl.textContent = 'Morning';
+        else if (hour >= 12 && hour < 17) greetingEl.textContent = 'Afternoon';
+        else if (hour >= 17 && hour < 21) greetingEl.textContent = 'Evening';
+        else greetingEl.textContent = 'Night';
+        
+        document.getElementById('current-time').textContent = timeString;
+        const dateOptions = { timeZone: 'Asia/Manila', weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+        document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', dateOptions);
+    }
+    updateTime();
+    setInterval(updateTime, 1000);
+
+    // ==========================================
+    // TOAST NOTIFICATIONS
+    // ==========================================
+    function showToast(message, type) {
+        type = type || 'info';
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        
+        const toast = document.createElement('div');
+        toast.className = 'toast toast-' + type;
+        
+        const icons = {
+            'info': 'fas fa-info-circle',
+            'success': 'fas fa-check-circle',
+            'warning': 'fas fa-exclamation-triangle',
+            'error': 'fas fa-times-circle'
+        };
+        
+        toast.innerHTML = '<i class="' + (icons[type] || icons.info) + '"></i><span>' + message + '</span>';
+        container.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(function() { toast.classList.add('show'); }, 10);
+        
+        // Auto remove
+        setTimeout(function() {
+            toast.classList.remove('show');
+            setTimeout(function() { toast.remove(); }, 300);
+        }, 3000);
+    }
+
+    // ==========================================
+    // SIDEBAR TOGGLE
+    // ==========================================
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    if (menuToggle && sidebar) {
+        menuToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('open');
+        });
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        if (sidebar && sidebar.classList.contains('open') && 
+            !sidebar.contains(e.target) && 
+            e.target !== menuToggle && 
+            !menuToggle.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
+    });
+
+    // ==========================================
+    // AUTO-DISMISS ALERTS
+    // ==========================================
+    document.querySelectorAll('.alert').forEach(function(alert) {
+        setTimeout(function() {
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateY(-10px)';
+            setTimeout(function() { alert.remove(); }, 300);
+        }, 5000);
+    });
+    </script>
 </body>
 </html>

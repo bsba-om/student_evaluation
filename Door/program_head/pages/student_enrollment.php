@@ -919,16 +919,16 @@ if (!$show_role_modal) {
             pointer-events: auto;
         }
 
-        .student-info-card-inline {
-            background: var(--white);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--border-light);
-            overflow: hidden;
-            max-width: 680px;
-            margin: 0 auto;
-            transition: all var(--transition-normal);
-        }
+         .student-info-card-inline {
+             background: var(--white);
+             border-radius: var(--radius-xl);
+             box-shadow: var(--shadow-lg);
+             border: 1px solid var(--border-light);
+             overflow: hidden;
+             max-width: 600px;
+             margin: 0 auto;
+             transition: all var(--transition-normal);
+         }
 
         .student-info-card-inline:hover {
             box-shadow: var(--shadow-xl);
@@ -1091,12 +1091,12 @@ if (!$show_role_modal) {
         /* ============================================
            YEAR LEVEL CARDS - ENHANCED
            ============================================ */
-        .year-level-section {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-            gap: 24px;
-            margin-top: 28px;
-        }
+         .year-level-section {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+             gap: 24px;
+             margin-top: 28px;
+         }
 
         .year-card {
             background: var(--white);
@@ -1386,21 +1386,21 @@ if (!$show_role_modal) {
         }
 
         /* Student Info Modal Card */
-        .student-info-card {
-            background: var(--white);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-xl);
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 960px;
-            max-height: 90vh;
-            overflow-y: auto;
-            z-index: 10000;
-            border: 1px solid var(--border-light);
-        }
+         .student-info-card {
+             background: var(--white);
+             border-radius: var(--radius-xl);
+             box-shadow: var(--shadow-xl);
+             position: fixed;
+             top: 50%;
+             left: 50%;
+             transform: translate(-50%, -50%);
+             width: 90%;
+             max-width: 880px;
+             max-height: 90vh;
+             overflow-y: auto;
+             z-index: 10000;
+             border: 1px solid var(--border-light);
+         }
 
         .student-info-card::-webkit-scrollbar {
             width: 6px;
