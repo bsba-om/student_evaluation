@@ -166,6 +166,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .pro-units{text-align:center;font-weight:600;white-space:nowrap;}
 .pro-prereq-col{color:#888;font-size:9.5px;white-space:nowrap;}
 .pro-total-row td{background:#f0ece0;font-weight:700;color:var(--gold-d);border-top:2px solid var(--gold);font-size:10px;}
+.pro-total-row td:last-child { text-align: center; }
 .pro-empty{text-align:center;color:#aaa;font-style:italic;padding:10px;font-size:10px;}
 .pro-grand-total{text-align:right;font-size:12px;font-weight:700;padding:7px 14px;background:#f7f5ef;border:1px solid var(--border);border-radius:7px;margin:0 0 12px;}
 .pro-sig-block{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:20px 0 0;border-top:2px solid var(--border);margin-top:20px;}
@@ -315,6 +316,10 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 
 .eval-bar-left{display:flex;align-items:center;gap:12px;}
 .filter-box{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.filter-toggle-btn{padding:8px 16px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .25s ease;}
+.filter-toggle-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.4);}
+.filter-container{display:none;flex-wrap:wrap;gap:10px;align-items:center;animation:fadeIn .3s ease;}
+.filter-container.open{display:flex;}
 .filter-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(184,134,11,.12);border-radius:6px;border:1px solid rgba(184,134,11,.15);}
 .filter-icon{color:var(--gold-l);font-size:11px;}
 .filter-title{font-size:10px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.5px;}
@@ -374,6 +379,22 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .rm-verdict{font-size:28px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.2;margin-bottom:6px;}
 .rm-verdict-sub{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;}
 .rm-gwa-chip{margin-top:10px;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:700;}
+
+@media print {
+  .rm-gwa-chip { font-size: 7pt !important; padding: 0.6mm 2mm !important; }
+  #gmSummaryGWA { font-size: 8pt !important; }
+  
+  /* Prospectus print table layout fixes */
+  .pro-table { table-layout: fixed !important; width: 100% !important; }
+  .pro-table td { vertical-align: top !important; padding: 0.5mm 1mm !important; }
+  .pro-th { padding: 0.5mm 1mm !important; }
+  .pro-sem-row { page-break-inside: avoid !important; }
+  .pro-year-block { page-break-inside: avoid !important; margin-bottom: 1mm !important; }
+  
+  /* Fix evaluated/locked row display in print */
+  .row-locked td, .row-finalized td { background: #fffbeb !important; }
+  .grade-print { font-size: 6pt !important; font-weight: 700 !important; }
+}
 .rm-body{padding:24px 32px 28px;}
 .rm-close{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,.15);border:none;border-radius:10px;cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10;}
 .rm-close:hover{background:rgba(255,255,255,.28);transform:rotate(90deg);}
@@ -430,6 +451,10 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 .gm-student-info{padding:8px 10px;background:#fff;border:1px solid rgba(184,134,11,.15);border-radius:6px;margin-bottom:10px;}
 .gm-summary{padding:8px 12px;background:linear-gradient(145deg,var(--gold-d),#a87120);border-radius:8px;margin-top:10px;}
 .gm-summary span{font-size:10px;font-weight:600;color:#fff;}
+
+@media print {
+  #gmSummaryGWA { font-size: 11px !important; }
+}
 .gm-sig-block{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
 .gm-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;background:var(--cream);border-top:1px solid var(--border);}
 .gm-hint{font-size:9px;color:var(--muted);margin-right:auto;}
@@ -480,7 +505,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   .pro-sem-label { font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important; background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important; display: block !important; width: 100% !important; }
   .pro-sem-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 2mm !important; padding: 1.5mm !important; background: white !important; width: 100% !important; }
   .pro-table { font-size: 6pt !important; table-layout: auto !important; border-collapse: collapse !important; font-family: 'Times New Roman',Times,serif !important; page-break-inside: avoid !important; width: 100% !important; }
-  .pro-th { background: #f0ece0 !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #7a5c10 !important; border: 0.3pt solid #ccc !important; white-space: nowrap; }
+  .pro-th { background: #f0ece0 !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #8B6914 !important; border: 0.3pt solid #ccc !important; white-space: nowrap; }
   .pro-table td { border: 0.3pt solid #ddd !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; line-height: 1.3 !important; }
   .pro-code { font-size: 6pt !important; font-weight: 700 !important; white-space: nowrap !important; }
   .pro-units { font-size: 6pt !important; text-align: center !important; white-space: nowrap; }
@@ -495,6 +520,13 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   .pro-empty { font-size: 5pt !important; }
   .pro-bridging-block { margin-bottom: 1mm !important; page-break-inside: avoid !important; }
   .pro-grand-total { font-size: 7pt !important; font-weight: 700 !important; text-align: right !important; padding: 1mm 2mm !important; margin: 1mm 0 !important; background: #f0ece0 !important; border-top: 0.5pt solid #B8860B !important; color: #8B6914 !important; }
+  
+  /* Fix GWA display size in prospectus print */
+  .gwa-strip .gwa-val { font-size: 18pt !important; }
+  
+   /* Align total units value directly under units column for all tables including bridging */
+   .pro-table .pro-total-row td:nth-child(3) { text-align: center !important; }
+   .pro-total-row td:last-child { text-align: center !important; }
   .pro-sig-block { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 5mm !important; padding: 3mm 2mm !important; border-top: 0.5pt solid #aaa !important; margin-top: 2mm !important; page-break-inside: avoid !important; }
   .pro-sig-col { text-align: center !important; }
   .pro-sig-line { border-bottom: 0.5pt solid #333 !important; height: 5mm !important; margin-bottom: 1mm !important; }
@@ -965,34 +997,35 @@ function buildCombinedBar(gwaData) {
   return `<div class="eval-combined-bar" id="evalFocusBar">
     <div class="eval-bar-left">
       <div class="filter-box">
-        <div class="filter-header">
-          <span class="filter-icon"><i class="fas fa-filter"></i></span>
-          <span class="filter-title">Filter View</span>
-        </div>
-        <div class="filter-controls">
-          <div class="filter-select-wrap">
-            <select class="filter-select" id="focusYearSel" onchange="onFocusChange()">
-              <option value="">— All Years —</option>
-              <option value="1st Year">1st Year</option>
-              <option value="2nd Year">2nd Year</option>
-              <option value="3rd Year">3rd Year</option>
-              <option value="4th Year">4th Year</option>
-              <option value="Bridging">Bridging</option>
-            </select>
+        <button class="filter-toggle-btn" onclick="toggleFilterContainer()">
+          <i class="fas fa-filter"></i> Filter View
+        </button>
+        <div class="filter-container" id="filterContainer">
+          <div class="filter-controls">
+            <div class="filter-select-wrap">
+              <select class="filter-select" id="focusYearSel" onchange="onFocusChange()">
+                <option value="">— All Years —</option>
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year">3rd Year</option>
+                <option value="4th Year">4th Year</option>
+                <option value="Bridging">Bridging</option>
+              </select>
+            </div>
+            <div class="filter-select-wrap">
+              <select class="filter-select" id="focusSemSel" onchange="onFocusChange()">
+                <option value="">— All Semesters —</option>
+                <option value="1st Semester">1st Semester</option>
+                <option value="2nd Semester">2nd Semester</option>
+              </select>
+            </div>
+            <button class="filter-clear-btn" onclick="clearFocus()" id="focusClearBtn" style="display:none;">
+              <i class="fas fa-times"></i> Clear
+            </button>
           </div>
-          <div class="filter-select-wrap">
-            <select class="filter-select" id="focusSemSel" onchange="onFocusChange()">
-              <option value="">— All Semesters —</option>
-              <option value="1st Semester">1st Semester</option>
-              <option value="2nd Semester">2nd Semester</option>
-            </select>
+          <div class="filter-active" id="focusActiveBadge" style="display:none;">
+            <i class="fas fa-eye"></i> <span id="focusBadgeText">—</span>
           </div>
-          <button class="filter-clear-btn" onclick="clearFocus()" id="focusClearBtn" style="display:none;">
-            <i class="fas fa-times"></i> Clear
-          </button>
-        </div>
-        <div class="filter-active" id="focusActiveBadge" style="display:none;">
-          <i class="fas fa-eye"></i> <span id="focusBadgeText">—</span>
         </div>
       </div>
     </div>
@@ -1249,6 +1282,11 @@ function closeAlreadyEvaluatedModal() {
 function confirmViewEvaluated(year, sem) {
   closeAlreadyEvaluatedModal();
   openGradesModal(year, sem);
+}
+
+function toggleFilterContainer() {
+  const container = document.getElementById('filterContainer');
+  container.classList.toggle('open');
 }
 
 function clearFocus() {
@@ -2547,9 +2585,25 @@ function buildGradeTable(subjects, student, ay, prereqUnlockMap, isFinalized = f
   });
   const semGWA = semTotalUnits > 0 ? (semTotalPoints / semTotalUnits).toFixed(2) : null;
 
-  const gwaBadge = semGWA ? `<span style="font-size:9px;font-weight:700;color:var(--green);">GWA: ${semGWA}</span>` : '';
-
-  rows += `<tr class="pro-total-row">${gwaBadge ? `<td style="text-align:center;font-size:10px;font-weight:700;background:#f0ece0;"><span style="color:var(--green);">${gwaBadge}</span></td>` : ''}<td></td><td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td><td class="pro-units">${fmt(total)}</td><td></td></tr>`;
+  // Total row — always render 6 cells to match the header (Grade | Status | Code | Description | Units | Pre-Req)
+  // When GWA exists, show it under the Grade column; otherwise keep that cell empty.
+  if (semGWA) {
+    rows += `<tr class="pro-total-row">
+      <td style="text-align:center;font-size:10px;font-weight:700;color:var(--green);background:#f0ece0;">GWA: ${semGWA}</td>
+      <td class="pro-td-status"></td>
+      <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
+      <td class="pro-units">${fmt(total)}</td>
+      <td></td>
+    </tr>`;
+  } else {
+    rows += `<tr class="pro-total-row">
+      <td></td>
+      <td class="pro-td-status"></td>
+      <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
+      <td class="pro-units">${fmt(total)}</td>
+      <td></td>
+    </tr>`;
+  }
   return `<table class="pro-table">
     <thead><tr>
       <th class="pro-th" style="width:54px;">Final Grade</th><th class="pro-th pro-th-status" style="width:36px;">Status</th>
