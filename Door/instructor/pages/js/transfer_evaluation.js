@@ -164,23 +164,28 @@ const TransferEvaluation = (() => {
     }
   }
 
-  /* ── Step 1: Previous Subjects ── */
-  function _renderPreviousSubjects(body, footer) {
-    // Group subjects by year and semester
-    const grouped = {};
-    _subjects.forEach(s => {
-      const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(s);
-    });
+   /* ── Step 1: Previous Subjects ── */
+    function _renderPreviousSubjects(body, footer) {
+      // Group subjects by year and semester
+      const grouped = {};
+      _subjects.forEach(s => {
+        const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(s);
+      });
 
-    let tableRows = '';
-    const sortedKeys = Object.keys(grouped).sort((a, b) => {
-      const [yA] = a.split('|');
-      const [yB] = b.split('|');
-      const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
-      return (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
-    });
+      let tableRows = '';
+      const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        const [yA, sA] = a.split('|');
+        const [yB, sB] = b.split('|');
+        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
+        const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
+        
+        const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
+        if (yearDiff !== 0) return yearDiff;
+        
+        return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
+      });
 
     sortedKeys.forEach(key => {
       const [year, sem] = key.split('|');
@@ -340,25 +345,30 @@ const TransferEvaluation = (() => {
     <button class="te-btn-next" onclick="TransferEvaluation.goToStep(3)"><i class="fas fa-arrow-right"></i> Next: Current Load</button>`;
   }
 
-  /* ── Step 3: Current Subject Load ── */
-  function _renderCurrentLoad(body, footer) {
-    // Show only subjects NOT credited from previous school
-    const remaining = _subjects.filter(s => !isSubjectCredited(s.id));
+   /* ── Step 3: Current Subject Load ── */
+    function _renderCurrentLoad(body, footer) {
+      // Show only subjects NOT credited from previous school
+      const remaining = _subjects.filter(s => !isSubjectCredited(s.id));
 
-    const grouped = {};
-    remaining.forEach(s => {
-      const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(s);
-    });
+      const grouped = {};
+      remaining.forEach(s => {
+        const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(s);
+      });
 
-    let tableRows = '';
-    const sortedKeys = Object.keys(grouped).sort((a, b) => {
-      const [yA] = a.split('|');
-      const [yB] = b.split('|');
-      const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
-      return (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
-    });
+      let tableRows = '';
+      const sortedKeys = Object.keys(grouped).sort((a, b) => {
+        const [yA, sA] = a.split('|');
+        const [yB, sB] = b.split('|');
+        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
+        const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
+        
+        const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
+        if (yearDiff !== 0) return yearDiff;
+        
+        return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
+      });
 
     sortedKeys.forEach(key => {
       const [year, sem] = key.split('|');

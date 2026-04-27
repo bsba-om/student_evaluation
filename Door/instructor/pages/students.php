@@ -857,14 +857,11 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                             <span class="s-badge s-badge-major"><?php echo htmlspecialchars($s['major_name']??'N/A'); ?></span>
                             <span class="s-badge s-badge-year"><?php echo htmlspecialchars($s['year_level']??'N/A'); ?></span>
                         </div>
-                        <div class="s-card-actions" onclick="event.stopPropagation()">
-                            <button class="btn-mini btn-mini-view" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                            <button class="btn-mini" onclick="openSingleAssign(<?php echo $s['mentee_id']; ?>, '<?php echo htmlspecialchars(addslashes($fullName)); ?>')">
-                                <i class="fas fa-tasks"></i> Assign
-                            </button>
-                        </div>
+<div class="s-card-actions" onclick="event.stopPropagation()">
+                             <button class="btn-mini btn-mini-view" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)">
+                                 <i class="fas fa-eye"></i> View
+                             </button>
+                         </div>
                     </div>
                     <?php endforeach; ?>
                     <?php if (empty($students)): ?>
@@ -991,10 +988,6 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
             <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
                 <button class="btn-submit" style="white-space:nowrap;" id="smAssignBtn">
                     <i class="fas fa-tasks"></i> Assign Task
-                </button>
-                <button onclick="" id="smRemoveBtn"
-                    style="padding:10px 20px;border-radius:12px;background:linear-gradient(135deg,#dc2626,#f87171);color:#fff;border:none;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;">
-                    <i class="fas fa-user-minus"></i> Remove
                 </button>
             </div>
         </div>

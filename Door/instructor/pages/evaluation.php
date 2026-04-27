@@ -867,6 +867,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
 
 <script src="../../../function/dashboard.js"></script>
 <script src="js/student_type_handler.js"></script>
+<script src="js/evaluation_common.js"></script>
 <script src="js/transfer_evaluation.js"></script>
 <script src="js/non_ibm_evaluation.js"></script>
 <script>
@@ -1698,17 +1699,31 @@ function showResultModal(subjects, yearLabel, semLabel) {
     retakeAY:  nextAYStr
   }));
 
-  // Grade breakdown chips
-  const breakdownHtml = `<div class="rm-grade-breakdown">
-    <span class="rm-grade-chip rgc-pass"><i class="fas fa-check"></i> ${passedSubs.length} Passed</span>
-    ${failedSubs.length?`<span class="rm-grade-chip rgc-fail"><i class="fas fa-times"></i> ${failedSubs.length} Failed</span>`:''}
-    ${condSubs.length?`<span class="rm-grade-chip rgc-cond"><i class="fas fa-exclamation"></i> ${condSubs.length} Conditional</span>`:''}
-    ${noGradeSubs.length?`<span class="rm-grade-chip rgc-none"><i class="fas fa-minus"></i> ${noGradeSubs.length} No Grade</span>`:''}
-  </div>`;
+    // Grade breakdown chips
+   const breakdownHtml = `<div class="rm-grade-breakdown">
+     <span class="rm-grade-chip rgc-pass"><i class="fas fa-check"></i> ${passedSubs.length} Passed</span>
+     ${failedSubs.length?`<span class="rm-grade-chip rgc-fail"><i class="fas fa-times"></i> ${failedSubs.length} Failed</span>`:''}
+     ${condSubs.length?`<span class="rm-grade-chip rgc-cond"><i class="fas fa-exclamation"></i> ${condSubs.length} Conditional</span>`:''}
+     ${noGradeSubs.length?`<span class="rm-grade-chip rgc-none"><i class="fas fa-minus"></i> ${noGradeSubs.length} No Grade</span>`:''}
+   </div>`;
 
-  let bodyHtml = '';
+   let bodyHtml = '';
 
-   // ★ PROSPECTUS STYLE ELIGIBLE SUBJECTS TABLE
+   // Failed subjects
+   if(failedSubs.length) {
+     bodyHtml += `<div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px;">
+       <i class="fas fa-redo" style="margin-right:7px;"></i>Failed Subjects — Must Retake
+     </div>
+     <div class="rm-subject-list">
+       ${failedSubs.map(s=>`<div class="rm-retake-card">
+         <div class="rm-sub-code">${esc(s.subject_code)}</div>
+         <div class="rm-sub-name">${esc(s.subject_name)}</div>
+         <div style="font-size:9px;font-weight:700;color:var(--red);margin-top:3px;">Grade: ${s.grade.toFixed(2)} — Failed</div>
+       </div>`).join('')}
+     </div>`;
+   }
+
+    // ★ PROSPECTUS STYLE ELIGIBLE SUBJECTS TABLE
    if(nextSemSubsWithStatus.length) {
      const totalAvailUnits = availableNextSubs.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
      bodyHtml += `
@@ -3039,11 +3054,11 @@ function renderAdvisement(d) {
   const nextSemLabel  = nSem===1 ? '1st Semester' : '2nd Semester';
   const nextAY = d.next_year||currentAY;
 
-  const rec     = adv.recommended||[];
-  const retake  = adv.retake||[];
-  const condl   = adv.conditional||[];
-  const blocked = adv.blocked||[];
-  const done    = adv.completed||[];
+   const rec     = adv.recommended||[];
+   const retake  = adv.retake||[];
+   const condl   = adv.conditional||[];
+   const blocked = adv.blocked||[];
+   const done    = (adv.completed||[]).filter(sub => sub.grade_rounded !== undefined && sub.grade_rounded !== null);
 
   const nextRec  = rec.filter(s2 => (YEAR_NUM[s2.year_level]||1)===nYr && (SEM_NUM[s2.semester]||1)===nSem);
   const laterRec = rec.filter(s2 => !nextRec.includes(s2));

@@ -500,7 +500,7 @@ $show_role_modal = !$role_access['allowed'];
                     <button class="tab-btn" onclick="switchTab('contact')"><i class="fas fa-address-book"></i> Contact</button>
                     <button class="tab-btn" onclick="switchTab('security')"><i class="fas fa-shield-alt"></i> Security</button>
                 </div>
-                
+
                 <!-- Personal Tab -->
                 <div class="tab-content active" id="personalTab">
                     <div class="content-card" id="personalCard">
