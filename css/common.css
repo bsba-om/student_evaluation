@@ -219,19 +219,33 @@ img {
     color: #3b82f6;
 }
 
-.toast.show {
-    transform: translateY(-50%) translateX(0);
+/* Responsive base styles */
+@media (max-width: 768px) {
+    .toast {
+        min-width: 90vw;
+        max-width: 90vw;
+        left: 5vw;
+        transform: translateX(0) translateY(20px);
+        bottom: 20px;
+    }
+    
+    .toast.show {
+        transform: translateX(0) translateY(0);
+    }
 }
 
-.toast-icon {
-    color: var(--gold-primary);
-    font-size: 1.2rem;
-}
-
-.toast-message {
-    font-size: 0.9rem;
-    font-weight: 500;
-    line-height: 1.5;
+/* Extra small devices */
+@media (max-width: 575px) {
+    .toast {
+        min-width: 95vw;
+        max-width: 95vw;
+        left: 2.5vw;
+        padding: 12px 16px;
+    }
+    
+    .toast-message {
+        font-size: 0.85rem;
+    }
 }
 
 .toast-close {

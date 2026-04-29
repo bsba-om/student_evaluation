@@ -51,15 +51,55 @@ const TransferEvaluation = (() => {
       const raw = sessionStorage.getItem(`${STORAGE_KEY}_${_student.id}`);
       if (raw) {
         const data = JSON.parse(raw);
-        _previousSubjects = data.previousSubjects || {};
-        _currentLoad = data.currentLoad || {};
+        _previousSubjects = normalizeObjectKeys(data.previousSubjects || {});
+
+        const savedLoad = data.currentLoad || {};
+        _currentLoad = {};
+
+        if (Array.isArray(savedLoad)) {
+          savedLoad.forEach(item => {
+            const sid = extractSubjectId(item);
+            if (sid != null) _currentLoad[String(sid)] = true;
+          });
+        } else if (savedLoad && typeof savedLoad === 'object') {
+          Object.keys(savedLoad).forEach(key => {
+            const value = savedLoad[key];
+            if (value === true || value === 1 || value === '1' || value === 'true') {
+              _currentLoad[String(key)] = true;
+            } else if (value && typeof value === 'object') {
+              const sid = extractSubjectId(value);
+              if (sid != null) _currentLoad[String(sid)] = true;
+            }
+          });
+        }
+
         if (Object.keys(_previousSubjects).length > 0 && Object.keys(_currentLoad).length > 0) {
           _step = 4; // already completed
         } else if (Object.keys(_previousSubjects).length > 0) {
           _step = 3; // skip to current load
+        } else if (Object.keys(_currentLoad).length > 0) {
+          _step = 4; // current load exists even without previous subjects
         }
       }
     } catch (e) {}
+  }
+
+  function normalizeObjectKeys(obj) {
+    if (!obj || typeof obj !== 'object') return {};
+    return Object.keys(obj).reduce((acc, key) => {
+      acc[String(key)] = obj[key];
+      return acc;
+    }, {});
+  }
+
+  function extractSubjectId(item) {
+    if (item == null) return null;
+    if (typeof item === 'object') {
+      if (item.id != null) return item.id;
+      if (item.subject_id != null) return item.subject_id;
+      return null;
+    }
+    return item;
   }
 
   function _save() {
@@ -76,12 +116,14 @@ const TransferEvaluation = (() => {
   function getCurrentLoad() { return _currentLoad; }
 
   function isSubjectCredited(subjectId) {
-    const ps = _previousSubjects[subjectId];
+    const ps = _previousSubjects[String(subjectId)];
     return ps && ps.validated && ps.grade && parseFloat(ps.grade) <= 3.00;
   }
 
   function isInCurrentLoad(subjectId) {
-    return !!_currentLoad[subjectId];
+    if (subjectId == null) return false;
+    const sid = (typeof subjectId === 'object') ? (subjectId.id ?? subjectId.subject_id) : subjectId;
+    return !!_currentLoad[String(sid)];
   }
 
   /* ── Show Workflow Modal ── */
@@ -192,7 +234,9 @@ const TransferEvaluation = (() => {
       tableRows += `<tr class="te-group-header"><td colspan="5" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-weight:700;padding:8px 12px;font-size:11px;">${_escHtml(year)} — ${_escHtml(sem)}</td></tr>`;
       grouped[key].forEach(s => {
         const prev = _previousSubjects[s.id] || {};
-        const checked = prev.grade ? 'checked' : '';
+        const selected = Object.prototype.hasOwnProperty.call(_previousSubjects, s.id);
+        const checked = selected ? 'checked' : '';
+        const gradeDisabled = !selected || !prev.grade;
         tableRows += `
         <tr class="te-subject-row" id="te-row-${s.id}">
           <td style="text-align:center;padding:6px;">
@@ -207,7 +251,7 @@ const TransferEvaluation = (() => {
             <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
               value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
               style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
-              ${!checked ? 'disabled' : ''}
+              ${gradeDisabled ? 'disabled' : ''}
               onchange="TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
           </td>
         </tr>`;
@@ -508,10 +552,11 @@ const TransferEvaluation = (() => {
   }
 
   function toggleCurrentLoad(sid, checked) {
+    const key = String(sid);
     if (checked) {
-      _currentLoad[sid] = true;
+      _currentLoad[key] = true;
     } else {
-      delete _currentLoad[sid];
+      delete _currentLoad[key];
     }
     _save();
     _updateLoadCount();
@@ -519,7 +564,7 @@ const TransferEvaluation = (() => {
 
   /* ── Count Updaters ── */
   function _updatePrevCount() {
-    const count = Object.keys(_previousSubjects).filter(k => _previousSubjects[k].grade).length;
+    const count = Object.keys(_previousSubjects).length;
     const units = Object.keys(_previousSubjects).filter(k => {
       const ps = _previousSubjects[k];
       return ps.grade && parseFloat(ps.grade) <= 3.00;
@@ -587,16 +632,25 @@ const TransferEvaluation = (() => {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  /* ── Apply Transfer Credits to Grade Map ── */
-  function applyCreditsToGradeMap(gradeMap) {
-    Object.keys(_previousSubjects).forEach(sid => {
-      const ps = _previousSubjects[sid];
-      if (ps.grade && ps.validated && parseFloat(ps.grade) <= 3.00) {
-        gradeMap[sid] = parseFloat(ps.grade);
-      }
-    });
-    return gradeMap;
-  }
+   /* ── Apply Transfer Credits to Grade Map ── */
+   function applyCreditsToGradeMap(gradeMap) {
+     Object.keys(_previousSubjects).forEach(sid => {
+       const ps = _previousSubjects[sid];
+       if (ps.grade && ps.validated && parseFloat(ps.grade) <= 3.00) {
+         gradeMap[sid] = parseFloat(ps.grade);
+       }
+     });
+     return gradeMap;
+   }
+
+   /* ── Get Filtered Subjects for Prospectus ── */
+   function getProspectusSubjects() {
+     // Return only subjects in current load for transfer students
+     if (Object.keys(_currentLoad).length > 0) {
+       return _subjects.filter(s => _currentLoad[String(s.id)] || _currentLoad[s.id]);
+     }
+     return _subjects;
+   }
 
   /* ── Public API ── */
   return {
@@ -614,6 +668,7 @@ const TransferEvaluation = (() => {
     getCurrentLoad,
     isSubjectCredited,
     isInCurrentLoad,
-    applyCreditsToGradeMap
+    applyCreditsToGradeMap,
+    getProspectusSubjects
   };
 })();

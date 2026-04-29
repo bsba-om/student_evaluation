@@ -493,6 +493,23 @@ if ($action === 'get_student_evaluation') {
             }
         }
 
+        // Fetch student subject load (which subjects the student is actually enrolled in)
+        $loadSubjects = [];
+        try {
+            $stmtLoad = $pdo->prepare("
+                SELECT subject_id, year_level, semester
+                FROM student_subject_load
+                WHERE student_id = ? AND academic_year = ?
+            ");
+            $stmtLoad->execute([$student_id, $academic_year]);
+            foreach ($stmtLoad->fetchAll(PDO::FETCH_ASSOC) as $load) {
+                $loadSubjects[$load['subject_id']] = [
+                    'year_level' => $load['year_level'],
+                    'semester'   => $load['semester']
+                ];
+            }
+        } catch (PDOException $e) {}
+
         // ── Merge ──
         $merged = [];
         foreach ($prospectus as $subj) {
@@ -504,6 +521,10 @@ if ($action === 'get_student_evaluation') {
             $subj['grade_label']   = $rounded !== null ? grade_label($rounded) : null;
             $subj['graded_at']     = $g ? $g['graded_at'] : null;
             $subj['remarks']       = $g ? ($g['remarks'] ?? '') : '';
+            // Load information
+            $subj['is_in_load']    = isset($loadSubjects[$subj['id']]);
+            $subj['load_year']     = $loadSubjects[$subj['id']]['year_level'] ?? null;
+            $subj['load_semester'] = $loadSubjects[$subj['id']]['semester'] ?? null;
             $merged[] = $subj;
         }
 
@@ -548,7 +569,6 @@ if ($action === 'get_student_evaluation') {
             }
         } catch (PDOException $e) {}
 
-        // Get advisor (instructor) name
         $advisorName = '';
         try {
             $stmtAdv = $pdo->prepare("SELECT first_name, middle_name, last_name, suffix FROM instructors WHERE id = ?");
@@ -596,24 +616,57 @@ if ($action === 'get_student_evaluation') {
     exit;
 }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  ACTION: save_enrollment_list
+  // ═══════════════════════════════════════════════════════════════════════════
+  
+  if ($action === 'save_enrollment_list') {
+      $student_id    = intval($_POST['student_id']    ?? 0);
+      $major_id      = intval($_POST['major_id']      ?? 0);
+      $academic_year = $_POST['academic_year']        ?? '2025-2026';
+      $subject_ids   = json_decode($_POST['subject_ids'] ?? '[]', true);
+      $year_level    = $_POST['year_level']           ?? '';
+      $semester      = $_POST['semester']              ?? '';
+      
+      if (!$student_id || !$major_id || !is_array($subject_ids)) {
+          echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+          exit;
+      }
+      
+      try {
+          $pdo->beginTransaction();
+          
+          // Delete existing load entries for this student/semester/year
+          $pdo->prepare("DELETE FROM student_subject_load WHERE student_id = ? AND academic_year = ? AND year_level = ? AND semester = ?")
+             ->execute([$student_id, $academic_year, $year_level, $semester]);
+          
+          // Insert new load entries
+          $stmt = $pdo->prepare("INSERT INTO student_subject_load (student_id, major_id, subject_id, academic_year, year_level, semester) VALUES (?,?,?,?,?,?)");
+          foreach ($subject_ids as $sid) {
+              $sid = intval($sid);
+              if ($sid > 0) {
+                  $stmt->execute([$student_id, $major_id, $sid, $academic_year, $year_level, $semester]);
+              }
+          }
+          
+          $pdo->commit();
+          
+          echo json_encode([
+              'success' => true,
+              'message' => 'Enrollment list saved successfully'
+          ]);
+      } catch (PDOException $e) {
+          $pdo->rollBack();
+          echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+  }
+  exit;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  ACTION: save_grade
 // ═══════════════════════════════════════════════════════════════════════════
 
 if ($action === 'save_grade') {
-    $student_id    = intval($_POST['student_id']    ?? 0);
-    $subject_id    = intval($_POST['subject_id']    ?? 0);
-    $major_id      = intval($_POST['major_id']      ?? 0);
-    $raw_grade     = $_POST['grade']                ?? '';
-    $semester      = $_POST['semester']             ?? '1st Semester';
-    $year_level    = $_POST['year_level']           ?? '1st Year';
-    $academic_year = $_POST['academic_year']        ?? '2025-2026';
-    $remarks       = trim($_POST['remarks']         ?? '');
-
-    if (!$student_id || !$subject_id || $raw_grade === '') {
-        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
-        exit;
-    }
     $raw = floatval($raw_grade);
     if ($raw < 1.00 || $raw > 5.00) {
         echo json_encode(['success' => false, 'message' => 'Grade must be between 1.00 and 5.00']);

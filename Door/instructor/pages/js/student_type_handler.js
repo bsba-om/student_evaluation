@@ -50,6 +50,16 @@ const StudentTypeHandler = (() => {
     _saveToSession();
   }
 
+  function clearType(studentId) {
+    if (!studentId) return;
+    const oldType = _typePerStudent[studentId];
+    delete _typePerStudent[studentId];
+    if (_currentType && _currentType === oldType) {
+      _currentType = null;
+    }
+    _saveToSession();
+  }
+
   function getCurrentType() {
     return _currentType;
   }
@@ -286,6 +296,7 @@ const StudentTypeHandler = (() => {
     onConfirm,
     getType,
     setType,
+    clearType,
     getCurrentType,
     TYPES
   };

@@ -1134,26 +1134,43 @@ function _proceedWithEval(m, studentType) {
     // Store subjects temporarily for workflow modals
     const tempSubjects = evalData.subjects || [];
 
-    if (studentType === 'transfer') {
-      // Init will check saved state; if complete, it calls onComplete immediately without showing modal
-      const skipped = TransferEvaluation.init(m, tempSubjects, function(previousSubjects, currentLoad) {
-        // This runs either after modal completion or immediately if already set up
-        document.getElementById('evalOverlay').classList.add('open');
-        TransferEvaluation.applyCreditsToGradeMap(gradeMap);
-        renderProspectus(evalData);
-        _applyTransferVisuals(previousSubjects);
-      });
+     if (studentType === 'transfer') {
+       // Init will check saved state; if complete, it calls onComplete immediately without showing modal
+       const skipped = TransferEvaluation.init(m, tempSubjects, function(previousSubjects, currentLoad) {
+         // This runs either after modal completion or immediately if already set up
+         document.getElementById('evalOverlay').classList.add('open');
+         TransferEvaluation.applyCreditsToGradeMap(gradeMap);
+         
+         // Mark credited subjects (passed previous school subjects) on evalData.subjects
+         Object.keys(previousSubjects).forEach(sid => {
+           const ps = previousSubjects[sid];
+           if (ps.grade && ps.validated && parseFloat(ps.grade) <= 3.00) {
+             const sub = evalData.subjects.find(s => s.id == sid);
+             if (sub) sub.is_credited = true;
+           }
+         });
+         
+         renderProspectus(evalData);
+         _applyTransferVisuals(previousSubjects);
+       });
       // Only close overlay if modal was actually shown
       if (!skipped) {
         document.getElementById('evalOverlay').classList.remove('open');
       }
-    } else if (studentType === 'non_ibm') {
-      // Init will check saved state; if complete, skips modal
-      const skipped = NonIBMEvaluation.init(m, tempSubjects, function(subjectLoad, bridgingSubjects) {
-        document.getElementById('evalOverlay').classList.add('open');
-        renderProspectus(evalData);
-        setTimeout(() => NonIBMEvaluation.applyRestrictions(), 200);
-      });
+     } else if (studentType === 'non_ibm') {
+       // Init will check saved state; if complete, skips modal
+       const skipped = NonIBMEvaluation.init(m, tempSubjects, function(subjectLoad, bridgingSubjects) {
+         document.getElementById('evalOverlay').classList.add('open');
+         // Mark subjects that are in the student's subject load
+         if (subjectLoad) {
+           evalData.subjects.forEach(sub => {
+             const sidStr = String(sub.id);
+             sub.is_in_load = !!subjectLoad[sidStr] || !!subjectLoad[sub.id];
+           });
+         }
+         renderProspectus(evalData);
+         setTimeout(() => NonIBMEvaluation.applyRestrictions(), 200);
+       });
       if (!skipped) {
         document.getElementById('evalOverlay').classList.remove('open');
       }
@@ -1485,9 +1502,15 @@ function confirmEditWithPassword(year, sem) {
                  sbtn.style.pointerEvents = 'auto';
                  sbtn.style.opacity = '';
                }
-             });
+   }).catch(err => {
+     console.error('Error loading mentees:', err);
+     toast('Failed to load mentees. Please refresh the page.', 'error');
+   });
            }
-         });
+   }).catch(err => {
+     console.error('Error loading evaluation data:', err);
+     toast('Error loading evaluation data.', 'error');
+   });
          
          closeAlreadyEvaluatedModal();
          applyFocusVisuals();
@@ -1516,43 +1539,278 @@ function toggleFilterContainer() {
   container.classList.toggle('open');
 }
 
-function clearFocus() {
-  focusYear = ''; focusSem = '';
-  const ys = document.getElementById('focusYearSel');
-  const ss = document.getElementById('focusSemSel');
-  if(ys) ys.value = '';
-  if(ss) ss.value = '';
-  applyFocusVisuals();
-  document.getElementById('focusBadgeText').textContent = '—';
-}
+ function clearFocus() {
+   focusYear = ''; focusSem = '';
+   const ys = document.getElementById('focusYearSel');
+   const ss = document.getElementById('focusSemSel');
+   if(ys) ys.value = '';
+   if(ss) ss.value = '';
+   applyFocusVisuals();
+   document.getElementById('focusBadgeText').textContent = '—';
+   
+   // Reset any inline display styles
+   document.querySelectorAll('.pro-year-block').forEach(block => {
+     block.style.display = '';
+     block.classList.remove('yr-blurred','yr-active');
+   });
+   document.querySelectorAll('.pro-sem-col').forEach(col => {
+     col.style.display = '';
+     col.classList.remove('sem-blurred','sem-active');
+   });
+   document.querySelectorAll('.pro-table tbody tr').forEach(row => {
+     row.style.display = '';
+   });
+ }
 
-function applyFocusVisuals() {
-  const hasFilter = !!(focusYear || focusSem);
-  const badge    = document.getElementById('focusActiveBadge');
-  const clearBtn = document.getElementById('focusClearBtn');
-  const badgeT   = document.getElementById('focusBadgeText');
-  if(badge)    badge.style.display    = hasFilter ? 'inline-flex' : 'none';
-  if(clearBtn) clearBtn.style.display = hasFilter ? 'flex' : 'none';
-  if(badgeT)   badgeT.textContent     = [focusYear, focusSem].filter(Boolean).join(' · ');
+ function applyFocusVisuals() {
+   const hasAnyFilter = !!(focusYear || focusSem);
+   const hasFullFilter = !!(focusYear && focusSem);
+   const badge    = document.getElementById('focusActiveBadge');
+   const clearBtn = document.getElementById('focusClearBtn');
+   const badgeT   = document.getElementById('focusBadgeText');
+   if(badge)    badge.style.display    = hasAnyFilter ? 'inline-flex' : 'none';
+   if(clearBtn) clearBtn.style.display = hasAnyFilter ? 'flex' : 'none';
+   if(badgeT)   badgeT.textContent     = [focusYear, focusSem].filter(Boolean).join(' · ');
 
-  document.querySelectorAll('.pro-year-block[data-year]').forEach(block => {
-    const yearMatch = !focusYear || block.dataset.year === focusYear;
-    if(!hasFilter) {
-      block.classList.remove('yr-blurred','yr-active');
-    } else if(yearMatch) {
-      block.classList.remove('yr-blurred'); block.classList.add('yr-active');
-    } else {
-      block.classList.add('yr-blurred'); block.classList.remove('yr-active');
-    }
-    if(yearMatch && focusSem) {
-      block.querySelectorAll('.pro-sem-col').forEach(col => {
-        if(col.dataset.sem === focusSem) { col.classList.remove('sem-blurred'); col.classList.add('sem-active'); }
-        else { col.classList.add('sem-blurred'); col.classList.remove('sem-active'); }
-      });
-    } else {
-      block.querySelectorAll('.pro-sem-col').forEach(col => col.classList.remove('sem-blurred','sem-active'));
-    }
-  });
+   document.querySelectorAll('.pro-year-block[data-year]').forEach(block => {
+     const isBridging = block.dataset.year === 'Bridging';
+     const yearMatch = isBridging || !focusYear || block.dataset.year === focusYear;
+
+     // Visibility: hide non-matching years when full filter active (except Bridging)
+     if (hasFullFilter && !yearMatch) {
+       block.style.display = 'none';
+     } else {
+       block.style.display = '';
+     }
+
+     // Visual classes: blur non-matching when partial filter; active when matching under full filter
+     if (!hasAnyFilter) {
+       block.classList.remove('yr-blurred','yr-active');
+     } else if (yearMatch) {
+       block.classList.remove('yr-blurred');
+       if (hasFullFilter) block.classList.add('yr-active');
+       else block.classList.remove('yr-active');
+     } else {
+       block.classList.add('yr-blurred');
+       block.classList.remove('yr-active');
+     }
+
+     // Semester columns
+     block.querySelectorAll('.pro-sem-col').forEach(col => {
+       const semMatch = isBridging || !focusSem || col.dataset.sem === focusSem;
+
+       // Visibility: hide non-matching semesters when full filter active (except Bridging)
+       if (hasFullFilter && focusSem && !semMatch) {
+         col.style.display = 'none';
+       } else {
+         col.style.display = '';
+       }
+
+       // Visual classes
+       if (!hasAnyFilter) {
+         col.classList.remove('sem-blurred','sem-active');
+       } else if (semMatch && focusSem) {
+         col.classList.remove('sem-blurred');
+         if (hasFullFilter) col.classList.add('sem-active');
+         else col.classList.remove('sem-active');
+       } else {
+         col.classList.add('sem-blurred');
+         col.classList.remove('sem-active');
+       }
+
+       // Subject row filtering: when full filter, hide subjects not in load nor credited
+       // Bridging rows: always shown (they are pre-loaded for non-IBM)
+       // Total row: always shown
+       col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+         // Always show total row
+         if (row.classList.contains('pro-total-row')) {
+           row.style.display = '';
+           return;
+         }
+         const subjectId = row.id.replace('row-','');
+         const sub = loadedSubjects.find(s => String(s.id) === subjectId);
+         if (hasFullFilter && !isBridging) {
+           if (sub && (sub.is_in_load || sub.is_credited)) {
+             row.style.display = '';
+           } else {
+             row.style.display = 'none';
+           }
+         } else {
+           row.style.display = '';
+         }
+       });
+     });
+   });
+
+   const fkey  = `${focusYear}|${focusSem}`;
+   const btnFin = document.getElementById('btnFinalize');
+   if(btnFin) {
+     if(hasFullFilter) {
+       btnFin.style.display = 'flex';
+       if(finalizedMap[fkey]) {
+         btnFin.disabled = true;
+         btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
+         btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
+       } else {
+         btnFin.disabled = false;
+         btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
+         btnFin.style.background = '';
+       }
+     } else {
+       btnFin.style.display = 'none';
+     }
+   }
+ }
+
+     // Visual classes: blur non-matching when partial filter; active when matching under full filter
+     if (!hasAnyFilter) {
+       block.classList.remove('yr-blurred','yr-active');
+     } else if (yearMatch) {
+       block.classList.remove('yr-blurred');
+       if (hasFullFilter) block.classList.add('yr-active');
+       else block.classList.remove('yr-active');
+     } else {
+       block.classList.add('yr-blurred');
+       block.classList.remove('yr-active');
+     }
+
+     // Semester columns
+     block.querySelectorAll('.pro-sem-col').forEach(col => {
+       const semMatch = !focusSem || col.dataset.sem === focusSem;
+
+       // Visibility: hide non-matching sems when full filter active
+       if (hasFullFilter && focusSem && !semMatch) {
+         col.style.display = 'none';
+       } else {
+         col.style.display = '';
+       }
+
+       // Visual classes
+       if (!hasAnyFilter) {
+         col.classList.remove('sem-blurred','sem-active');
+       } else if (semMatch && focusSem) {
+         col.classList.remove('sem-blurred');
+         if (hasFullFilter) col.classList.add('sem-active');
+         else col.classList.remove('sem-active');
+       } else {
+         col.classList.add('sem-blurred');
+         col.classList.remove('sem-active');
+       }
+
+       // Subject row filtering: when full filter, hide subjects not in load nor credited
+       col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+         const subjectId = row.id.replace('row-','');
+         const sub = loadedSubjects.find(s => String(s.id) === subjectId);
+         if (hasFullFilter) {
+           if (sub && (sub.is_in_load || sub.is_credited)) {
+             row.style.display = '';
+           } else {
+             row.style.display = 'none';
+           }
+         } else {
+           row.style.display = '';
+         }
+       });
+     });
+   });
+
+   const fkey  = `${focusYear}|${focusSem}`;
+   const btnFin = document.getElementById('btnFinalize');
+   if(btnFin) {
+     if(hasFullFilter) {
+       btnFin.style.display = 'flex';
+       if(finalizedMap[fkey]) {
+         btnFin.disabled = true;
+         btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
+         btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
+       } else {
+         btnFin.disabled = false;
+         btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
+         btnFin.style.background = '';
+       }
+     } else {
+       btnFin.style.display = 'none';
+     }
+   }
+ }
+     }
+
+     // Semester filtering
+     if(yearMatch && focusSem) {
+       block.querySelectorAll('.pro-sem-col').forEach(col => {
+         const semMatch = col.dataset.sem === focusSem;
+         if (hasFullFilter && !semMatch) {
+           col.style.display = 'none';
+         } else {
+           col.style.display = '';
+           col.classList.add('sem-active');
+           col.classList.remove('sem-blurred');
+           // When fully filtered, hide subjects NOT in student load AND NOT credited
+           if (hasFullFilter) {
+             col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+               const subjectId = row.id.replace('row-','');
+               const sub = loadedSubjects.find(s => String(s.id) === subjectId);
+               if (sub && sub.is_in_load === false && !sub.is_credited) {
+                 row.style.display = 'none';
+               } else {
+                 row.style.display = '';
+               }
+             });
+           } else {
+             col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+               row.style.display = '';
+             });
+           }
+         }
+       });
+     } else {
+       block.querySelectorAll('.pro-sem-col').forEach(col => {
+         col.style.display = '';
+         col.classList.remove('sem-blurred','sem-active');
+         col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+           row.style.display = '';
+         });
+       });
+     }
+   });
+ }
+     }
+
+     // Semester filtering and subject visibility
+     if(yearMatch && focusSem) {
+       block.querySelectorAll('.pro-sem-col').forEach(col => {
+         const semMatch = col.dataset.sem === focusSem;
+         if (!semMatch) {
+           col.style.display = 'none';
+         } else {
+           col.style.display = '';
+           col.classList.add('sem-active');
+           col.classList.remove('sem-blurred');
+           // Within the matching semester, hide subjects NOT in load and NOT credited
+           col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+             const subjectId = row.id.replace('row-','');
+             const sub = loadedSubjects.find(s => String(s.id) === subjectId);
+             if (sub && sub.is_in_load === false && !sub.is_credited) {
+               row.style.display = 'none';
+             } else {
+               row.style.display = '';
+             }
+           });
+         }
+       });
+     } else {
+       block.querySelectorAll('.pro-sem-col').forEach(col => {
+         col.style.display = '';
+         if (!hasFilter) {
+           col.classList.remove('sem-blurred','sem-active');
+         }
+         // Show all rows when no semester filter
+         col.querySelectorAll('.pro-table tbody tr').forEach(row => {
+           row.style.display = '';
+         });
+       });
+     }
+   });
 
   const fkey  = `${focusYear}|${focusSem}`;
   const btnFin = document.getElementById('btnFinalize');
@@ -1582,10 +1840,11 @@ function triggerFinalize() {
   const fkey = `${focusYear}|${focusSem}`;
   if(finalizedMap[fkey]) { toast('This period is already finalized.','info'); return; }
 
-  const targeted = loadedSubjects.filter(s =>
-    s.year_level === focusYear &&
-    (s.semester||'').includes(focusSem === '1st Semester' ? '1st' : '2nd')
-  );
+   const targeted = loadedSubjects.filter(s =>
+     s.year_level === focusYear &&
+     (s.semester||'').includes(focusSem === '1st Semester' ? '1st' : '2nd') &&
+     s.is_in_load !== false // include subjects that are in the student's load (regular or transfer with load)
+   );
   if(!targeted.length) { toast('No subjects found for this year/semester.','error'); return; }
 
   const missing = targeted.filter(s => gradeMap[s.id] == null);
@@ -1620,10 +1879,7 @@ function triggerFinalize() {
     });
   });
 
-  toast(`${focusYear} — ${focusSem} finalized successfully!`,'success',3000);
-  setTimeout(() => showResultModal(targeted, focusYear, focusSem), 700);
 
-  const fd = new FormData();
   fd.append('action','finalize_session'); fd.append('student_id',currentStudent.id);
   fd.append('major_id',currentStudent.major_id||0); fd.append('academic_year',currentAY);
   fd.append('year_level',focusYear); fd.append('semester',focusSem);
@@ -2556,20 +2812,35 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
 /* ═══════════════════════════════════════════════════════════
    RENDER PROSPECTUS
 ═══════════════════════════════════════════════════════════ */
-function renderProspectus(data) {
-  const s = data.student; const subjects = data.subjects||[];
-  const gwaData = data.gwa_data||{}; const ay = data.academic_year||currentAY;
-  const prereqSetsMap = data.prereq_map||{};
-  const finalizedSessions = data.finalized_sessions||{};
-  window.advisorName = data.advisor_name || '';
-  window.programHeadName = data.program_head_name || '';
-  const advisorName = window.advisorName;
-  const programHeadName = window.programHeadName;
+ function renderProspectus(data) {
+   const s = data.student; const subjects = data.subjects||[];
+   const gwaData = data.gwa_data||{}; const ay = data.academic_year||currentAY;
+   const prereqSetsMap = data.prereq_map||{};
+   const finalizedSessions = data.finalized_sessions||{};
+   window.advisorName = data.advisor_name || '';
+   window.programHeadName = data.program_head_name || '';
+   const advisorName = window.advisorName;
+   const programHeadName = window.programHeadName;
 
-  loadedSubjects = subjects;
-  subjects.forEach(sub => { if(sub.grade_rounded != null) gradeMap[sub.id] = parseFloat(sub.grade_rounded); });
+    loadedSubjects = subjects;
+    subjects.forEach(sub => { if(sub.grade_rounded != null) gradeMap[sub.id] = parseFloat(sub.grade_rounded); });
 
-  // Populate finalizedMap from backend data
+    // Mark subject load status based on student type
+    if (currentStudentType === 'transfer' && typeof TransferEvaluation !== 'undefined') {
+      const currentLoad = TransferEvaluation.getCurrentLoad();
+      subjects.forEach(sub => {
+        const sid = String(sub.id);
+        const isCredited = !!sub.is_credited;
+        sub.is_in_load = isCredited || !!currentLoad[sid];
+      });
+    } else if (currentStudentType === 'non_ibm') {
+      // Non-IBM: is_in_load already set by NonIBMEvaluation callback; do nothing
+    } else {
+      // Regular students: all subjects are in load
+      subjects.forEach(sub => { sub.is_in_load = true; });
+    }
+
+    // Populate finalizedMap from backend data
   finalizedMap = {};
   Object.keys(finalizedSessions).forEach(key => {
     const [year, sem] = key.split('|');
@@ -2753,42 +3024,77 @@ const sigHtml = `<div class="pro-sig-block">
 
 /* ═══════════════════════════════════════════════════════════
    BUILD GRADE TABLE
-═══════════════════════════════════════════════════════════ */
-function buildGradeTable(subjects, student, ay, prereqUnlockMap, isFinalized = false) {
-  if(!subjects?.length) return `<table class="pro-table">
-    <thead><tr>
-      <th class="pro-th" style="width:54px;text-align:center;">Grade</th><th class="pro-th pro-th-status" style="width:36px;text-align:center;">Status</th>
-      <th class="pro-th" style="width:62px;">Code</th><th class="pro-th">Description</th>
-      <th class="pro-th" style="width:32px;text-align:center;">Units</th><th class="pro-th" style="width:46px;">Pre-Req</th>
-    </tr></thead>
-    <tbody><tr><td colspan="6" class="pro-empty">No subjects</td></tr></tbody>
-  </table>`;
+ ═══════════════════════════════════════════════════════════ */
+ function buildGradeTable(subjects, student, ay, prereqUnlockMap, isFinalized = false) {
+   if(!subjects?.length) return `<table class="pro-table">
+     <thead><tr>
+       <th class="pro-th" style="width:54px;text-align:center;">Grade</th><th class="pro-th pro-th-status" style="width:36px;text-align:center;">Status</th>
+       <th class="pro-th" style="width:62px;">Code</th><th class="pro-th">Description</th>
+       <th class="pro-th" style="width:32px;text-align:center;">Units</th><th class="pro-th" style="width:46px;">Pre-Req</th>
+     </tr></thead>
+     <tbody><tr><td colspan="6" class="pro-empty">No subjects</td></tr></tbody>
+   </table>`;
 
-  let rows = ''; let total = 0;
-  subjects.forEach(sub => {
-    const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
-    const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
-    const inpCls = raw != null ? gClass(status) : '';
-    const prereqCode = (sub.display_prerequisite||sub.prerequisite||'').trim();
-    const pi = prereqUnlockMap ? (prereqUnlockMap[sub.id]||{unlocked:true}) : {unlocked:true};
-    const isPrereqLocked = !pi.unlocked;
-    const isFinalizedLocked = isFinalized;
-    const shouldDisable = isPrereqLocked || isFinalizedLocked;
-    total += parseFloat(sub.units)||0;
+   let rows = ''; let total = 0;
+   subjects.forEach(sub => {
+     const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
+     const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
+     const inpCls = raw != null ? gClass(status) : '';
+     const prereqCode = (sub.display_prerequisite||sub.prerequisite||'').trim();
+     const pi = prereqUnlockMap ? (prereqUnlockMap[sub.id]||{unlocked:true}) : {unlocked:true};
+     const isPrereqLocked = !pi.unlocked;
+     const isFinalizedLocked = isFinalized;
+     const isInLoad = !!sub.is_in_load;
+     const isCredited = !!sub.is_credited;
 
-    let lockDesc = '';
-    if(isPrereqLocked) {
-      const parts = [];
-      if(pi.directLocked && pi.directPrereqSubj) parts.push(`Pass ${esc(pi.directPrereqCode)}`);
-      if(pi.setLocked && pi.setBlockedBy?.length) pi.setBlockedBy.forEach(b => parts.push(`Pass ${esc(b.subject_code)}`));
-      lockDesc = parts.join(', ');
-    } else if(isFinalizedLocked) {
-      lockDesc = '';
-    }
-    const isPrereqSetTarget = Array.isArray(prereqSetsData) && prereqSetsData.some(set =>
-      set.major_id == currentStudent?.major_id && parseInt(set.target_subject_id) === parseInt(sub.id)
-    );
-    const rowClass = isFinalized ? 'row-finalized' : (shouldDisable ? 'row-locked' : '');
+     // Determine if input should be disabled:
+     // - Prerequisite not yet passed
+     // - Semester finalized
+     // - Credited from previous school (cannot edit)
+     // - Not in current load (cannot edit, regardless of grade presence)
+     const shouldDisable = isPrereqLocked || isFinalizedLocked || isCredited || !isInLoad;
+
+      total += parseFloat(sub.units)||0;
+
+      let lockDesc = '';
+      let badgeStyle = '';
+      let badgeIcon = 'fa-lock';
+
+      if(isPrereqLocked) {
+        const parts = [];
+        if(pi.directLocked && pi.directPrereqSubj) parts.push(`Pass ${esc(pi.directPrereqCode)}`);
+        if(pi.setLocked && pi.setBlockedBy?.length) pi.setBlockedBy.forEach(b => parts.push(`Pass ${esc(b.subject_code)}`));
+        lockDesc = parts.join(', ');
+        badgeStyle = ''; // default lock style
+        badgeIcon = 'fa-lock';
+      } else if(isFinalizedLocked) {
+        lockDesc = '';
+        badgeStyle = 'display:none;';
+      } else if(isCredited) {
+        lockDesc = ''; // badge already shown by _applyTransferVisuals
+        badgeStyle = 'display:none;';
+        badgeIcon = 'fa-check-circle';
+      } else if(!isInLoad) {
+        // For non-IBM, applyRestrictions will add its own badge; hide ours to avoid duplication
+        if (currentStudentType === 'non_ibm') {
+          lockDesc = '';
+          badgeStyle = 'display:none;';
+        } else {
+          lockDesc = 'Not in student load';
+          badgeStyle = 'background:rgba(128,128,128,.15);border-color:#999;color:#666;';
+          badgeIcon = 'fa-info-circle';
+        }
+      }
+
+     const isPrereqSetTarget = Array.isArray(prereqSetsData) && prereqSetsData.some(set =>
+       set.major_id == currentStudent?.major_id && parseInt(set.target_subject_id) === parseInt(sub.id)
+     );
+     let rowClass = '';
+     if (isFinalized) {
+       rowClass = 'row-finalized';
+     } else if (shouldDisable) {
+       rowClass = isCredited ? 'row-credited' : 'row-locked';
+     }
 
     rows += `<tr id="row-${sub.id}" class="${rowClass}">
       <td>
@@ -2806,7 +3112,8 @@ function buildGradeTable(subjects, student, ay, prereqUnlockMap, isFinalized = f
               ${shouldDisable?'disabled':''} title="Save grade"><i class="fas fa-save"></i></button>
           </div>
           <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
-          ${shouldDisable && !isFinalizedLocked ? `<span class="lock-badge"><i class="fas fa-lock" style="font-size:7px;"></i>${lockDesc||'Locked'}</span>` : ''}
+           ${shouldDisable && !isFinalizedLocked ? `<span class="lock-badge" style="${badgeStyle}"><i class="fas ${badgeIcon}" style="font-size:7px;"></i>${lockDesc||'Locked'}</span>` : ''}
+          ${isInLoad && raw == null ? '<span class="lock-badge" style="background:linear-gradient(135deg,var(--amber-l),var(--amber-b));color:#92400e;border-color:#fbbf24;"><i class="fas fa-exclamation-triangle" style="font-size:7px;"></i> Not graded</span>' : ''}
         </div>
       </td>
       <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>

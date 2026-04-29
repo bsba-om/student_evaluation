@@ -82,19 +82,38 @@ try {
          $message[] = 'Created prerequisite_sets table';
      } catch (Exception $e) {}
 
-     try {
-         $pdo->exec("CREATE TABLE IF NOT EXISTS prerequisite_set_subjects (
-             id INT AUTO_INCREMENT PRIMARY KEY,
-             set_id INT NOT NULL,
-             subject_id INT NOT NULL,
-             FOREIGN KEY (set_id) REFERENCES prerequisite_sets(id) ON DELETE CASCADE,
-             FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
-             UNIQUE KEY uk_set_subject (set_id, subject_id)
-         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-         $message[] = 'Created prerequisite_set_subjects table';
-     } catch (Exception $e) {}
+      try {
+          $pdo->exec("CREATE TABLE IF NOT EXISTS prerequisite_set_subjects (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              set_id INT NOT NULL,
+              subject_id INT NOT NULL,
+              FOREIGN KEY (set_id) REFERENCES prerequisite_sets(id) ON DELETE CASCADE,
+              FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+              UNIQUE KEY uk_set_subject (set_id, subject_id)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+          $message[] = 'Created prerequisite_set_subjects table';
+      } catch (Exception $e) {}
 
-     echo json_encode(['success' => true, 'message' => implode(', ', $message)]);
+      // Student subject load - tracks which subjects a student is actually enrolled in for each semester
+      try {
+          $pdo->exec("CREATE TABLE IF NOT EXISTS student_subject_load (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              student_id INT NOT NULL,
+              major_id INT NOT NULL,
+              subject_id INT NOT NULL,
+              academic_year VARCHAR(20) NOT NULL,
+              year_level VARCHAR(20) NOT NULL,
+              semester VARCHAR(20) NOT NULL,
+              enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+              FOREIGN KEY (major_id) REFERENCES majors(id) ON DELETE CASCADE,
+              FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE,
+              UNIQUE KEY uk_student_semester_subject (student_id, subject_id, academic_year, year_level, semester)
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+          $message[] = 'Created student_subject_load table';
+      } catch (Exception $e) {}
+
+      echo json_encode(['success' => true, 'message' => implode(', ', $message)]);
  } catch (PDOException $e) {
      echo json_encode(['success' => false, 'message' => $e->getMessage()]);
  }

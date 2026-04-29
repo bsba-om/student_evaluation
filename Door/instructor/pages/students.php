@@ -370,16 +370,32 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
 .s-card-actions {
     display: flex; gap: 6px; margin-top: 12px;
 }
-.btn-mini {
-    flex: 1; padding: 7px; border-radius: 8px;
-    border: 1.5px solid var(--border);
-    background: #fff; font-family: 'Poppins', sans-serif;
-    font-size: 11px; font-weight: 600; cursor: pointer;
-    transition: var(--transition); color: var(--ink-2);
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-}
-.btn-mini:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
-.btn-mini-view:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+ .btn-mini {
+     flex: 1; padding: 7px; border-radius: 8px;
+     border: 1.5px solid var(--border);
+     background: #fff; font-family: 'Poppins', sans-serif;
+     font-size: 11px; font-weight: 600; cursor: pointer;
+     transition: var(--transition); color: var(--ink-2);
+     display: flex; align-items: center; justify-content: center; gap: 5px;
+ }
+ .btn-mini:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+ .btn-mini-view:hover { background: var(--gold); color: #fff; border-color: var(--gold); }
+ .btn-mini-kick { 
+     color: #dc2626; 
+     border-color: #fecaca; 
+     background: #fef2f2; 
+ }
+ .btn-mini-kick:hover { 
+     background: #dc2626; 
+     color: #fff; 
+     border-color: #dc2626; 
+     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+ }
+ .btn-mini-kick:active {
+     transform: scale(0.95);
+ }
+ .btn-mini-kick { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+ .btn-mini-kick:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
 
 /* ══════════════════════════════════════════
    LIST VIEW — TABLE
@@ -591,8 +607,16 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
     cursor: pointer; transition: var(--transition);
     box-shadow: var(--shadow-gold);
 }
-.btn-submit:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(212,168,67,.4); }
-.btn-submit:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; transform: none; }
+ .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 12px 28px rgba(212,168,67,.4); }
+ .btn-submit:disabled { background: #9ca3af; box-shadow: none; cursor: not-allowed; transform: none; }
+ .btn-kick {
+     padding: 11px 24px; border-radius: 12px;
+     border: 1.5px solid #fecaca; background: #fef2f2;
+     font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600;
+     cursor: pointer; color: #dc2626; transition: var(--transition);
+     display: flex; align-items: center; gap: 8px;
+ }
+ .btn-kick:hover { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 12px rgba(220,38,38,.3); }
 
 /* ══════════════════════════════════════════
    STUDENT DETAIL MODAL SPECIFICS
@@ -857,11 +881,14 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                             <span class="s-badge s-badge-major"><?php echo htmlspecialchars($s['major_name']??'N/A'); ?></span>
                             <span class="s-badge s-badge-year"><?php echo htmlspecialchars($s['year_level']??'N/A'); ?></span>
                         </div>
-<div class="s-card-actions" onclick="event.stopPropagation()">
-                             <button class="btn-mini btn-mini-view" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)">
-                                 <i class="fas fa-eye"></i> View
-                             </button>
-                         </div>
+ <div class="s-card-actions" onclick="event.stopPropagation()">
+                              <button class="btn-mini btn-mini-view" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)" title="View student details">
+                                  <i class="fas fa-eye"></i> View
+                              </button>
+                              <button class="btn-mini btn-mini-kick" onclick="kickStudent(<?php echo $s['mentee_id']; ?>, '<?php echo htmlspecialchars(addslashes($fullName)); ?>')" title="Remove from mentees">
+                                  <i class="fas fa-user-xmark"></i> Kick
+                              </button>
+                          </div>
                     </div>
                     <?php endforeach; ?>
                     <?php if (empty($students)): ?>
@@ -911,12 +938,15 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                             <td style="font-family:monospace;font-size:12px;color:var(--muted);"><?php echo htmlspecialchars($s['student_id']??'N/A'); ?></td>
                             <td><span class="s-badge s-badge-major"><?php echo htmlspecialchars($s['major_name']??'N/A'); ?></span></td>
                             <td><span class="s-badge s-badge-year"><?php echo htmlspecialchars($s['year_level']??'N/A'); ?></span></td>
-                            <td style="text-align:center;">
-                                <div style="display:flex;gap:6px;justify-content:center;">
-                                    <button class="btn-mini btn-mini-view" style="flex:none;padding:6px 12px;" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)"><i class="fas fa-eye"></i></button>
-                                    <button class="btn-mini" style="flex:none;padding:6px 12px;" onclick="openSingleAssign(<?php echo $s['mentee_id']; ?>, '<?php echo htmlspecialchars(addslashes($fullName)); ?>')"><i class="fas fa-tasks"></i></button>
-                                </div>
-                            </td>
+                             <td style="text-align:center;">
+                                 <div style="display:flex;gap:6px;justify-content:center;">
+                                     <button class="btn-mini btn-mini-view" style="flex:none;padding:6px 12px;" onclick="viewStudent(<?php echo $s['mentee_id']; ?>)"><i class="fas fa-eye"></i></button>
+                                     <button class="btn-mini" style="flex:none;padding:6px 12px;" onclick="openSingleAssign(<?php echo $s['mentee_id']; ?>, '<?php echo htmlspecialchars(addslashes($fullName)); ?>')"><i class="fas fa-tasks"></i></button>
+                                     <button class="btn-mini btn-mini-kick" style="flex:none;padding:6px 12px;" onclick="kickStudent(<?php echo $s['mentee_id']; ?>, '<?php echo htmlspecialchars(addslashes($fullName)); ?>')" title="Remove mentee">
+                                         <i class="fas fa-user-xmark"></i>
+                                     </button>
+                                 </div>
+                             </td>
                         </tr>
                         <?php endforeach; ?>
                         </tbody>
@@ -985,11 +1015,14 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                 <div class="student-modal-sid" id="smSid"><i class="fas fa-id-card"></i> <span></span></div>
                 <div class="student-modal-info" id="smInfo"></div>
             </div>
-            <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
-                <button class="btn-submit" style="white-space:nowrap;" id="smAssignBtn">
-                    <i class="fas fa-tasks"></i> Assign Task
-                </button>
-            </div>
+             <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px;flex-shrink:0;">
+                 <button class="btn-submit" style="white-space:nowrap;" id="smAssignBtn">
+                     <i class="fas fa-tasks"></i> Assign Task
+                 </button>
+                 <button class="btn-kick" style="white-space:nowrap;" id="smKickBtn" onclick="kickStudentFromModal()">
+                     <i class="fas fa-user-xmark"></i> Remove Mentee
+                 </button>
+             </div>
         </div>
         <div class="modal-body">
             <div class="detail-grid" id="smDetailGrid"></div>
@@ -1235,7 +1268,6 @@ function viewStudent(menteeId) {
         <span><i class="fas fa-layer-group"></i> ${esc(s.year_level||'N/A')}</span>`;
 
     document.getElementById('smAssignBtn').onclick = () => { closeModal('studentModal'); openSingleAssign(menteeId, fullName); };
-    document.getElementById('smRemoveBtn').onclick = () => removeMentee(menteeId, fullName);
 
     document.getElementById('smDetailGrid').innerHTML = `
         <div class="detail-card"><div class="detail-card-label"><i class="fas fa-id-card"></i> Student ID</div><div class="detail-card-val">${esc(s.student_id||'N/A')}</div></div>
@@ -1294,18 +1326,33 @@ async function markDone(taskId, menteeId) {
     } catch(e) { toast('Network error', 'error'); }
 }
 
-async function removeMentee(menteeId, name) {
-    if (!confirm(`Remove "${name}" from your mentees? All their tasks will be deleted.`)) return;
-    try {
-        const r = await fetch('../../../Door/data/remove_mentee.php', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mentee_id: menteeId })
-        });
-        const d = await r.json();
-        if (d.success) { toast('Mentee removed!', 'success'); closeModal('studentModal'); setTimeout(() => location.reload(), 1000); }
-        else toast(d.message || 'Failed', 'error');
-    } catch(e) { toast('Network error', 'error'); }
-}
+ async function removeMentee(menteeId, name) {
+     if (!confirm(`Remove "${name}" from your mentees? All their tasks will be deleted.`)) return;
+     try {
+         const r = await fetch('../../../Door/data/remove_mentee.php', {
+             method: 'POST', headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ mentee_id: menteeId })
+         });
+         const d = await r.json();
+         if (d.success) { toast('Mentee removed!', 'success'); closeModal('studentModal'); setTimeout(() => location.reload(), 1000); }
+         else toast(d.message || 'Failed', 'error');
+     } catch(e) { toast('Network error', 'error'); }
+ }
+ 
+ // Alias for kick button
+ function kickStudent(menteeId, name) {
+     removeMentee(menteeId, name);
+ }
+ 
+ function kickStudentFromModal() {
+     if (currentDetailMenteeId) {
+         const s = ALL_STUDENTS.find(x => x.mentee_id == currentDetailMenteeId);
+         if (s) {
+             const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' ') + (s.suffix ? ' ' + s.suffix : '');
+             removeMentee(currentDetailMenteeId, fullName);
+         }
+     }
+ }
 
 /* ══════════════════════════════════
    BULK ASSIGN

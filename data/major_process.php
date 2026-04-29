@@ -12,6 +12,11 @@ function jsonResponse($data) {
 
 require_once __DIR__ . '/config.php';
 
+if (!$pdo) {
+    jsonResponse(['success' => false, 'message' => 'Database connection failed']);
+    exit;
+}
+
 $action = isset($_POST['action']) ? $_POST['action'] : '';
 
 switch ($action) {
