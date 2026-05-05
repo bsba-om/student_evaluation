@@ -381,6 +381,19 @@ if ($action === 'get_mentees') {
             JOIN students s   ON me.student_id = s.id
             LEFT JOIN majors m ON s.major_id   = m.id
             WHERE me.mentor_id = :iid
+              AND (
+                  s.student_type IS NULL
+                  OR s.student_type = ''
+                  OR (
+                      SELECT COUNT(*) 
+                      FROM student_grades sg2
+                      WHERE sg2.student_id = s.id AND sg2.graded_by = :iid
+                  ) < (
+                      SELECT COUNT(*) 
+                      FROM major_subjects ms2 
+                      WHERE ms2.major_id = s.major_id
+                  )
+              )
             ORDER BY s.last_name, s.first_name
         ");
         $stmt->execute([':iid' => $instructor_id]);
@@ -667,6 +680,15 @@ if ($action === 'get_student_evaluation') {
 // ═══════════════════════════════════════════════════════════════════════════
 
 if ($action === 'save_grade') {
+    $student_id    = intval($_POST['student_id']    ?? 0);
+    $subject_id    = intval($_POST['subject_id']    ?? 0);
+    $major_id      = intval($_POST['major_id']      ?? 0);
+    $semester      = $_POST['semester']           ?? '';
+    $year_level    = $_POST['year_level']         ?? '';
+    $academic_year = $_POST['academic_year']      ?? '2025-2026';
+    $raw_grade     = $_POST['grade']              ?? 0;
+    $remarks       = trim($_POST['remarks']       ?? '');
+    
     $raw = floatval($raw_grade);
     if ($raw < 1.00 || $raw > 5.00) {
         echo json_encode(['success' => false, 'message' => 'Grade must be between 1.00 and 5.00']);

@@ -135,14 +135,14 @@ const TransferEvaluation = (() => {
     const html = `
     <div class="te-overlay" id="transferEvalModal">
       <div class="te-panel">
-        <div class="te-header">
-          <div class="te-header-icon"><i class="fas fa-exchange-alt"></i></div>
-          <div>
-            <div class="te-header-title">Transfer Student Setup</div>
-            <div class="te-header-sub">${_escHtml(full)} — ${_escHtml(_student.major_name || '—')}</div>
-          </div>
-          <button class="te-close" onclick="TransferEvaluation.close()"><i class="fas fa-times"></i></button>
-        </div>
+    <div class="te-header">
+      <div class="te-header-icon"><i class="fas fa-exchange-alt"></i></div>
+      <div>
+        <div class="te-header-title">${_escHtml(full)}</div>
+        <div class="te-header-sub">${_escHtml(_student.major_name || '—')}</div>
+      </div>
+      <button class="te-close" onclick="TransferEvaluation.close()"><i class="fas fa-times"></i></button>
+    </div>
 
         <div class="te-steps">
           <div class="te-step ${_step >= 1 ? 'te-step-active' : ''}" id="teStep1">
@@ -206,59 +206,59 @@ const TransferEvaluation = (() => {
     }
   }
 
-   /* ── Step 1: Previous Subjects ── */
-    function _renderPreviousSubjects(body, footer) {
-      // Group subjects by year and semester
-      const grouped = {};
-      _subjects.forEach(s => {
-        const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(s);
-      });
+    /* ── Step 1: Previous Subjects ── */
+     function _renderPreviousSubjects(body, footer) {
+       // Group subjects by year and semester
+       const grouped = {};
+       _subjects.forEach(s => {
+         const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
+         if (!grouped[key]) grouped[key] = [];
+         grouped[key].push(s);
+       });
 
-      let tableRows = '';
-      const sortedKeys = Object.keys(grouped).sort((a, b) => {
-        const [yA, sA] = a.split('|');
-        const [yB, sB] = b.split('|');
-        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
-        const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
-        
-        const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
-        if (yearDiff !== 0) return yearDiff;
-        
-        return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
-      });
+       let tableRows = '';
+       const sortedKeys = Object.keys(grouped).sort((a, b) => {
+         const [yA, sA] = a.split('|');
+         const [yB, sB] = b.split('|');
+         const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
+         const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
+         
+         const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
+         if (yearDiff !== 0) return yearDiff;
+         
+         return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
+       });
 
-    sortedKeys.forEach(key => {
-      const [year, sem] = key.split('|');
-      tableRows += `<tr class="te-group-header"><td colspan="5" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-weight:700;padding:8px 12px;font-size:11px;">${_escHtml(year)} — ${_escHtml(sem)}</td></tr>`;
-      grouped[key].forEach(s => {
-        const prev = _previousSubjects[s.id] || {};
-        const selected = Object.prototype.hasOwnProperty.call(_previousSubjects, s.id);
-        const checked = selected ? 'checked' : '';
-        const gradeDisabled = !selected || !prev.grade;
-        tableRows += `
-        <tr class="te-subject-row" id="te-row-${s.id}">
-          <td style="text-align:center;padding:6px;">
-            <input type="checkbox" class="te-prev-check" data-sid="${s.id}" ${checked}
-              onchange="TransferEvaluation.togglePrevSubject(${s.id}, this.checked)"
-              style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
-          </td>
-          <td style="font-weight:700;font-size:11px;padding:6px 8px;">${_escHtml(s.subject_code)}</td>
-          <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
-          <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
-          <td style="padding:6px 8px;">
-            <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
-              value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
-              style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
-              ${gradeDisabled ? 'disabled' : ''}
-              onchange="TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
-          </td>
-        </tr>`;
-      });
-    });
+       sortedKeys.forEach(key => {
+         const [year, sem] = key.split('|');
+         tableRows += `<tr class="te-group-header"><td colspan="5" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-weight:700;padding:8px 12px;font-size:11px;">${_escHtml(year)} — ${_escHtml(sem)}</td></tr>`;
+         grouped[key].forEach(s => {
+           const prev = _previousSubjects[s.id] || {};
+           const selected = Object.prototype.hasOwnProperty.call(_previousSubjects, s.id);
+           const checked = selected ? 'checked' : '';
+           const gradeDisabled = !selected || !prev.grade;
+           tableRows += `
+           <tr class="te-subject-row" id="te-row-${s.id}">
+             <td style="text-align:center;padding:6px;">
+               <input type="checkbox" class="te-prev-check" data-sid="${s.id}" ${checked}
+                 onchange="TransferEvaluation.togglePrevSubject(${s.id}, this.checked)"
+                 style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
+             </td>
+             <td style="font-weight:700;font-size:11px;padding:6px 8px;">${_escHtml(s.subject_code)}</td>
+             <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
+             <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
+             <td style="padding:6px 8px;">
+               <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
+                 value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
+                 style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
+                 ${gradeDisabled ? 'disabled' : ''}
+                 onchange="TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
+             </td>
+           </tr>`;
+         });
+       });
 
-    body.innerHTML = `
+     body.innerHTML = `
     <div style="margin-bottom:14px;">
       <div style="padding:14px 18px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid var(--blue-b);border-radius:10px;">
         <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:4px;">
@@ -389,51 +389,51 @@ const TransferEvaluation = (() => {
     <button class="te-btn-next" onclick="TransferEvaluation.goToStep(3)"><i class="fas fa-arrow-right"></i> Next: Current Load</button>`;
   }
 
-   /* ── Step 3: Current Subject Load ── */
-    function _renderCurrentLoad(body, footer) {
-      // Show only subjects NOT credited from previous school
-      const remaining = _subjects.filter(s => !isSubjectCredited(s.id));
+    /* ── Step 3: Current Subject Load ── */
+     function _renderCurrentLoad(body, footer) {
+       // Show only subjects NOT credited from previous school
+       const remaining = _subjects.filter(s => !isSubjectCredited(s.id));
 
-      const grouped = {};
-      remaining.forEach(s => {
-        const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(s);
-      });
+       const grouped = {};
+       remaining.forEach(s => {
+         const key = `${s.year_level || '1st Year'}|${s.semester || '1st Semester'}`;
+         if (!grouped[key]) grouped[key] = [];
+         grouped[key].push(s);
+       });
 
-      let tableRows = '';
-      const sortedKeys = Object.keys(grouped).sort((a, b) => {
-        const [yA, sA] = a.split('|');
-        const [yB, sB] = b.split('|');
-        const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
-        const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
-        
-        const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
-        if (yearDiff !== 0) return yearDiff;
-        
-        return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
-      });
+       let tableRows = '';
+       const sortedKeys = Object.keys(grouped).sort((a, b) => {
+         const [yA, sA] = a.split('|');
+         const [yB, sB] = b.split('|');
+         const yearOrder = { '1st Year': 1, '2nd Year': 2, '3rd Year': 3, '4th Year': 4, 'Bridging': 5 };
+         const semesterOrder = { '1st Semester': 1, '2nd Semester': 2, 'Summer': 3 };
+         
+         const yearDiff = (yearOrder[yA] || 99) - (yearOrder[yB] || 99);
+         if (yearDiff !== 0) return yearDiff;
+         
+         return (semesterOrder[sA] || 99) - (semesterOrder[sB] || 99);
+       });
 
-    sortedKeys.forEach(key => {
-      const [year, sem] = key.split('|');
-      tableRows += `<tr class="te-group-header"><td colspan="4" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-weight:700;padding:8px 12px;font-size:11px;">${_escHtml(year)} — ${_escHtml(sem)}</td></tr>`;
-      grouped[key].forEach(s => {
-        const inLoad = _currentLoad[s.id] || false;
-        tableRows += `
-        <tr class="te-subject-row" id="te-load-row-${s.id}">
-          <td style="text-align:center;padding:6px;">
-            <input type="checkbox" class="te-load-check" data-sid="${s.id}" ${inLoad ? 'checked' : ''}
-              onchange="TransferEvaluation.toggleCurrentLoad(${s.id}, this.checked)"
-              style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;">
-          </td>
-          <td style="font-weight:700;font-size:11px;padding:6px 8px;">${_escHtml(s.subject_code)}</td>
-          <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
-          <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
-        </tr>`;
-      });
-    });
+       sortedKeys.forEach(key => {
+         const [year, sem] = key.split('|');
+         tableRows += `<tr class="te-group-header"><td colspan="4" style="background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-weight:700;padding:8px 12px;font-size:11px;">${_escHtml(year)} — ${_escHtml(sem)}</td></tr>`;
+         grouped[key].forEach(s => {
+           const inLoad = _currentLoad[s.id] || false;
+           tableRows += `
+           <tr class="te-subject-row" id="te-load-row-${s.id}">
+             <td style="text-align:center;padding:6px;">
+               <input type="checkbox" class="te-load-check" data-sid="${s.id}" ${inLoad ? 'checked' : ''}
+                 onchange="TransferEvaluation.toggleCurrentLoad(${s.id}, this.checked)"
+                 style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;">
+             </td>
+             <td style="font-weight:700;font-size:11px;padding:6px 8px;">${_escHtml(s.subject_code)}</td>
+             <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
+             <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
+           </tr>`;
+         });
+       });
 
-    body.innerHTML = `
+     body.innerHTML = `
     <div style="margin-bottom:14px;">
       <div style="padding:14px 18px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid var(--amber-b);border-radius:10px;">
         <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -173,7 +173,7 @@ if (!$show_role_modal) {
         .prereq-chain-item:last-child { margin-bottom: 0; }
         .prereq-chain-arrow { color: var(--gold-dark); font-size: 11px; text-align: center; padding: 2px 0; }
 
-        /* ══ PREREQUISITE CRUD TABLE ═══════════════════════════ */
+        /* -- PREREQUISITE CRUD TABLE --------------------------- */
         .prereq-table-wrap { overflow-x: auto; }
         .prereq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
         .prereq-table th { background: var(--cream); color: var(--gold-dark); font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border-light); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -200,7 +200,7 @@ if (!$show_role_modal) {
         .stat-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--cream); color: var(--light-text); border: 1px solid var(--border-light); }
         .stat-pill.gold { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
 
-        /* ══ PROSPECTUS SCREEN STYLES ══════════════════════════ */
+        /* -- PROSPECTUS SCREEN STYLES -------------------------- */
         .pro-wrap { font-family: 'Poppins', sans-serif; font-size: 12px; color: #1a1a1a; background: white; border-radius: 12px; border: 1px solid var(--border-light); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .pro-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px 10px; background: linear-gradient(to bottom, #fffdf5, #fff); border-bottom: 2px solid #8B6914; }
         .pro-logo { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1.5px solid #8B6914; }
@@ -275,30 +275,30 @@ if (!$show_role_modal) {
             border: 2px dashed #f59e0b !important;
         }
         .pro-table tbody.drag-over-empty td.pro-empty::after {
-            content: ' — Drop here to move subject';
+            content: ' � Drop here to move subject';
             font-weight: 600;
         }
         .pro-bridging-block { margin-bottom: 16px; }
 
-        /* ══ PRINT STYLES — SINGLE-PAGE PROSPECTUS ══════════════════════ */
+        /* -- PRINT STYLES � SINGLE-PAGE PROSPECTUS ---------------------- */
 @media print {
 
-    /* ── Paper size config (change these to switch paper types) ── */
+    /* -- Paper size config (change these to switch paper types) -- */
     :root {
         --print-paper: A4;           /* A4, Letter, Legal */
     }
 
-    /* A4 → 210 × 297 mm */
-    /* Short Bond (Letter) → 216 × 279 mm */
-    /* Long Bond (Legal) → 216 × 356 mm */
+    /* A4 ? 210 � 297 mm */
+    /* Short Bond (Letter) ? 216 � 279 mm */
+    /* Long Bond (Legal) ? 216 � 356 mm */
 
-    /* ── Page setup ── */
+    /* -- Page setup -- */
     @page {
         size: A4 portrait;
         margin: 6mm 6mm 6mm 6mm;
     }
 
-    /* ── Reset everything ── */
+    /* -- Reset everything -- */
     *, *::before, *::after {
         box-sizing: border-box !important;
     }
@@ -320,11 +320,11 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ── Hide screen-only columns in print ── */
+    /* -- Hide screen-only columns in print -- */
     .pro-prereq-screen { display: none !important; }
     .pro-th.pro-prereq-screen { display: none !important; }
 
-    /* ── Hide ALL UI except the prospectus ── */
+    /* -- Hide ALL UI except the prospectus -- */
     body > *:not(.main-content),
     .sidebar,
     .topbar,
@@ -349,7 +349,7 @@ if (!$show_role_modal) {
         visibility: hidden !important;
     }
 
-    /* ── Show only the prospectus ── */
+    /* -- Show only the prospectus -- */
     body * {
         visibility: hidden !important;
     }
@@ -359,7 +359,7 @@ if (!$show_role_modal) {
         visibility: visible !important;
     }
 
-    /* ── Layout reset for wrappers ── */
+    /* -- Layout reset for wrappers -- */
     .main-content,
     .dashboard-content,
     .page-container,
@@ -377,7 +377,7 @@ if (!$show_role_modal) {
         overflow: visible !important;
     }
 
-    /* ── Prospectus root ── */
+    /* -- Prospectus root -- */
     #printableProspectus {
         position: absolute !important;
         top: 0 !important;
@@ -390,7 +390,7 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ══ DOCUMENT WRAPPER ═════════════════════════════════════════ */
+    /* -- DOCUMENT WRAPPER ----------------------------------------- */
     .pro-wrap {
         width: 198mm !important;
         max-width: 198mm !important;
@@ -405,7 +405,7 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ══ HEADER ═══════════════════════════════════════════════════ */
+    /* -- HEADER --------------------------------------------------- */
     .pro-header {
         display: flex !important;
         flex-direction: row !important;
@@ -502,14 +502,14 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ══ BODY ═════════════════════════════════════════════════════ */
+    /* -- BODY ----------------------------------------------------- */
     .pro-body {
         width: 100% !important;
         padding: 1mm 0 0 !important;
         overflow: visible !important;
     }
 
-    /* ══ YEAR BLOCKS ══════════════════════════════════════════════ */
+    /* -- YEAR BLOCKS ---------------------------------------------- */
     .pro-year-block {
         width: 100% !important;
         margin-bottom: 1mm !important;
@@ -546,7 +546,7 @@ if (!$show_role_modal) {
         opacity: 0.9 !important;
     }
 
-    /* ── Two-column semester layout ── */
+    /* -- Two-column semester layout -- */
     .pro-sem-row {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
@@ -577,7 +577,7 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ══ TABLES ═══════════════════════════════════════════════════ */
+    /* -- TABLES --------------------------------------------------- */
     .pro-table {
         width: 100% !important;
         max-width: 100% !important;
@@ -678,7 +678,7 @@ if (!$show_role_modal) {
         font-size: 6.5pt !important;
     }
 
-    /* ══ BRIDGING BLOCK ═══════════════════════════════════════════ */
+    /* -- BRIDGING BLOCK ------------------------------------------- */
     .pro-bridging-block {
         width: 100% !important;
         margin-bottom: 1.5mm !important;
@@ -686,7 +686,7 @@ if (!$show_role_modal) {
         break-inside: avoid !important;
     }
 
-    /* ══ GRAND TOTAL ══════════════════════════════════════════════ */
+    /* -- GRAND TOTAL ---------------------------------------------- */
     .pro-grand-total {
         font-size: 8.5pt !important;
         font-weight: 700 !important;
@@ -702,7 +702,7 @@ if (!$show_role_modal) {
         print-color-adjust: exact !important;
     }
 
-    /* ══ SIGNATURE BLOCK ══════════════════════════════════════════ */
+    /* -- SIGNATURE BLOCK ------------------------------------------ */
     .pro-sig-block {
         display: grid !important;
         grid-template-columns: repeat(3, 1fr) !important;
@@ -741,7 +741,7 @@ if (!$show_role_modal) {
         font-style: italic !important;
     }
 
-    /* ══ LEGEND ═══════════════════════════════════════════════════ */
+    /* -- LEGEND --------------------------------------------------- */
     .pro-legend {
         font-size: 6pt !important;
         color: #999 !important;
@@ -893,7 +893,7 @@ if (!$show_role_modal) {
                         <button class="tab" onclick="switchTab('subjects')"><i class="fas fa-scroll"></i> Prospectus</button>
                     </div>
 
-                    <!-- ══ MAJORS TAB ══════════════════════════════════════ -->
+                    <!-- -- MAJORS TAB -------------------------------------- -->
                     <div id="majorsTab">
                         <?php if (empty($majors)): ?>
                         <div class="empty-state">
@@ -938,7 +938,7 @@ if (!$show_role_modal) {
                         <?php endif; ?>
                     </div>
 
-                    <!-- ══ PREREQUISITES TAB ══════════════════════════════════════ -->
+                    <!-- -- PREREQUISITES TAB -------------------------------------- -->
                     <div id="prerequisitesTab" style="display:none;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap;">
                             <div>
@@ -958,16 +958,16 @@ if (!$show_role_modal) {
                         </div>
                     </div>
 
-                    <!-- ══ PROSPECTUS TAB ══════════════════════════════════ -->
+                    <!-- -- PROSPECTUS TAB ---------------------------------- -->
                     <div id="subjectsTab" style="display:none;">
                         <div class="prospectus-controls">
                             <div class="prospectus-controls-left">
                                 <h3><i class="fas fa-scroll" style="color:var(--gold-dark);margin-right:8px;"></i>Subject Prospectus</h3>
-                                <p>Official curriculum layout — view and print by major</p>
+                                <p>Official curriculum layout � view and print by major</p>
                             </div>
                             <div class="prospectus-controls-right">
                                 <select id="prospectusMajorSelect" class="form-select" style="min-width:240px;" onchange="loadProspectus()">
-                                    <option value="">— Select Major —</option>
+                                    <option value="">� Select Major �</option>
                                     <?php foreach ($majors as $major): ?>
                                     <option value="<?php echo $major['id']; ?>"><?php echo htmlspecialchars($major['display_name']); ?></option>
                                     <?php endforeach; ?>
@@ -998,7 +998,7 @@ if (!$show_role_modal) {
         </main>
     </div>
 
-    <!-- ══ TOAST ═══════════════════════════════════════════════════ -->
+    <!-- -- TOAST --------------------------------------------------- -->
     <div class="toast" id="toast">
         <div class="toast-icon"><i class="fas fa-check-circle"></i></div>
         <div class="toast-content">
@@ -1008,7 +1008,7 @@ if (!$show_role_modal) {
         <button class="toast-close" onclick="closeToast()"><i class="fas fa-times"></i></button>
     </div>
 
-    <!-- ══ BRIDGING SUBJECTS MODAL ══════════════════════════════════════════════ -->
+    <!-- -- BRIDGING SUBJECTS MODAL ---------------------------------------------- -->
     <div class="modal-overlay" id="bridgingModal">
         <div class="modal" style="max-width:800px;">
             <div class="modal-header">
@@ -1021,7 +1021,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ MAJOR MODAL ══════════════════════════════════════════════ -->
+    <!-- -- MAJOR MODAL ---------------------------------------------- -->
     <div class="modal-overlay" id="majorModal">
         <div class="modal">
             <div class="modal-header">
@@ -1053,23 +1053,23 @@ if (!$show_role_modal) {
                         <div class="form-group">
                             <label class="form-label">Icon</label>
                             <select class="form-select" id="majorIcon" name="icon_class">
-                                <option value="fas fa-graduation-cap">🎓 Graduation Cap</option>
-                                <option value="fas fa-cogs">⚙️ Cogs</option>
-                                <option value="fas fa-dollar-sign">💲 Finance</option>
-                                <option value="fas fa-chart-line">📈 Analytics</option>
-                                <option value="fas fa-briefcase">💼 Business</option>
-                                <option value="fas fa-users">👥 Management</option>
-                                <option value="fas fa-book">📚 Academic</option>
-                                <option value="fas fa-laptop">💻 Technology</option>
-                                <option value="fas fa-handshake">🤝 Relations</option>
-                                <option value="fas fa-globe">🌐 International</option>
+                                <option value="fas fa-graduation-cap">?? Graduation Cap</option>
+                                <option value="fas fa-cogs">?? Cogs</option>
+                                <option value="fas fa-dollar-sign">?? Finance</option>
+                                <option value="fas fa-chart-line">?? Analytics</option>
+                                <option value="fas fa-briefcase">?? Business</option>
+                                <option value="fas fa-users">?? Management</option>
+                                <option value="fas fa-book">?? Academic</option>
+                                <option value="fas fa-laptop">?? Technology</option>
+                                <option value="fas fa-handshake">?? Relations</option>
+                                <option value="fas fa-globe">?? International</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Status</label>
                             <select class="form-select" id="majorActive" name="is_active">
-                                <option value="1">✅ Active</option>
-                                <option value="0">⏸ Inactive</option>
+                                <option value="1">? Active</option>
+                                <option value="0">? Inactive</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1090,7 +1090,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ SUBJECT MODAL ════════════════════════════════════════════ -->
+    <!-- -- SUBJECT MODAL -------------------------------------------- -->
     <div class="modal-overlay" id="subjectModal">
         <div class="modal">
             <div class="modal-header">
@@ -1167,7 +1167,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ SET/EDIT PREREQUISITE MODAL ══════════════════════════════ -->
+    <!-- -- SET/EDIT PREREQUISITE MODAL ------------------------------ -->
     <div class="modal-overlay" id="prereqModal" style="display:none;">
         <div class="modal" style="max-width:560px;">
             <div class="modal-header">
@@ -1187,7 +1187,7 @@ if (!$show_role_modal) {
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Subject *</label>
                         <select class="form-select" id="prereqTargetSubject" name="target_subject_id" required onchange="updatePrereqOptions2()">
-                            <option value="">— Choose subject —</option>
+                            <option value="">� Choose subject �</option>
                         </select>
                     </div>
                 </div>
@@ -1196,16 +1196,16 @@ if (!$show_role_modal) {
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Prerequisite *</label>
                         <select class="form-select" id="prereqSourceSubject" name="prerequisite_subject_id" required>
-                            <option value="">— Choose prerequisite —</option>
+                            <option value="">� Choose prerequisite �</option>
                         </select>
                     </div>
                 </div>
                 <div id="prereqPreview" style="display:none;" class="form-section">
                     <div class="form-section-title"><i class="fas fa-eye"></i> Preview</div>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <div style="background:white;border:1px solid var(--border-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevPrereq">—</div>
-                        <div style="color:var(--gold-dark);font-weight:700;font-size:12px;">must pass first →</div>
-                        <div style="background:var(--gold-dark);color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevTarget">—</div>
+                        <div style="background:white;border:1px solid var(--border-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevPrereq">�</div>
+                        <div style="color:var(--gold-dark);font-weight:700;font-size:12px;">must pass first ?</div>
+                        <div style="background:var(--gold-dark);color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevTarget">�</div>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -1216,7 +1216,7 @@ if (!$show_role_modal) {
         </div>
 </div>
 
-    <!-- ══ CREATE PREREQUISITES MODAL ══════════════════════════════════════ -->
+    <!-- -- CREATE PREREQUISITES MODAL -------------------------------------- -->
     <div class="modal-overlay" id="createPrereqModal">
         <div class="modal" style="max-width:700px;">
             <div class="modal-header">
@@ -1233,7 +1233,7 @@ if (!$show_role_modal) {
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">Select Major *</label>
                     <select class="form-select" id="prereqMajorSelect" onchange="loadPrereqSubjectsForSelection()">
-                        <option value="">— Select Major —</option>
+                        <option value="">� Select Major �</option>
                     </select>
                 </div>
             </div>
@@ -1241,7 +1241,7 @@ if (!$show_role_modal) {
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">Target Subject (needs this prerequisite)</label>
                     <select class="form-select" id="prereqTargetSubjectSelect">
-                        <option value="">— Optional: Select target subject —</option>
+                        <option value="">� Optional: Select target subject �</option>
                     </select>
                 </div>
             </div>
@@ -1258,7 +1258,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ MAJOR SUBJECTS DETAIL MODAL ══════════════════════════════════════ -->
+    <!-- -- MAJOR SUBJECTS DETAIL MODAL -------------------------------------- -->
     <div class="modal-overlay" id="detailModal">
         <div class="modal" style="max-width:820px;">
             <div class="modal-header">
@@ -1274,7 +1274,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ ADD SUBJECT TO MAJOR MODAL ════════════════════════════════ -->
+    <!-- -- ADD SUBJECT TO MAJOR MODAL -------------------------------- -->
     <div class="modal-overlay" id="addSubjectModal">
         <div class="modal" style="max-width:540px;">
             <div class="modal-header">
@@ -1321,7 +1321,7 @@ if (!$show_role_modal) {
         </div>
     </div>
 
-    <!-- ══ EDIT SUBJECT IN PROSPECTUS MODAL ══════════════════════════ -->
+    <!-- -- EDIT SUBJECT IN PROSPECTUS MODAL -------------------------- -->
     <div class="modal-overlay" id="editProspectusSubjectModal">
         <div class="modal" style="max-width:520px;">
             <div class="modal-header">
@@ -1377,13 +1377,13 @@ if (!$show_role_modal) {
 
     <script src="../../../function/dashboard.js"></script>
     <script>
-    /* ══ DATA FROM PHP ══════════════════════════════════════════════ */
+    /* -- DATA FROM PHP ---------------------------------------------- */
     let currentMajorId = 0;
     let majorsData   = <?php echo json_encode($majors, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
 let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
     let phSettings = <?php echo json_encode($ph_settings, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
 
-    /* ══ URL PARAMETER HANDLER ═══════════════════════════════════════════════ */
+    /* -- URL PARAMETER HANDLER ----------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const tab = urlParams.get('tab');
@@ -1393,7 +1393,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         }
     });
 
-    /* ══ TOAST NOTIFICATIONS ══════════════════════════════════════════════ */
+    /* -- TOAST NOTIFICATIONS ---------------------------------------------- */
     function toast(msg, type = 'info', duration = 3000, customTitle = null) {
         const el = document.getElementById('toast');
         const titleEl = document.getElementById('toastTitle');
@@ -1428,7 +1428,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         clearTimeout(el._timer);
     }
 
-    /* ══ TAB SWITCHER ═════════════════════════════════════════════ */
+    /* -- TAB SWITCHER --------------------------------------------- */
     function switchTab(tab) {
         document.querySelectorAll('.tab').forEach((t, i) => {
             const tabName = ['majors','prerequisites','subjects'][i];
@@ -1440,7 +1440,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         if (tab === 'prerequisites') loadPrereqSets();
     }
 
-    /* ══ MAJOR MODAL ══════════════════════════════════════════════ */
+    /* -- MAJOR MODAL ---------------------------------------------- */
     function showMajorModal(id = 0) {
         document.getElementById('majorModal').classList.add('active');
         document.getElementById('majorModalTitle').textContent = id ? 'Edit Major' : 'Add Major';
@@ -1488,10 +1488,10 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             });
     }
 
-    /* ══ DETAIL / MAJOR SUBJECTS MODAL ═══════════════════════════ */
+    /* -- DETAIL / MAJOR SUBJECTS MODAL --------------------------- */
     function viewMajorSubjects(majorId, majorName) {
         currentMajorId = majorId;
-        document.getElementById('detailModalTitle').textContent = majorName + ' — Subjects';
+        document.getElementById('detailModalTitle').textContent = majorName + ' � Subjects';
         document.getElementById('detailModal').classList.add('active');
         loadMajorSubjects(majorId);
     }
@@ -1540,8 +1540,8 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <div class="subject-row ${isPrereq?'prerequisite':''}">
                         <div class="subject-icon"><i class="${s.icon_class||'fas fa-book'}"></i></div>
                         <div class="subject-info">
-                            <div class="subject-name">${escHtml(s.subject_code)} — ${escHtml(s.subject_name)}</div>
-                            <div class="subject-meta"><i class="fas fa-layer-group" style="font-size:10px;"></i> ${escHtml(s.semester||'')} &nbsp;·&nbsp; ${parseFloat(s.units)||0} Units</div>
+                            <div class="subject-name">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</div>
+                            <div class="subject-meta"><i class="fas fa-layer-group" style="font-size:10px;"></i> ${escHtml(s.semester||'')} &nbsp;�&nbsp; ${parseFloat(s.units)||0} Units</div>
                         </div>
                         <span class="subject-badge ${isPrereq?'badge-prereq':'badge-required'}">
                             ${isPrereq?'<i class="fas fa-star"></i> Prerequisite':'<i class="fas fa-check"></i> Required'}
@@ -1576,7 +1576,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             if (item.prerequisites && item.prerequisites.length > 0) {
                                 pHtml += `<div style="margin-top:6px;font-size:11px;color:var(--light-text);">Must pass first:</div>`;
                                 item.prerequisites.forEach(p => {
-                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(p.subject_code)}</strong> — ${escHtml(p.subject_name)}</div>`;
+                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(p.subject_code)}</strong> � ${escHtml(p.subject_name)}</div>`;
                                 });
                             }
                             pHtml += `</div>`;
@@ -1586,7 +1586,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             if (item.subjects && item.subjects.length > 0) {
                                 pHtml += `<div style="margin-top:6px;font-size:11px;color:var(--light-text);">Prerequisite subjects:</div>`;
                                 item.subjects.forEach(s => {
-                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(s.subject_code)}</strong> — ${escHtml(s.subject_name)} <span style="color:#6b7280;font-size:10px;">${s.units} units</span></div>`;
+                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(s.subject_code)}</strong> � ${escHtml(s.subject_name)} <span style="color:#6b7280;font-size:10px;">${s.units} units</span></div>`;
                                 });
                             }
                             pHtml += `</div>`;
@@ -1609,7 +1609,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         document.getElementById('addMajorId').value = currentMajorId;
         const sel = document.getElementById('addSubjectId');
         sel.innerHTML = '<option value="">Choose a subject...</option>';
-        subjectsData.forEach(s => sel.innerHTML += `<option value="${s.id}" data-year="${s.default_year_level||''}" data-sem="${s.default_semester||''}">${escHtml(s.subject_code)} — ${escHtml(s.subject_name)}</option>`);
+        subjectsData.forEach(s => sel.innerHTML += `<option value="${s.id}" data-year="${s.default_year_level||''}" data-sem="${s.default_semester||''}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`);
         document.getElementById('addSubjectModal').classList.add('active');
     }
     function closeAddSubjectModal() { document.getElementById('addSubjectModal').classList.remove('active'); }
@@ -1687,7 +1687,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             });
     }
 
-    /* ══ SUBJECT MODAL ════════════════════════════════════════════ */
+    /* -- SUBJECT MODAL -------------------------------------------- */
     function showSubjectModal(id = 0) {
         document.getElementById('subjectModal').classList.add('active');
         document.getElementById('subjectModalTitle').textContent = id ? 'Edit Subject' : 'Add Subject';
@@ -1774,16 +1774,16 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         });
     }
 
-    /* ══ PREREQUISITES SETS ═══════════════════════════════════════ */
+    /* -- PREREQUISITES SETS --------------------------------------- */
     let prereqSetsData = [];
 
     function showCreatePrereqModal() {
         document.getElementById('prereqSetCode').value = '';
         document.getElementById('prereqMajorSelect').value = '';
-        document.getElementById('prereqTargetSubjectSelect').innerHTML = '<option value="">— Optional: Select target subject —</option>';
+        document.getElementById('prereqTargetSubjectSelect').innerHTML = '<option value="">� Optional: Select target subject �</option>';
         document.getElementById('prereqSubjectsContainer').innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
         const majorSel = document.getElementById('prereqMajorSelect');
-        majorSel.innerHTML = '<option value="">— Select Major —</option>';
+        majorSel.innerHTML = '<option value="">� Select Major �</option>';
         majorsData.forEach(m => {
             majorSel.innerHTML += `<option value="${m.id}">${escHtml(m.display_name)}</option>`;
         });
@@ -1798,7 +1798,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         const container = document.getElementById('prereqSubjectsContainer');
         const majorId = document.getElementById('prereqMajorSelect').value;
         const targetSel = document.getElementById('prereqTargetSubjectSelect');
-        targetSel.innerHTML = '<option value="">— Optional: Select target subject —</option>';
+        targetSel.innerHTML = '<option value="">� Optional: Select target subject �</option>';
         if (!majorId) {
             container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
             return;
@@ -1830,7 +1830,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             if (subjectData && subjectData.success && Array.isArray(subjectData.subjects)) {
                 const allSubjects = subjectData.subjects;
                 allSubjects.forEach(s => {
-                    targetSel.innerHTML += `<option value="${s.id}">${escHtml(s.subject_code)} — ${escHtml(s.subject_name)}</option>`;
+                    targetSel.innerHTML += `<option value="${s.id}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`;
                 });
             }
             
@@ -2065,7 +2065,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         .catch(() => { toast('Failed to delete', 'error'); });
     }
 
-    /* ══ REFRESH SUBJECTS DATA ════════════════════════════════════ */
+    /* -- REFRESH SUBJECTS DATA ------------------------------------ */
     function refreshSubjectsData() {
         const fd = new FormData();
         fd.append('action','get_all_subjects');
@@ -2075,16 +2075,16 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                 subjectsData = d.subjects;
                 const prereqSel = document.getElementById('subjectPrerequisite');
                 if (prereqSel) {
-                    prereqSel.innerHTML = '<option value="">— None —</option>';
+                    prereqSel.innerHTML = '<option value="">� None �</option>';
                     d.subjects.forEach(s => {
-                        prereqSel.innerHTML += `<option value="${escHtml(s.subject_code)}">${escHtml(s.subject_code)} — ${escHtml(s.subject_name)}</option>`;
+                        prereqSel.innerHTML += `<option value="${escHtml(s.subject_code)}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`;
                     });
                 }
             }
         });
     }
 
-    /* ══ PROSPECTUS RENDERING ═════════════════════════════════════ */
+    /* -- PROSPECTUS RENDERING ------------------------------------- */
     function buildProspectusHeader(majorName) {
     const schoolName   = phSettings?.school_name    || 'Northern Bukidnon State College';
     const schoolAddress = phSettings?.school_address || 'Manolo Fortich, Bukidnon';
@@ -2123,7 +2123,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <td class="pro-grade-cell"></td>
                     <td class="pro-code">${escHtml(s.subject_code||'')}</td>
                     <td>${escHtml(s.subject_name||'')}</td>
-                    <td class="pro-prereq-col pro-prereq-screen">${prereqCode ? '<span class="pro-star">★</span> '+escHtml(prereqCode) : '—'}</td>
+                    <td class="pro-prereq-col pro-prereq-screen">${prereqCode ? '<span class="pro-star">?</span> '+escHtml(prereqCode) : '�'}</td>
                     <td class="pro-units">${u%1===0?u:u.toFixed(1)}</td>
                 </tr>`;
             });
@@ -2154,7 +2154,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             grouped[y].push(s);
         });
 
-        let yearBlocks = '', grandTotal = 0;
+        let yearBlocksHtml = '', grandTotal = 0;
         yearOrder.forEach(y => {
             const all  = grouped[y] || [];
             const sem1 = all.filter(s => !s.semester || s.semester.includes('1st'));
@@ -2162,7 +2162,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             const t = all.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
             grandTotal += t;
             const tFmt = t%1===0?t:t.toFixed(1);
-            yearBlocks += `
+            yearBlocksHtml += `
             <div class="pro-year-block">
                 <div class="pro-year-header">
                     <span><i class="fas fa-calendar-alt" style="margin-right:6px;font-size:11px;"></i>${y}</span>
@@ -2197,7 +2197,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             </tr></thead>
                             <tbody>
                                 ${bridging.map(s=>{
-                                    const bridgeFor = escHtml(s.bridging_for || '—');
+                                    const bridgeFor = escHtml(s.bridging_for || '�');
                                     return `<tr><td class="pro-grade-cell"></td><td class="pro-code">${escHtml(s.subject_code||'')}</td><td>${escHtml(s.subject_name||'')}</td><td class="pro-units">${parseFloat(s.units)||0}</td><td class="pro-prereq-col" style="font-size:9pt;">${bridgeFor}</td></tr>`;
                                 }).join('')}
                                 <tr class="pro-total-row"><td colspan="3" style="text-align:right;padding-right:8px;">Total Units</td><td class="pro-units">${bt%1===0?bt:bt.toFixed(1)}</td><td></td></tr>
@@ -2213,7 +2213,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         <div class="pro-wrap" id="printableProspectus">
             ${buildProspectusHeader(majorName)}
             <div class="pro-body">
-                ${yearBlocks}
+                ${yearBlocksHtml}
                 ${bridgeHtml}
                 <div class="pro-grand-total">Grand Total: <strong>${gt} units</strong></div>
                 <div class="pro-sig-block">
@@ -2221,16 +2221,16 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Program Head's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                 </div>
-                <div class="pro-legend"><span class="pro-star">★</span> = Prerequisite subject &nbsp;·&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
+                <div class="pro-legend"><span class="pro-star">?</span> = Prerequisite subject &nbsp;�&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
             </div>
         </div>`;
     }
 
     function renderEmptyProspectus(majorName) {
         const yearOrder = ['1st Year','2nd Year','3rd Year','4th Year'];
-        let yearBlocks = '';
+        let yearBlocksHtml = '';
         yearOrder.forEach(y => {
-            yearBlocks += `
+            yearBlocksHtml += `
             <div class="pro-year-block">
                 <div class="pro-year-header"><span>${y}</span><span class="pro-year-total">0 units</span></div>
                 <div class="pro-sem-row">${buildSemTable([],'1st Semester',{},y)}${buildSemTable([],'2nd Semester',{},y)}</div>
@@ -2240,7 +2240,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         <div class="pro-wrap" id="printableProspectus">
             ${buildProspectusHeader(majorName)}
             <div class="pro-body">
-                ${yearBlocks}
+                ${yearBlocksHtml}
                 <div class="pro-grand-total">Grand Total: <strong>0 units</strong></div>
                 <div class="pro-sig-block">
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Student's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
@@ -2275,7 +2275,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             return;
         }
 
-        container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus…</p></div>';
+        container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus�</p></div>';
 
         const fd = new FormData();
         fd.append('action','get_major_subjects'); fd.append('major_id',majorId);
@@ -2322,7 +2322,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
     window.print();
 }
 
-    /* ══ BRIDGING SUBJECTS MODAL ════════════════════════════════════════════ */
+    /* -- BRIDGING SUBJECTS MODAL -------------------------------------------- */
     function showBridgingModal() {
         const majorId = document.getElementById('prospectusMajorSelect').value;
         if (!majorId) { toast('Please select a major first', 'error'); return; }
@@ -2376,7 +2376,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <tbody>`;
             
             bridging.forEach(s => {
-                const bridgingFor = escHtml(s.bridging_for || '—');
+                const bridgingFor = escHtml(s.bridging_for || '�');
                 html += `
                 <tr>
                     <td class="pro-grade-cell"></td>
@@ -2416,7 +2416,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         showSubjectModal(subjectId);
     }
 
-    /* ══ HELPER ═══════════════════════════════════════════════════ */
+    /* -- HELPER --------------------------------------------------- */
     let editMode = false;
     let currentEditMajorId = 0;
 
@@ -2442,7 +2442,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         // Only show the loading spinner when explicitly requested (initial load, major switch, etc.)
         // Skip spinner for background refreshes like after drag-and-drop reorder
         if (showSpinner) {
-            document.getElementById('prospectusContent').innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus…</p></div>';
+            document.getElementById('prospectusContent').innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus�</p></div>';
         }
 
         const fd = new FormData();
@@ -2473,8 +2473,8 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             subjects.forEach(s => {
                 const u = parseFloat(s.units) || 0;
                 total += u;
-                const prereqCode = s.prerequisite || '—';
-                const prereqDisplay = prereqCode !== '—' ? '<span style="color:#dc2626;font-weight:600;">★ ' + escHtml(prereqCode) + '</span>' : '—';
+                const prereqCode = s.prerequisite || '�';
+                const prereqDisplay = prereqCode !== '�' ? '<span style="color:#dc2626;font-weight:600;">? ' + escHtml(prereqCode) + '</span>' : '�';
                 rows += `<tr draggable="true" data-major-subject-id="${s.major_subject_id}" data-sort-order="${s.sort_order || 0}" data-year-level="${escHtml(s.year_level||'')}" data-semester="${escHtml(s.semester||'')}">
                     <td class="pro-grade-cell"><span class="drag-handle"><i class="fas fa-grip-vertical"></i></span></td>
                     <td class="pro-code">${escHtml(s.subject_code||'')}</td>
@@ -2515,7 +2515,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             grouped[y].push(s);
         });
 
-        let yearBlocks = '', grandTotal = 0;
+        let yearBlocksHtml = '', grandTotal = 0;
         yearOrder.forEach(y => {
             const all  = grouped[y] || [];
             const sem1 = all.filter(s => !s.semester || s.semester.includes('1st'));
@@ -2523,7 +2523,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             const t = all.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
             grandTotal += t;
             const tFmt = t%1===0?t:t.toFixed(1);
-            yearBlocks += `
+            yearBlocksHtml += `
             <div class="pro-year-block">
                 <div class="pro-year-header">
                     <span><i class="fas fa-calendar-alt" style="margin-right:6px;font-size:11px;"></i>${y}</span>
@@ -2559,13 +2559,13 @@ if (bridging.length > 0) {
                             </tr></thead>
                             <tbody>
                                 ${bridging.map(s=>{
-                                    const prereqCode = s.prerequisite || '—';
+                                    const prereqCode = s.prerequisite || '�';
                                     return `<tr draggable="true" data-major-subject-id="${s.major_subject_id}" data-sort-order="${s.sort_order || 0}" data-year-level="${escHtml(s.year_level||'')}" data-semester="${escHtml(s.semester||'')}">
                                         <td class="pro-grade-cell"><span class="drag-handle"><i class="fas fa-grip-vertical"></i></span></td>
                                         <td class="pro-code">${escHtml(s.subject_code||'')}</td>
                                         <td>${escHtml(s.subject_name||'')}</td>
                                         <td class="pro-units">${parseFloat(s.units)||0}</td>
-                                        <td class="pro-prereq-col">${prereqCode !== '—' ? '<span style="color:#dc2626;font-weight:600;">★ ' + prereqCode + '</span>' : '—'}</td>
+                                        <td class="pro-prereq-col">${prereqCode !== '�' ? '<span style="color:#dc2626;font-weight:600;">? ' + prereqCode + '</span>' : '�'}</td>
                                         <td class="pro-crud-col">
                                             <button class="btn-crud btn-crud-edit" onclick="editProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', '${escHtml(s.subject_name||'')}', '${escHtml(s.year_level||'')}', '${escHtml(s.semester||'')}', '${escHtml(s.units||'')}', ${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
                                             <button class="btn-crud btn-crud-delete" onclick="deleteProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', ${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
@@ -2585,7 +2585,7 @@ if (bridging.length > 0) {
         <div class="pro-wrap" id="printableProspectus">
             ${buildProspectusHeader(majorName)}
             <div class="pro-body">
-                ${yearBlocks}
+                ${yearBlocksHtml}
                 ${bridgeHtml}
                 <div class="pro-grand-total">Grand Total: <strong>${gt} units</strong></div>
                 <div class="pro-sig-block">
@@ -2593,16 +2593,16 @@ if (bridging.length > 0) {
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Program Head's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                 </div>
-                <div class="pro-legend"><span class="pro-star">★</span> = Prerequisite subject &nbsp;·&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
+                <div class="pro-legend"><span class="pro-star">?</span> = Prerequisite subject &nbsp;�&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
             </div>
         </div>`;
     }
 
     function renderEmptyProspectusWithCRUD(majorName) {
         const yearOrder = ['1st Year','2nd Year','3rd Year','4th Year'];
-        let yearBlocks = '';
+        let yearBlocksHtml = '';
         yearOrder.forEach(y => {
-            yearBlocks += `
+            yearBlocksHtml += `
             <div class="pro-year-block">
                 <div class="pro-year-header"><span>${y}</span><span class="pro-year-total">0 units</span></div>
                 <div class="pro-sem-row">${buildSemTableWithCRUD([],'1st Semester',y)}${buildSemTableWithCRUD([],'2nd Semester',y)}</div>
@@ -2612,7 +2612,7 @@ if (bridging.length > 0) {
         <div class="pro-wrap" id="printableProspectus">
             ${buildProspectusHeader(majorName)}
             <div class="pro-body">
-                ${yearBlocks}
+                ${yearBlocksHtml}
                 <div class="pro-grand-total">Grand Total: <strong>0 units</strong></div>
                 <div class="pro-sig-block">
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Student's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
@@ -2626,7 +2626,7 @@ if (bridging.length > 0) {
     function editProspectusSubject(majorSubjectId, subjectCode, subjectName, yearLevel, semester, units, subjectId) {
         document.getElementById('editProspectusMajorId').value = currentEditMajorId;
         document.getElementById('editProspectusSubjectId').value = majorSubjectId;
-        document.getElementById('editProspectusSubjectName').value = subjectCode + ' — ' + subjectName;
+        document.getElementById('editProspectusSubjectName').value = subjectCode + ' � ' + subjectName;
         document.getElementById('editProspectusUnits').value = units || '3';
         document.getElementById('editProspectusYearLevel').value = yearLevel || '1st Year';
         document.getElementById('editProspectusSemester').value = semester || '1st Semester';
@@ -2655,7 +2655,7 @@ if (bridging.length > 0) {
                     html += `<label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='transparent'">
                         <input type="checkbox" class="prospectus-major-toggle" data-major-id="${m.id}" ${isChecked} style="width:16px;height:16px;accent-color:var(--gold-dark);" onchange="toggleSubjectMajor(this, ${m.id})">
                         <span style="font-size:13px;">${m.display_name}</span>
-                        <span style="font-size:11px;color:${m.has_subject ? '#22c55e' : '#9ca3af'};">${m.has_subject ? '✓ In prospectus' : '— Not in prospectus'}</span>
+                        <span style="font-size:11px;color:${m.has_subject ? '#22c55e' : '#9ca3af'};">${m.has_subject ? '? In prospectus' : '� Not in prospectus'}</span>
                     </label>`;
                 });
                 container.innerHTML = html || '<p style="font-size:12px;color:var(--light-text);padding:8px;font-style:italic;">No majors available.</p>';
@@ -2669,7 +2669,7 @@ if (bridging.length > 0) {
     }
 
     function toggleSubjectMajor(checkbox, majorId) {
-        const subjectCode = document.getElementById('editProspectusSubjectName').value.split(' — ')[0];
+        const subjectCode = document.getElementById('editProspectusSubjectName').value.split(' � ')[0];
         
         const fd = new FormData();
         if (checkbox.checked) {
@@ -2735,7 +2735,7 @@ if (bridging.length > 0) {
         });
     }
 
-    /* ══ DRAG AND DROP FOR SUBJECT REORDERING ═══════════════════════ */
+    /* -- DRAG AND DROP FOR SUBJECT REORDERING ----------------------- */
     let draggedRow = null;
     let draggedMajorSubjectId = null;
     let dragSourceYearLevel = '';

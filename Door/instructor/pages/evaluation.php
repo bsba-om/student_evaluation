@@ -19,637 +19,8 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<style>
-:root {
-  --gold:#B8860B; --gold-l:#D4A843; --gold-d:#8B6914;
-  --cream:#f7f5ef; --cream2:#ede9df; --white:#fff;
-  --dark:#1a1a1a; --mid:#4b4b4b; --muted:#7a7a7a;
-  --border:#d4cfc5; --border2:#c5bfb3;
-  --green:#16a34a; --green-l:#dcfce7; --green-b:#86efac;
-  --red:#dc2626; --red-l:#fee2e2; --red-b:#fca5a5;
-  --amber:#d97706; --amber-l:#fef3c7; --amber-b:#fbbf24;
-  --blue:#1d4ed8; --blue-l:#dbeafe; --blue-b:#93c5fd;
-  --purple:#7c3aed; --purple-l:#f3e8ff;
-  --radius:14px; --radius-sm:9px;
-  --shadow:0 4px 20px rgba(0,0,0,.10);
-  --shadow-lg:0 12px 48px rgba(0,0,0,.18);
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;}
-.page-wrap{padding:16px 20px 24px;animation:fadeInUp .5s ease forwards;}
-@keyframes fadeInUp{from{opacity:0;transform:translateY(15px);}to{opacity:1;transform:translateY(0);}}
-
-/* MENTEE GRID */
-.mentee-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px;}
-.mentee-card{background:linear-gradient(145deg,#fff,#fafaf8);border-radius:var(--radius);border:1px solid rgba(184,134,11,.15);padding:0;cursor:pointer;transition:all .32s cubic-bezier(.23,1,.32,1);overflow:hidden;position:relative;box-shadow:0 4px 16px rgba(0,0,0,.06);}
-.mentee-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold));transform:scaleX(0);transform-origin:left;transition:transform .32s cubic-bezier(.23,1,.32,1);}
-.mentee-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(184,134,11,.25);}
-.mentee-card:hover::before{transform:scaleX(1);}
-.mc-top{padding:18px 18px 14px;display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#fffdf6,#fef9ed);border-bottom:1px solid rgba(184,134,11,.1);}
-.mc-avatar{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;flex-shrink:0;box-shadow:0 4px 12px rgba(0,0,0,.18),0 0 0 2px rgba(255,255,255,.3);font-family:'Playfair Display',serif;letter-spacing:.5px;transition:transform .28s ease;}
-.mentee-card:hover .mc-avatar{transform:scale(1.05);}
-.mc-name{font-size:14px;font-weight:700;color:var(--dark);line-height:1.3;}
-.mc-sub{font-size:11px;color:var(--muted);margin-top:3px;}
-.mc-bottom{padding:14px 18px 16px;}
-.mc-pills{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px;}
-.pill{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap;}
-.pill-gold{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e;border:1px solid #fbbf24;}
-.pill-blue{background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1e40af;border:1px solid #93c5fd;}
-.pill-green{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#166534;border:1px solid #86efac;}
-.pill-gray{background:linear-gradient(135deg,#f5f5f4,#e7e5e4);color:var(--muted);border:1px solid #d6d3d1;}
-.pill-red{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;border:1px solid #fca5a5;}
-.mc-progress-track{background:linear-gradient(145deg,#e7e5e4,#f5f5f4);border-radius:20px;height:5px;overflow:hidden;margin-bottom:5px;box-shadow:inset 0 1px 2px rgba(0,0,0,.05);}
-.mc-progress-bar{height:100%;border-radius:20px;background:linear-gradient(to right,var(--gold),var(--gold-l));transition:width .6s ease;box-shadow:0 1px 3px rgba(184,134,11,.3);}
-.mc-progress-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);}
-.mc-action{display:flex;align-items:center;justify-content:center;gap:7px;padding:10px;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;font-size:12px;font-weight:600;border-top:1px solid rgba(255,255,255,.15);transition:opacity .2s;}
-.mentee-card:hover .mc-action{opacity:.88;}
-
-/* SEARCH / HERO */
-.search-wrap{display:flex;align-items:center;gap:9px;padding:10px 14px;background:var(--white);border-radius:var(--radius-sm);border:1.5px solid rgba(184,134,11,.2);transition:all .25s cubic-bezier(.23,1,.32,1);}
-.search-wrap:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.15);}
-.search-wrap i{color:var(--gold-d);font-size:13px;}
-.search-wrap input{border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:13px;color:var(--dark);flex:1;outline:none;}
-.hero-eyebrow{display:flex;align-items:center;gap:10px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#fff;margin-bottom:10px;}
-.hero-eyebrow span{width:32px;height:2px;background:#fff;border-radius:2px;}
-.hero-title{font-family:'Playfair Display',serif;font-size:38px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:8px;}
-.hero-title em{color:#2d1f07;font-style:normal;}
-.hero-sub{font-size:14px;color:rgba(255,255,255,.85);max-width:360px;}
-.hero-search{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,0.95);border:2px solid rgba(184,134,11,.3);border-radius:14px;box-shadow:0 4px 20px rgba(0,0,0,.15),inset 0 0 0 0 rgba(255,255,255,0);transition:all .3s ease;min-width:240px;position:relative;overflow:hidden;}
-.hero-search::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold));}
-.hero-search:hover{background:#fff;border-color:var(--gold);box-shadow:0 6px 28px rgba(184,134,11,.25);}
-.hero-search:focus-within{background:#fff;border-color:var(--gold-l);box-shadow:0 0 0 4px rgba(212,168,67,.2),0 6px 28px rgba(184,134,11,.2);}
-.hero-search i{color:var(--gold-d);font-size:14px;animation:searchPulse 2s ease infinite;}
-@keyframes searchPulse{0%,100%{opacity:1;}50%{opacity:.6;}}
-.hero-search input{border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;color:var(--dark);flex:1;outline:none;width:160px;}
-.hero-search input::placeholder{color:#999;}
-.year-btn{padding:8px 14px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:10px;color:rgba(255,255,255,0.8);font-size:11px;font-weight:600;cursor:pointer;transition:all .25s ease;position:relative;overflow:hidden;}
-.year-btn::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform:scaleX(0);transition:transform .25s ease;}
-.year-btn:hover{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.45);color:#fff;transform:translateY(-1px);}
-.year-btn.active{background:linear-gradient(135deg,#fff 0%,#fef9ed 100%);color:#b8922f;border-color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(184,134,11,.3);}
-.year-btn.active::before{transform:scaleX(1);}
-
-/* EVAL OVERLAY */
-.overlay{position:fixed;inset:0;background:rgba(5,5,10,.8);z-index:9900;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:14px;backdrop-filter:blur(6px);}
-.overlay.open{display:flex;}
-.eval-panel{background:var(--white);border-radius:22px;width:100%;max-width:1200px;box-shadow:0 32px 80px rgba(0,0,0,.4),0 0 0 1px rgba(184,134,11,.15);display:flex;flex-direction:column;min-height:min(96vh,860px);overflow:hidden;margin:auto;}
-.eval-hdr{background:linear-gradient(145deg,var(--gold-d) 0%,#a87120 50%,#c9a84c 100%);padding:18px 24px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;flex-shrink:0;position:relative;overflow:hidden;}
-.eval-hdr::before{content:'';position:absolute;top:-40px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none;}
-.eval-hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);}
-.eval-hdr-name{font-size:17px;font-weight:700;font-family:'Playfair Display',serif;}
-.eval-hdr-sub{font-size:11px;opacity:.82;margin-top:2px;}
-.eval-hdr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-.hdr-btn{padding:9px 16px;border:1.5px solid rgba(255,255,255,.3);border-radius:10px;background:linear-gradient(145deg,rgba(255,255,255,.15),rgba(255,255,255,.08));color:#fff;cursor:pointer;font-size:12px;font-weight:600;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:6px;transition:all .25s cubic-bezier(.23,1,.32,1);}
-.hdr-btn:hover{background:rgba(255,255,255,.28);transform:translateY(-1px);}
-.hdr-btn-solid{background:linear-gradient(145deg,#fff,#fafaf8);color:var(--gold-d);border-color:rgba(255,255,255,.7);box-shadow:0 2px 8px rgba(0,0,0,.1);}
-.hdr-btn-solid:hover{background:#fff;box-shadow:0 4px 16px rgba(0,0,0,.15);}
-.hdr-close{width:36px;height:36px;border:none;background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.1));border-radius:10px;cursor:pointer;font-size:15px;color:#fff;display:flex;align-items:center;justify-content:center;transition:all .25s cubic-bezier(.23,1,.32,1);}
-.hdr-close:hover{background:rgba(255,255,255,.35);transform:rotate(90deg);}
-.eval-tabs{display:flex;background:linear-gradient(180deg,#f7f5ef,#ede9df);border-bottom:2px solid rgba(184,134,11,.15);padding:14px 22px 0;flex-shrink:0;gap:8px;}
-.eval-tab{padding:10px 20px;border:none;background:transparent;font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-radius:24px;display:flex;align-items:center;gap:7px;transition:all .25s cubic-bezier(.23,1,.32,1);position:relative;}
-.eval-tab::after{content:'';position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);width:0;height:3px;background:var(--gold);border-radius:3px 3px 0 0;transition:width .25s cubic-bezier(.23,1,.32,1);}
-.eval-tab:hover{color:var(--dark);background:rgba(184,134,11,.08);}
-.eval-tab.active{color:var(--gold-d);background:rgba(184,134,11,.12);font-weight:700;box-shadow:0 2px 8px rgba(184,134,11,.15);}
-.eval-tab.active::after{width:60%;}
-.eval-body{padding:20px 24px 24px;flex:1;overflow-y:auto;}
-
-/* GWA STRIP - Premium Gold Design */
-.gwa-strip{display:flex;gap:16px;flex-wrap:wrap;align-items:center;padding:20px 24px;background:linear-gradient(135deg,#fffdf6 0%,#fef9ed 50%,#faf5e7 100%);border:1px solid rgba(184,134,11,.25);border-radius:var(--radius);margin-bottom:20px;box-shadow:0 4px 20px rgba(184,134,11,.12),inset 0 1px 0 rgba(255,255,255,.8);position:relative;overflow:hidden;}
-.gwa-strip::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold),var(--gold-l),var(--gold-d));}
-.gwa-main{background:linear-gradient(145deg,var(--gold-d) 0%,#c9a84c 50%,var(--gold-l) 100%);border-radius:16px;padding:18px 28px;color:#fff;text-align:center;min-width:140px;box-shadow:0 8px 24px rgba(139,105,20,.4),0 0 0 1px rgba(255,255,255,.2),inset 0 1px 0 rgba(255,255,255,.3);position:relative;overflow:hidden;}
-.gwa-main::before{content:'';position:absolute;top:-60%;right:-60%;width:120%;height:120%;background:radial-gradient(circle,rgba(255,255,255,.25) 0%,transparent 60%);pointer-events:none;}
-.gwa-main::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.5),transparent);}
-.gwa-val{font-size:32px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.15);}
-.gwa-lbl{font-size:10px;opacity:.9;margin-top:4px;text-transform:uppercase;letter-spacing:1px;font-weight:600;}
-.gwa-stat{background:linear-gradient(145deg,#fff,#fafaf8);border-radius:14px;padding:14px 20px;text-align:center;border:1px solid rgba(184,134,11,.15);min-width:110px;box-shadow:0 4px 12px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);transition:all .3s ease;position:relative;overflow:hidden;}
-.gwa-stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold-l),transparent);opacity:0;}
-.gwa-stat:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(184,134,11,.15);border-color:var(--gold-l);}
-.gwa-stat:hover::before{opacity:1;}
-.gwa-stat-val{font-size:24px;font-weight:800;font-family:'Playfair Display',serif;color:var(--dark);line-height:1;}
-.gwa-stat-lbl{font-size:9px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
-.gwa-hint{margin-left:auto;font-size:11px;color:var(--muted);background:linear-gradient(145deg,#fff,#f7f5ef);border-radius:10px;padding:10px 14px;border:1px solid rgba(184,134,11,.2);line-height:1.6;box-shadow:0 2px 8px rgba(0,0,0,.04);}
-
-/* STUDENT INFO STRIP */
-.student-info-strip{display:flex;justify-content:flex-start;align-items:center;flex-wrap:wrap;gap:10px;padding:14px 18px;background:linear-gradient(135deg,#fffdf6,#fef9ed);border:1px solid rgba(184,134,11,.2);border-radius:var(--radius);margin-bottom:18px;box-shadow:0 4px 16px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.8);position:relative;overflow:hidden;}
-.student-info-strip::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold),var(--gold-l),var(--gold-d));}
-.si-item{display:flex;flex-direction:column;gap:2px;padding:6px 12px;background:linear-gradient(145deg,#fff,#fafaf8);border-radius:8px;border:1px solid rgba(184,134,11,.12);flex:1;min-width:110px;transition:all .25s ease;position:relative;}
-.si-item::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold-l),transparent);opacity:0;transition:opacity .25s;}
-.si-item:hover{background:linear-gradient(145deg,#fffef8,#fef6e4);border-color:var(--gold-l);transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.1);}
-.si-item:hover::before{opacity:1;}
-.si-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600;white-space:nowrap;}
-.si-value{font-size:12px;color:var(--dark);font-weight:700;}
-@media(max-width:768px){.student-info-strip{flex-direction:column;align-items:stretch;}.si-item{flex:none;width:100%;}}
-.student-info-strip-print{display:none;}
-
-/* PROSPECTUS */
-.pro-wrap{font-family:'Poppins',sans-serif;font-size:12px;color:var(--dark);background:var(--white);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
-.pro-hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 13px;background:linear-gradient(to bottom,#fffdf5,#fff);border-bottom:3px solid var(--gold-d);}
-.pro-logo{width:74px;height:74px;object-fit:cover;border-radius:10px;border:2px solid var(--gold-d);flex-shrink:0;}
-.pro-title-block{text-align:center;flex:1;padding:0 12px;}
-.pro-school{font-size:14px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;font-family:'Playfair Display',serif;}
-.pro-address{font-size:10px;color:var(--muted);margin:2px 0;}
-.pro-institute{font-size:11px;font-weight:700;color:var(--gold-d);text-transform:uppercase;margin-top:4px;letter-spacing:.3px;}
-.pro-degree{font-size:10px;color:#444;margin:2px 0;}
-.pro-major-line{font-size:11px;font-weight:600;margin:2px 0;}
-.pro-student-line{font-size:10px;color:var(--mid);margin-top:3px;}
-.pro-label{display:inline-block;margin-top:5px;padding:2px 12px;border:1.5px solid var(--gold-d);border-radius:20px;font-size:9px;font-weight:700;color:var(--gold-d);letter-spacing:.5px;text-transform:uppercase;}
-.pro-body{padding:12px 14px 14px;}
-.pro-year-block{margin-bottom:12px;border:1px solid #e0dbd0;border-radius:10px;overflow:hidden;transition:all .4s cubic-bezier(.23,1,.32,1);position:relative;}
-.pro-year-hdr{background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#fff;padding:8px 14px;font-size:12px;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
-.pro-year-total{font-size:10px;font-weight:400;opacity:.85;}
-.pro-sem-row{display:grid;grid-template-columns:1fr 1fr;padding:8px 10px 10px;gap:10px;}
-.pro-sem-label{font-size:10px;font-weight:700;color:var(--gold-d);text-align:center;padding:4px 0;background:#f7f5ef;border:1px solid var(--border);border-radius:5px 5px 0 0;text-transform:uppercase;letter-spacing:.3px;}
-.pro-table{width:100%;border-collapse:collapse;font-size:11px;}
-.pro-th{background:#f0ece0;padding:5px 7px;text-align:left;font-size:9.5px;font-weight:700;color:var(--gold-d);border:1px solid #ccc;white-space:nowrap;}
-.pro-table td{border:1px solid #ddd;padding:4px 7px;vertical-align:middle;}
-.pro-table tr:not(.pro-total-row):hover td{background:#fdfbf6;}
-.pro-code{font-weight:700;white-space:nowrap;font-size:10px;}
-.pro-units{text-align:center;font-weight:600;white-space:nowrap;}
-.pro-prereq-col{color:#888;font-size:9.5px;white-space:nowrap;}
-.pro-total-row td{background:#f0ece0;font-weight:700;color:var(--gold-d);border-top:2px solid var(--gold);font-size:10px;}
-.pro-empty{text-align:center;color:#aaa;font-style:italic;padding:10px;font-size:10px;}
-.pro-grand-total{text-align:right;font-size:12px;font-weight:700;padding:7px 14px;background:#f7f5ef;border:1px solid var(--border);border-radius:7px;margin:0 0 12px;}
-.pro-sig-block{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:20px 0 0;border-top:2px solid var(--border);margin-top:20px;}
-.pro-sig-col{text-align:center;}
-.pro-sig-line{border-bottom:1.5px solid var(--dark);height:28px;margin-bottom:8px;}
-.pro-sig-lbl{font-size:11px;font-weight:700;color:var(--dark);margin-bottom:12px;}
-.pro-sig-name{font-size:20px;font-weight:600;color:var(--dark);margin-top:10px;margin-bottom:-30px;}
-.pro-sig-date{font-size:10px;color:#888;}
-.pro-legend{font-size:9.5px;color:#999;padding:6px 0;margin-top:1px;}
-.pro-star{color:var(--red);font-weight:700;}
-.pro-bridging-block{margin-bottom:12px;}
-
-/* GRADE CELL */
-.grade-cell-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.grade-row{display:flex;align-items:center;gap:3px;}
-.grade-inp{width:52px;padding:4px 5px;border:1.5px solid var(--border);border-radius:6px;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;text-align:center;transition:all .25s cubic-bezier(.23,1,.32,1);background:#fafaf8;}
-.grade-inp:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.2);}
-.grade-inp:hover:not(:focus){border-color:var(--gold-l);}
-.grade-inp.gp{border-color:var(--green);background:#f0fdf4;}
-.grade-inp.gf{border-color:var(--red);background:#fef2f2;}
-.grade-inp.gc{border-color:var(--amber);background:#fffbeb;}
-.save-btn{width:22px;height:22px;border:none;border-radius:6px;cursor:pointer;background:var(--blue-l);color:var(--blue);font-size:9px;display:flex;align-items:center;justify-content:center;transition:all .25s cubic-bezier(.23,1,.32,1);}
-.save-btn:hover{background:var(--blue);color:#fff;transform:scale(1.1);}
-.save-btn.saved{background:var(--green-l);color:var(--green);}
-.save-btn.saved:hover{background:var(--green);color:#fff;}
-.grade-hint{font-size:8px;color:var(--muted);text-align:center;max-width:54px;line-height:1.2;}
-.gpill{padding:2px 5px;border-radius:4px;font-size:8px;font-weight:700;}
-.gpill.gp{background:var(--green-l);color:#166534;}
-.gpill.gf{background:var(--red-l);color:#991b1b;}
-.gpill.gc{background:var(--amber-l);color:#92400e;}
-.gpill.gn{background:var(--cream2);color:var(--muted);}
-.row-locked td{background:#fffbeb !important;}
-.row-locked .grade-inp{pointer-events:none;background:var(--amber-l);border-color:var(--amber-b);opacity:.8;}
-.row-locked .save-btn{pointer-events:none;opacity:.35;}
-.row-finalized td{background:#fdfbf6 !important;border-color:#e8e4dc !important;}
-.row-finalized .grade-inp{pointer-events:none;background:#f5f0e6;border-color:#d4cfc5;opacity:.85;}
-.row-finalized .save-btn{pointer-events:none;opacity:.35;}
-.lock-badge{display:inline-flex;align-items:center;gap:3px;font-size:8px;padding:2px 5px;background:var(--amber-l);color:#92400e;border-radius:4px;border:1px solid var(--amber-b);white-space:nowrap;}
-.row-prereqblocked td{background:#fff8f0 !important;opacity:.9;}
-.prereq-chain-info{display:inline-flex;align-items:center;gap:3px;font-size:8.5px;padding:2px 6px;background:var(--red-l);color:#991b1b;border-radius:4px;border:1px solid var(--red-b);white-space:nowrap;margin-top:2px;}
-
-/* ADVISEMENT */
-.adv-panel{padding:4px 0;}
-.summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px;margin-bottom:20px;}
-.sum-card{background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:18px 14px;text-align:center;border:1px solid rgba(184,134,11,.12);box-shadow:0 4px 16px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);transition:all .3s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;}
-.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transform:scaleX(0);transform-origin:left;transition:transform .3s cubic-bezier(.23,1,.32,1);}
-.sum-card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 32px rgba(0,0,0,.12);}
-.sum-card:hover::before{transform:scaleX(1);}
-.sum-rec::before{background:linear-gradient(90deg,transparent,var(--green),transparent);}
-.sum-fail::before{background:linear-gradient(90deg,transparent,var(--red),transparent);}
-.sum-cond::before{background:linear-gradient(90deg,transparent,var(--amber),transparent);}
-.sum-block::before{background:linear-gradient(90deg,transparent,#64748b,transparent);}
-.sum-done::before{background:linear-gradient(90deg,transparent,var(--blue),transparent);}
-.sum-num{font-size:32px;font-weight:800;font-family:'Playfair Display',serif;line-height:1;text-shadow:0 2px 4px rgba(0,0,0,.06);}
-.sum-lbl{font-size:9px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
-.sum-rec .sum-num{color:var(--green);}
-.sum-fail .sum-num{color:var(--red);}
-.sum-cond .sum-num{color:var(--amber);}
-.sum-block .sum-num{color:#64748b;}
-.sum-done .sum-num{color:var(--blue);}
-.context-banner{background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:var(--radius-sm);padding:15px 20px;margin-bottom:20px;border:1px solid var(--blue-b);box-shadow:0 4px 16px rgba(29,78,216,.12),inset 0 1px 0 rgba(255,255,255,.8);}
-.context-title{font-size:14px;font-weight:700;color:#1e40af;margin-bottom:4px;}
-.context-sub{font-size:12px;color:#1d4ed8;}
-.adv-section{margin-bottom:24px;}
-.adv-sec-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.05);transition:all .25s ease;}
-.adv-sec-title:hover{transform:translateX(4px);}
-.ast-green{background:linear-gradient(135deg,#f0fdf4,#dcfce7);color:#166534;border:1px solid var(--green-b);}
-.ast-red{background:linear-gradient(135deg,#fef2f2,#fee2e2);color:#991b1b;border:1px solid var(--red-b);}
-.ast-amber{background:linear-gradient(135deg,#fffbeb,#fef3c7);color:#92400e;border:1px solid var(--amber-b);}
-.ast-slate{background:linear-gradient(135deg,#f8fafc,#f1f5f9);color:#475569;border:1px solid #cbd5e1;}
-.ast-blue{background:linear-gradient(135deg,#eff6ff,#dbeafe);color:#1e40af;border:1px solid var(--blue-b);}
-.adv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;}
-.adv-card{border-radius:14px;padding:16px;border:1px solid var(--border);background:linear-gradient(145deg,#fff,#fafaf8);transition:all .3s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;}
-.adv-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;transform:scaleX(0);transform-origin:left;transition:transform .3s ease;}
-.adv-card:hover{box-shadow:0 12px 32px rgba(0,0,0,.12);transform:translateY(-3px);}
-.adv-card:hover::before{transform:scaleX(1);}
-.adv-card.ac-rec{border-left:4px solid var(--green);border-left-width:4px;}
-.adv-card.ac-rec::before{background:linear-gradient(90deg,var(--green),#22c55e,var(--green));}
-.adv-card.ac-fail{border-left:4px solid var(--red);}
-.adv-card.ac-fail::before{background:linear-gradient(90deg,var(--red),#ef4444,var(--red));}
-.adv-card.ac-cond{border-left:4px solid var(--amber);}
-.adv-card.ac-cond::before{background:linear-gradient(90deg,var(--amber),#f59e0b,var(--amber));}
-.adv-card.ac-block{border-left:4px solid #94a3b8;}
-.adv-card.ac-block::before{background:linear-gradient(90deg,#94a3b8,#cbd5e1,#94a3b8);}
-.adv-card.ac-done{border-left:4px solid var(--blue);}
-.adv-card.ac-done::before{background:linear-gradient(90deg,var(--blue),#3b82f6,var(--blue));}
-.adv-code{font-size:13px;font-weight:700;color:var(--dark);}
-.adv-name{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;}
-.adv-meta{font-size:9.5px;color:var(--muted);margin-top:3px;}
-.adv-reason{font-size:10px;margin-top:7px;padding:4px 8px;border-radius:6px;font-weight:600;}
-.ar-rec{background:var(--green-l);color:#166534;}
-.ar-fail{background:var(--red-l);color:#991b1b;}
-.ar-cond{background:var(--amber-l);color:#92400e;}
-.ar-block{background:#f1f5f9;color:#475569;}
-.ar-done{background:var(--blue-l);color:#1e40af;}
-.adv-chain{margin-top:7px;font-size:9px;color:#6b7280;line-height:1.7;border-top:1px solid #f0ece4;padding-top:5px;}
-.adv-chain strong{color:var(--gold-d);}
-.unlock-tag{display:inline-flex;align-items:center;gap:3px;font-size:9px;padding:2px 6px;background:#eff6ff;color:var(--blue);border-radius:10px;border:1px solid var(--blue-b);margin:1px;}
-.block-prereq{display:inline-flex;align-items:center;gap:4px;font-size:9px;padding:3px 7px;background:#f1f5f9;color:#475569;border-radius:5px;border:1px solid #cbd5e1;}
-.grade-badge{display:inline-flex;align-items:center;gap:3px;margin-top:5px;font-size:9.5px;padding:3px 8px;border-radius:12px;font-weight:700;}
-.gb-pass{background:var(--green-l);color:#166534;border:1px solid var(--green-b);}
-.gb-fail{background:var(--red-l);color:#991b1b;border:1px solid var(--red-b);}
-.gb-cond{background:var(--amber-l);color:#92400e;border:1px solid var(--amber-b);}
-
-/* SESSION NOTES */
-.session-bar{background:linear-gradient(145deg,#f7f5ef,#f0ece0);border-radius:var(--radius);padding:16px 18px;border:1px solid rgba(184,134,11,.15);margin-top:20px;box-shadow:0 2px 10px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.5);}
-.session-bar textarea{width:100%;padding:10px 14px;border:1.5px solid rgba(184,134,11,.2);border-radius:10px;font-family:'Poppins',sans-serif;font-size:12px;resize:vertical;min-height:60px;background:linear-gradient(145deg,#fff,#fafaf8);transition:all .25s ease;}
-.session-bar textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(184,134,11,.15);}
-
-/* BUTTONS */
-.btn{padding:10px 18px;border:none;border-radius:12px;cursor:pointer;font-weight:600;font-size:13px;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:8px;transition:all .28s cubic-bezier(.23,1,.32,1);position:relative;overflow:hidden;}
-.btn::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);opacity:0;transition:opacity .25s;}
-.btn:hover::before{opacity:1;}
-.btn-gold{background:linear-gradient(145deg,var(--gold-l) 0%,var(--gold) 50%,var(--gold-d) 100%);color:#fff;box-shadow:0 4px 16px rgba(139,105,20,.35),inset 0 1px 0 rgba(255,255,255,.3);}
-.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(139,105,20,.45),inset 0 1px 0 rgba(255,255,255,.4);}
-.btn-green{background:linear-gradient(145deg,var(--green),#15803d);color:#fff;box-shadow:0 4px 12px rgba(22,163,74,.3),inset 0 1px 0 rgba(255,255,255,.2);}
-.btn-green:hover{background:linear-gradient(145deg,#16a34a,#15803d);transform:translateY(-2px);box-shadow:0 6px 20px rgba(22,163,74,.4);}
-.btn-blue{background:linear-gradient(145deg,var(--blue),#1e40af);color:#fff;box-shadow:0 4px 12px rgba(29,78,216,.3),inset 0 1px 0 rgba(255,255,255,.2);}
-.btn-blue:hover{background:linear-gradient(145deg,#2563eb,#1e40af);transform:translateY(-2px);box-shadow:0 6px 20px rgba(29,78,216,.4);}
-
-/* TOAST */
-.toast{position:fixed;bottom:28px;right:28px;background:linear-gradient(145deg,#fff,#fafaf8);color:var(--dark);padding:16px 22px;border-radius:14px;font-size:14px;font-weight:500;display:flex;align-items:center;gap:12px;transform:translateY(120px);opacity:0;transition:all .4s cubic-bezier(.23,1,.32,1);z-index:99999;box-shadow:0 12px 40px rgba(0,0,0,.2),0 0 0 1px rgba(184,134,11,.1);max-width:380px;border-left:4px solid var(--gold);}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast.success{border-left-color:var(--green);}
-.toast.error{border-left-color:var(--red);}
-.toast.info{border-left-color:var(--amber);}
-.toast-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.1);}
-.toast.success .toast-icon{background:linear-gradient(145deg,#f0fdf4,#dcfce7);color:var(--green);}
-.toast.error .toast-icon{background:linear-gradient(145deg,#fef2f2,#fee2e2);color:var(--red);}
-.toast.info .toast-icon{background:linear-gradient(145deg,#fffbeb,#fef3c7);color:var(--amber);}
-
-/* MISC */
-.spinner{display:inline-block;width:22px;height:22px;border:3px solid rgba(184,134,11,.15);border-top-color:var(--gold-d);border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.empty-state{text-align:center;padding:52px 24px;color:var(--muted);animation:fadeInUp .5s ease forwards;}
-.empty-state i{font-size:44px;opacity:.18;display:block;margin-bottom:14px;}
-.empty-state h3{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:5px;}
-.divider{border:none;border-top:1px solid rgba(184,134,11,.15);margin:16px 0;}
-.card{background:linear-gradient(145deg,#fff,#fafaf8);border-radius:var(--radius);padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);border:1px solid rgba(184,134,11,.12);margin-bottom:20px;}
-
-/* FOCUS BAR - Legacy (kept for compatibility) */
-.sem-finalized-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;background:linear-gradient(145deg,rgba(22,163,74,.15),rgba(22,163,74,.1));border:1.5px solid var(--green-b);border-radius:20px;color:#166534;font-size:11px;font-weight:700;margin-bottom:8px;box-shadow:0 2px 8px rgba(22,163,74,.15);}
-.sem-finalized-badge-inline{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;background:linear-gradient(145deg,rgba(22,163,74,.2),rgba(22,163,74,.15));border:1px solid var(--green-b);border-radius:12px;color:#166534;font-size:10px;font-weight:600;margin-left:8px;vertical-align:middle;}
-
-/* COMBINED FOCUS + GWA BAR - Clean Organized Layout */
-.eval-combined-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 18px;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#1a1a2e 100%);border-radius:var(--radius);margin-bottom:18px;border:1px solid rgba(184,134,11,.12);box-shadow:0 6px 24px rgba(0,0,0,.25);position:sticky;top:0;z-index:100;}
-
-.eval-bar-left{display:flex;align-items:center;gap:12px;}
-.filter-box{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.filter-toggle-btn{padding:8px 16px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .25s ease;}
-.filter-toggle-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(184,134,11,.4);}
-.filter-container{display:none;flex-wrap:wrap;gap:10px;align-items:center;animation:fadeIn .3s ease;}
-.filter-container.open{display:flex;}
-.filter-header{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(184,134,11,.12);border-radius:6px;border:1px solid rgba(184,134,11,.15);}
-.filter-icon{color:var(--gold-l);font-size:11px;}
-.filter-title{font-size:10px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.5px;}
-.filter-controls{display:flex;align-items:center;gap:6px;}
-.filter-select-wrap{position:relative;}
-.filter-select{padding:7px 28px 7px 10px;border:1px solid rgba(184,134,11,.2);border-radius:6px;background:rgba(255,255,255,.05);font-family:'Poppins',sans-serif;font-size:11px;font-weight:500;color:#fff;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23D4A843' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:all .2s;}
-.filter-select:hover,.filter-select:focus{border-color:var(--gold-l);background:rgba(184,134,11,.1);outline:none;}
-.filter-select option{background:#1a1a2e;color:#fff;}
-.filter-clear-btn{padding:7px 10px;border:1px solid rgba(184,134,11,.2);border-radius:6px;background:rgba(184,134,11,.08);color:rgba(255,255,255,.7);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;}
-.filter-clear-btn:hover{background:rgba(184,134,11,.2);border-color:var(--gold-l);color:var(--gold-l);}
-.filter-active{padding:5px 10px;background:rgba(184,134,11,.15);border:1px solid var(--gold-l);border-radius:6px;font-size:10px;color:var(--gold-l);font-weight:600;display:flex;align-items:center;gap:5px;}
-
-.eval-bar-right{display:flex;align-items:center;gap:16px;}
-.stats-box{display:flex;align-items:center;gap:12px;padding:8px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.06);}
-.stat-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 10px;}
-.stat-value{font-size:18px;font-weight:800;font-family:'Playfair Display',serif;color:#fff;line-height:1;}
-.stat-value.gold{color:var(--gold-l);}
-.stat-value.red{color:var(--red-b);}
-.stat-label{font-size:8px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.3px;font-weight:600;}
-.stat-divider{width:1px;height:32px;background:rgba(255,255,255,.1);}
-
-.actions-box{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
-.hint-text{font-size:9px;color:rgba(255,255,255,.45);line-height:1.4;}
-.hint-text .key-badge{background:rgba(255,255,255,.12);color:#fff;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:700;}
-.hint-text .lock-badge{background:linear-gradient(135deg,var(--amber),#d97706);color:#fff;padding:1px 5px;border-radius:3px;font-size:8px;font-weight:600;}
-.finalize-btn{padding:8px 14px;border:none;border-radius:8px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:11px;font-weight:700;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;display:inline-flex;align-items:center;gap:5px;box-shadow:0 3px 10px rgba(22,163,74,.3);transition:all .2s;}
-.finalize-btn:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(22,163,74,.4);}
-.finalize-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-
-/* YEAR BLOCK BLUR/FOCUS */
-.pro-year-block{transition:all .4s cubic-bezier(.23,1,.32,1);position:relative;}
-.pro-year-block.yr-blurred{filter:blur(3px) grayscale(60%);opacity:.35;pointer-events:none;user-select:none;}
-.pro-year-block.yr-blurred::after{content:'';position:absolute;inset:0;background:rgba(240,236,224,.4);z-index:10;border-radius:10px;pointer-events:none;}
-.pro-year-block.yr-active{filter:none;opacity:1;pointer-events:all;box-shadow:0 0 0 3px var(--gold-l),0 8px 32px rgba(184,134,11,.2);border-color:var(--gold-l);}
-.pro-sem-col.sem-blurred{filter:blur(2px) grayscale(50%);opacity:.3;pointer-events:none;transition:all .35s ease;}
-.pro-sem-col.sem-active{filter:none;opacity:1;pointer-events:all;}
-.finalized-lock-overlay{position:absolute;inset:0;z-index:20;background:rgba(240,253,244,.6);border-radius:inherit;pointer-events:none;border:2px solid var(--green-b);}
-
-/* RESULT MODAL */
-.result-modal-overlay{position:fixed;inset:0;background:rgba(5,5,15,.8);z-index:10000;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px);}
-.result-modal-overlay.open{display:flex;}
-.result-modal{background:var(--white);border-radius:24px;width:100%;max-width:720px;max-height:92vh;overflow-y:auto;box-shadow:0 40px 100px rgba(0,0,0,.5);animation:modal-in .45s cubic-bezier(.23,1,.32,1);position:relative;}
-@keyframes modal-in{from{opacity:0;transform:scale(.88) translateY(24px);}to{opacity:1;transform:scale(1) translateY(0);}}
-.rm-header{padding:28px 32px 24px;position:relative;overflow:hidden;display:flex;align-items:flex-start;gap:20px;}
-.rm-header.rm-pass{background:linear-gradient(135deg,#052e16,#14532d,#166534);}
-.rm-header.rm-fail{background:linear-gradient(135deg,#450a0a,#7f1d1d,#991b1b);}
-.rm-header.rm-cond{background:linear-gradient(135deg,#431407,#7c2d12,#9a3412);}
-.rm-header.rm-mixed{background:linear-gradient(135deg,#1e3a5f,#1e40af,#1d4ed8);}
-.rm-header::before{content:'';position:absolute;top:-60px;right:-80px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;}
-.rm-icon{width:72px;height:72px;border-radius:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:0 8px 24px rgba(0,0,0,.3);}
-.rm-icon.pass-icon{background:rgba(134,239,172,.25);}
-.rm-icon.fail-icon{background:rgba(252,165,165,.25);}
-.rm-icon.cond-icon{background:rgba(253,230,138,.25);}
-.rm-icon.mixed-icon{background:rgba(147,197,253,.25);}
-.rm-header-text{flex:1;}
-.rm-semester-tag{display:inline-block;padding:3px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);margin-bottom:8px;}
-.rm-verdict{font-size:28px;font-weight:800;color:#fff;font-family:'Playfair Display',serif;line-height:1.2;margin-bottom:6px;}
-.rm-verdict-sub{font-size:13px;color:rgba(255,255,255,.75);line-height:1.5;}
-.rm-gwa-chip{margin-top:10px;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:20px;background:rgba(255,255,255,.15);color:#fff;font-size:12px;font-weight:700;}
-
-@media print {
-  .rm-gwa-chip { font-size: 7pt !important; padding: 0.6mm 2mm !important; }
-  #gmSummaryGWA { font-size: 8pt !important; }
-  
-  /* Prospectus print table layout fixes */
-  .pro-table { table-layout: fixed !important; width: 100% !important; }
-  .pro-table td { vertical-align: top !important; padding: 0.5mm 1mm !important; }
-  .pro-th { padding: 0.5mm 1mm !important; }
-  .pro-sem-row { page-break-inside: avoid !important; }
-  .pro-year-block { page-break-inside: avoid !important; margin-bottom: 1mm !important; }
-  
-  /* Fix evaluated/locked row display in print */
-  .row-locked td, .row-finalized td { background: #fffbeb !important; }
-  .grade-print { font-size: 6pt !important; font-weight: 700 !important; }
-}
-.rm-body{padding:24px 32px 28px;}
-.rm-close{position:absolute;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,.15);border:none;border-radius:10px;cursor:pointer;color:#fff;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;z-index:10;}
-.rm-close:hover{background:rgba(255,255,255,.28);transform:rotate(90deg);}
-.rm-subject-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;margin-bottom:20px;max-height:260px;overflow-y:auto;padding-right:4px;}
-.rm-subject-list::-webkit-scrollbar{width:4px;}
-.rm-subject-list::-webkit-scrollbar-track{background:var(--cream);}
-.rm-subject-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.rm-sub-card{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--cream);transition:all .2s;}
-.rm-sub-card:hover{background:var(--amber-l);border-color:var(--amber-b);}
-.rm-sub-code{font-size:12px;font-weight:700;color:var(--dark);}
-.rm-sub-name{font-size:10px;color:var(--muted);margin-top:2px;line-height:1.3;}
-.rm-sub-units{font-size:9px;color:var(--gold-d);font-weight:600;margin-top:3px;}
-.rm-retake-card{padding:10px 12px;border-radius:10px;border-left:4px solid var(--red);border:1px solid var(--red-b);background:var(--red-l);}
-.rm-retake-card .rm-sub-code{color:#991b1b;}
-.rm-retake-card .rm-sub-name{color:#b91c1c;}
-.rm-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--border);}
-.btn-promote{padding:12px 24px;border:none;border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;display:inline-flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(22,163,74,.4);transition:all .3s cubic-bezier(.23,1,.32,1);flex:1;justify-content:center;}
-.btn-promote:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(22,163,74,.55);}
-.btn-modal-close{padding:12px 20px;border:1.5px solid var(--border);border-radius:12px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;background:var(--white);color:var(--mid);display:inline-flex;align-items:center;gap:8px;transition:all .2s;}
-.btn-modal-close:hover{background:var(--cream);border-color:var(--border2);}
-.promote-success{text-align:center;padding:32px 24px;animation:fadeInUp .5s ease forwards;}
-.promote-success i{font-size:52px;color:var(--green);margin-bottom:14px;display:block;}
-.promote-success h3{font-size:18px;font-weight:800;color:var(--dark);margin-bottom:8px;font-family:'Playfair Display',serif;}
-.promote-success p{font-size:13px;color:var(--muted);}
-.rm-grade-breakdown{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
-.rm-grade-chip{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;gap:5px;}
-.rgc-pass{background:var(--green-l);color:#166534;border:1px solid var(--green-b);}
-.rgc-fail{background:var(--red-l);color:#991b1b;border:1px solid var(--red-b);}
-.rgc-cond{background:var(--amber-l);color:#92400e;border:1px solid var(--amber-b);}
-.rgc-none{background:var(--cream2);color:var(--muted);border:1px solid var(--border);}
-
-/* GRADES VIEW MODAL */
-.grades-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10001;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px);}
-.grades-modal-overlay.open{display:flex;}
-.grades-modal{background:#fff;border-radius:14px;width:100%;max-width:680px;max-height:80vh;box-shadow:0 20px 50px rgba(0,0,0,.25);position:relative;border:1px solid rgba(184,134,11,.2);padding:0;animation:modal-in .25s ease;}
-.gm-header{background:linear-gradient(145deg,var(--gold-d),#a87120);padding:12px 18px;color:#fff;}
-.gm-body{padding:12px 14px;max-height:calc(80vh - 60px);overflow-y:auto;}
-.gm-body::-webkit-scrollbar{width:3px;}
-.gm-body::-webkit-scrollbar-track{background:var(--cream);}
-.gm-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
-.gm-table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px;}
-.gm-table{width:100%;border-collapse:collapse;font-size:10px;}
-.gm-th{background:var(--gold-d);color:#fff;padding:6px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--gold);white-space:nowrap;}
-.gm-td{padding:5px 8px;border-bottom:1px solid var(--border);vertical-align:middle;}
-.gm-code{font-weight:700;color:var(--dark);font-size:9px;}
-.gm-subject{font-size:10px;color:var(--mid);}
-.gm-units{text-align:center;font-weight:600;color:var(--dark);}
-.gm-grade{text-align:center;font-weight:800;font-size:12px;}
-.gm-grade.pass{color:var(--green);}
-.gm-grade.fail{color:var(--red);}
-.gm-grade.cond{color:var(--amber);}
-.gm-empty-td{text-align:center;padding:15px;color:var(--muted);font-style:italic;}
-.gm-school-header{padding:10px 12px;background:var(--cream);border-bottom:2px solid var(--gold);margin-bottom:10px;text-align:center;}
-.gm-student-info{padding:8px 10px;background:#fff;border:1px solid rgba(184,134,11,.15);border-radius:6px;margin-bottom:10px;}
-.gm-summary{padding:8px 12px;background:linear-gradient(145deg,var(--gold-d),#a87120);border-radius:8px;margin-top:10px;}
-.gm-summary span{font-size:10px;font-weight:600;color:#fff;}
-
-@media print {
-  #gmSummaryGWA { font-size: 11px !important; }
-}
-.gm-sig-block{margin-top:12px;padding-top:10px;border-top:1px solid var(--border);}
-.gm-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;background:var(--cream);border-top:1px solid var(--border);}
-.gm-hint{font-size:9px;color:var(--muted);margin-right:auto;}
-
-/* ENROLLMENT LIST CHECKBOX CARDS */
-.rm-enroll-card{padding:10px 12px 10px 36px;border-radius:10px;border:1px solid var(--border);background:var(--cream);transition:all .2s;cursor:pointer;display:block;position:relative;}
-.rm-enroll-card:hover{background:var(--green-l);border-color:var(--green-b);}
-.rm-enroll-card.deselected{background:var(--cream2);opacity:.6;border-color:var(--border);}
-.rm-enroll-card input[type=checkbox]{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;cursor:pointer;accent-color:var(--green);}
-.rm-blocked-card{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--cream2);opacity:.55;position:relative;}
-
-/* ═══════════════════════════════════════════════════════════
-   STUDENT TYPE MODAL
-═══════════════════════════════════════════════════════════ */
-.stm-overlay{position:fixed;inset:0;background:rgba(5,5,15,.85);z-index:10500;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);}
-.stm-overlay.open{display:flex;}
-.stm-panel{background:var(--white);border-radius:22px;width:100%;max-width:680px;box-shadow:0 32px 80px rgba(0,0,0,.45);animation:modal-in .4s cubic-bezier(.23,1,.32,1);overflow:hidden;}
-.stm-header{background:linear-gradient(145deg,#1a1a2e 0%,#16213e 60%,#1a1a2e 100%);padding:22px 26px;color:#fff;display:flex;align-items:center;gap:16px;position:relative;}
-.stm-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold-d),var(--gold-l),var(--gold));}
-.stm-header-icon{width:48px;height:48px;background:rgba(184,134,11,.25);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gold-l);}
-.stm-header-title{font-size:18px;font-weight:700;font-family:'Playfair Display',serif;}
-.stm-header-sub{font-size:11px;opacity:.7;margin-top:2px;}
-.stm-close{position:absolute;top:16px;right:16px;width:34px;height:34px;background:rgba(255,255,255,.12);border:none;border-radius:10px;cursor:pointer;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.stm-close:hover{background:rgba(255,255,255,.25);transform:rotate(90deg);}
-.stm-student-bar{display:flex;align-items:center;gap:14px;padding:16px 26px;background:linear-gradient(135deg,#fffdf6,#fef9ed);border-bottom:1px solid rgba(184,134,11,.15);}
-.stm-student-avatar{width:42px;height:42px;background:linear-gradient(135deg,var(--gold),var(--gold-l));border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;}
-.stm-student-name{font-size:14px;font-weight:700;color:var(--dark);}
-.stm-student-meta{font-size:11px;color:var(--muted);margin-top:1px;}
-.stm-prev-badge{padding:4px 12px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid var(--blue-b);border-radius:20px;font-size:10px;font-weight:600;color:#1e40af;margin-left:auto;}
-.stm-body{padding:20px 26px;display:flex;flex-direction:column;gap:12px;}
-.stm-type-card{display:flex;align-items:flex-start;gap:16px;padding:18px 20px;border:2px solid var(--border);border-radius:16px;cursor:pointer;transition:all .3s cubic-bezier(.23,1,.32,1);background:linear-gradient(145deg,#fff,#fafaf8);position:relative;overflow:hidden;}
-.stm-type-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transform:scaleX(0);transform-origin:left;transition:transform .3s ease;}
-.stm-type-card:hover{border-color:var(--gold-l);box-shadow:0 8px 24px rgba(184,134,11,.15);transform:translateY(-2px);}
-.stm-type-card:hover::before{transform:scaleX(1);}
-.stm-type-card[data-type="regular"]::before{background:linear-gradient(90deg,#16a34a,#22c55e);}
-.stm-type-card[data-type="transfer"]::before{background:linear-gradient(90deg,#1d4ed8,#3b82f6);}
-.stm-type-card[data-type="non_ibm"]::before{background:linear-gradient(90deg,#d97706,#f59e0b);}
-.stm-type-card.stm-selected{border-color:var(--gold);box-shadow:0 8px 28px rgba(184,134,11,.25);background:linear-gradient(145deg,#fffdf6,#fef9ed);}
-.stm-type-card.stm-selected::before{transform:scaleX(1);}
-.stm-card-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
-.stm-card-content{flex:1;}
-.stm-card-title{font-size:14px;font-weight:700;margin-bottom:4px;}
-.stm-card-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px;}
-.stm-card-features{display:flex;flex-wrap:wrap;gap:6px;}
-.stm-feature{font-size:9px;padding:3px 8px;background:var(--cream2);border-radius:10px;color:var(--mid);font-weight:600;display:inline-flex;align-items:center;gap:4px;}
-.stm-feature i{font-size:8px;color:var(--green);}
-.stm-card-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:14px;color:transparent;transition:all .25s;flex-shrink:0;margin-top:4px;}
-.stm-type-card.stm-selected .stm-card-check{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,.1);}
-.stm-footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 26px;background:var(--cream);border-top:1px solid var(--border);}
-.stm-btn-cancel{padding:10px 18px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:6px;transition:all .2s;}
-.stm-btn-cancel:hover{background:var(--cream);border-color:var(--border2);}
-.stm-btn-confirm{padding:10px 22px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:6px;transition:all .25s;box-shadow:0 4px 12px rgba(184,134,11,.3);}
-.stm-btn-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(184,134,11,.4);}
-.stm-btn-confirm:disabled{opacity:.45;cursor:not-allowed;transform:none;}
-
-/* ═══════════════════════════════════════════════════════════
-   TRANSFER EVALUATION MODAL
-═══════════════════════════════════════════════════════════ */
-.te-overlay{position:fixed;inset:0;background:rgba(5,5,15,.85);z-index:10600;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);}
-.te-panel{background:var(--white);border-radius:22px;width:100%;max-width:800px;max-height:92vh;box-shadow:0 32px 80px rgba(0,0,0,.45);animation:modal-in .4s cubic-bezier(.23,1,.32,1);overflow:hidden;display:flex;flex-direction:column;}
-.te-header{background:linear-gradient(145deg,#1d4ed8,#1e40af);padding:20px 24px;color:#fff;display:flex;align-items:center;gap:14px;position:relative;flex-shrink:0;}
-.te-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#3b82f6,#93c5fd,#3b82f6);}
-.te-header-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.te-header-title{font-size:17px;font-weight:700;font-family:'Playfair Display',serif;}
-.te-header-sub{font-size:11px;opacity:.8;margin-top:2px;}
-.te-close{position:absolute;top:14px;right:14px;width:32px;height:32px;background:rgba(255,255,255,.12);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.te-close:hover{background:rgba(255,255,255,.25);transform:rotate(90deg);}
-.te-steps{display:flex;align-items:center;justify-content:center;gap:0;padding:16px 24px;background:var(--cream);border-bottom:1px solid var(--border);flex-shrink:0;}
-.te-step{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;transition:all .25s;}
-.te-step-active{background:rgba(29,78,216,.1);}
-.te-step-num{width:26px;height:26px;border-radius:50%;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .25s;}
-.te-step-active .te-step-num{background:var(--blue);color:#fff;}
-.te-step-label{font-size:11px;font-weight:600;color:var(--muted);transition:color .25s;}
-.te-step-active .te-step-label{color:var(--blue);}
-.te-step-line{width:30px;height:2px;background:var(--border);transition:background .25s;}
-.te-line-active{background:var(--blue);}
-.te-body{padding:20px 24px;flex:1;overflow-y:auto;}
-.te-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;background:var(--cream);border-top:1px solid var(--border);flex-shrink:0;}
-.te-btn-cancel,.te-btn-back{padding:9px 16px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
-.te-btn-cancel:hover,.te-btn-back:hover{background:var(--cream);border-color:var(--border2);}
-.te-btn-next,.te-btn-skip{padding:9px 18px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--blue),#1e40af);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .25s;box-shadow:0 3px 10px rgba(29,78,216,.3);}
-.te-btn-next:hover,.te-btn-skip:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(29,78,216,.4);}
-.te-btn-skip{background:linear-gradient(135deg,#64748b,#475569);box-shadow:0 3px 10px rgba(71,85,105,.3);}
-.te-btn-confirm{padding:10px 22px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:6px;transition:all .25s;box-shadow:0 4px 12px rgba(22,163,74,.3);}
-.te-btn-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.4);}
-.te-group-header td{font-size:11px !important;}
-
-/* ═══════════════════════════════════════════════════════════
-   NON-IBM EVALUATION MODAL
-═══════════════════════════════════════════════════════════ */
-.nim-overlay{position:fixed;inset:0;background:rgba(5,5,15,.85);z-index:10600;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px);}
-.nim-panel{background:var(--white);border-radius:22px;width:100%;max-width:800px;max-height:92vh;box-shadow:0 32px 80px rgba(0,0,0,.45);animation:modal-in .4s cubic-bezier(.23,1,.32,1);overflow:hidden;display:flex;flex-direction:column;}
-.nim-header{background:linear-gradient(145deg,#92400e,#b45309);padding:20px 24px;color:#fff;display:flex;align-items:center;gap:14px;position:relative;flex-shrink:0;}
-.nim-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#f59e0b,#fbbf24,#f59e0b);}
-.nim-header-icon{width:44px;height:44px;background:rgba(255,255,255,.15);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.nim-header-title{font-size:17px;font-weight:700;font-family:'Playfair Display',serif;}
-.nim-header-sub{font-size:11px;opacity:.8;margin-top:2px;}
-.nim-close{position:absolute;top:14px;right:14px;width:32px;height:32px;background:rgba(255,255,255,.12);border:none;border-radius:8px;cursor:pointer;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.nim-close:hover{background:rgba(255,255,255,.25);transform:rotate(90deg);}
-.nim-steps{display:flex;align-items:center;justify-content:center;gap:0;padding:16px 24px;background:var(--cream);border-bottom:1px solid var(--border);flex-shrink:0;}
-.nim-step{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:20px;transition:all .25s;}
-.nim-step-active{background:rgba(217,119,6,.1);}
-.nim-step-num{width:26px;height:26px;border-radius:50%;background:var(--border);color:var(--muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .25s;}
-.nim-step-active .nim-step-num{background:var(--amber);color:#fff;}
-.nim-step-label{font-size:11px;font-weight:600;color:var(--muted);transition:color .25s;}
-.nim-step-active .nim-step-label{color:var(--amber);}
-.nim-step-line{width:30px;height:2px;background:var(--border);transition:background .25s;}
-.nim-line-active{background:var(--amber);}
-.nim-body{padding:20px 24px;flex:1;overflow-y:auto;}
-.nim-footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;background:var(--cream);border-top:1px solid var(--border);flex-shrink:0;}
-.nim-btn-cancel,.nim-btn-back{padding:9px 16px;border:1.5px solid var(--border);border-radius:8px;background:var(--white);color:var(--mid);font-size:12px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .2s;}
-.nim-btn-cancel:hover,.nim-btn-back:hover{background:var(--cream);border-color:var(--border2);}
-.nim-btn-next{padding:9px 18px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--amber),#b45309);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .25s;box-shadow:0 3px 10px rgba(217,119,6,.3);}
-.nim-btn-next:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(217,119,6,.4);}
-.nim-btn-confirm{padding:10px 22px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:inline-flex;align-items:center;gap:6px;transition:all .25s;box-shadow:0 4px 12px rgba(22,163,74,.3);}
-.nim-btn-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(22,163,74,.4);}
-.nim-group-header td{font-size:11px !important;}
-
-/* Student Type Badge in Eval Header */
-.student-type-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;margin-left:10px;}
-.stb-regular{background:rgba(22,163,74,.15);color:#166534;border:1px solid var(--green-b);}
-.stb-transfer{background:rgba(29,78,216,.15);color:#1e40af;border:1px solid var(--blue-b);}
-.stb-non_ibm{background:rgba(217,119,6,.15);color:#92400e;border:1px solid var(--amber-b);}
-
- /* PRINT */
- @media print {
-   @page { size: A4 portrait; margin: 8mm; }
-   body > * { display: none !important; }
-   #printTarget { 
-     display: block !important; 
-     visibility: visible !important; 
-     position: static !important;
-     left: 0 !important;
-     top: 0 !important;
-     width: 100% !important;
-     height: auto !important;
-     background: white !important;
-   }
-   html, body { margin: 0 !important; padding: 0 !important; width: 100% !important; background: white !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-   #printTarget { width: 100% !important; max-width: 200mm !important; margin: 0 auto !important; position: static !important; }
-  .pro-wrap { width: 100% !important; max-width: 200mm !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; background: white !important; font-size: 7pt !important; font-family: 'Times New Roman', Times, serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .pro-hdr { display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; padding: 3mm 3mm 2mm !important; border-top: 2.5pt solid #8B6914 !important; border-bottom: 1.5pt solid #8B6914 !important; background: white !important; width: 100% !important; }
-  .pro-logo { width: 22mm !important; height: 22mm !important; border: 1.5pt solid #8B6914 !important; border-radius: 2pt !important; flex-shrink: 0 !important; }
-  .pro-title-block { flex: 1 1 auto !important; text-align: center !important; padding: 0 3mm !important; }
-  .pro-school { font-size: 14pt !important; font-weight: 700 !important; font-family: 'Times New Roman',serif !important; }
-  .pro-address { font-size: 9pt !important; color: #555 !important; font-style: italic !important; }
-  .pro-institute { font-size: 11pt !important; font-weight: 700 !important; color: #8B6914 !important; }
-  .pro-degree { font-size: 9pt !important; }
-  .pro-major-line { font-size: 10pt !important; font-weight: 700 !important; }
-  .pro-student-line { font-size: 9pt !important; color: #333 !important; }
-  .pro-label { font-size: 8pt !important; padding: 1.5pt 8pt !important; border: 1pt solid #8B6914 !important; color: #8B6914 !important; }
-  .student-info-strip-print { display: flex !important; justify-content: space-between !important; padding: 1.5mm 2mm !important; background: #fafafa !important; border: 0.5pt solid #ccc !important; margin-bottom: 1mm !important; }
-  .sip-item { display: flex !important; gap: 2mm !important; }
-  .sip-label { font-size: 9pt !important; font-weight: 700 !important; color: #333 !important; }
-  .sip-value { font-size: 9pt !important; }
-  .gwa-strip, .student-info-strip, .session-bar, .eval-hdr, .eval-tabs, .eval-focus-bar, .eval-combined-bar { display: none !important; }
-  .student-info-strip-print { display: flex !important; }
-  .pro-body { padding: 1mm 2mm 0 !important; overflow: visible !important; width: 100% !important; }
-  .pro-year-block { margin-bottom: 1mm !important; border: 0.3pt solid #bbb !important; border-radius: 0 !important; overflow: hidden !important; page-break-inside: avoid !important; break-inside: avoid !important; width: 100% !important; filter: none !important; opacity: 1 !important; box-shadow: none !important; }
-  .pro-year-hdr { padding: 1mm 1.5mm !important; font-size: 6.5pt !important; font-weight: 700 !important; background: #8B6914 !important; color: white !important; width: 100% !important; }
-  .pro-sem-label { font-size: 6.5pt !important; font-weight: 700 !important; padding: 0.8pt 0 !important; background: #fde68a !important; border: 0.3pt solid #d4cfc5 !important; display: block !important; width: 100% !important; }
-  .pro-sem-row { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 2mm !important; padding: 1.5mm !important; background: white !important; width: 100% !important; }
-  .pro-table { font-size: 6pt !important; table-layout: auto !important; border-collapse: collapse !important; font-family: 'Times New Roman',Times,serif !important; page-break-inside: avoid !important; width: 100% !important; }
-  .pro-th { background: #f0ece0 !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; font-weight: 700 !important; color: #8B6914 !important; border: 0.3pt solid #ccc !important; white-space: nowrap; }
-  .pro-table td { border: 0.3pt solid #ddd !important; padding: 0.8pt 1.5pt !important; font-size: 6pt !important; line-height: 1.3 !important; }
-  .pro-code { font-size: 6pt !important; font-weight: 700 !important; white-space: nowrap !important; }
-  .pro-units { font-size: 6pt !important; text-align: center !important; white-space: nowrap; }
-  .pro-prereq-col { font-size: 5.5pt !important; white-space: nowrap; }
-  .grade-inp, .save-btn, .grade-hint, .lock-badge, .prereq-chain-info, .sem-finalized-badge, .sem-finalized-badge-inline, .finalized-lock-overlay, .btn-finalize { display: none !important; }
-  .grade-print { display: inline-block !important; font-size: 6pt !important; font-weight: 700 !important; }
-  .pro-td-status, .pro-th-status { display: none !important; }
-  .gpill { font-size: 5pt !important; padding: 0.3pt 1pt !important; }
-  .row-locked td { background: #fffbeb !important; }
-  .row-finalized td { background: #fdfbf6 !important; }
-  .pro-total-row td { background: #f0ece0 !important; font-weight: 700 !important; color: #8B6914 !important; border-top: 0.5pt solid #B8860B !important; font-size: 6pt !important; }
-  .pro-empty { font-size: 5pt !important; }
-  .pro-bridging-block { margin-bottom: 1mm !important; page-break-inside: avoid !important; }
-  .pro-bridging-block .pro-sem-col { grid-column: 1 / -1 !important; }
-  .pro-grand-total { font-size: 7pt !important; font-weight: 700 !important; text-align: right !important; padding: 1mm 2mm !important; margin: 1mm 0 !important; background: #f0ece0 !important; border-top: 0.5pt solid #B8860B !important; color: #8B6914 !important; }
-  
-  /* Fix GWA display size in prospectus print */
-  .gwa-strip .gwa-val { font-size: 18pt !important; }
-  
-  /* Align total units value directly under units column for graded tables */
-  .pro-total-row td:last-child { text-align: center !important; }
-  .pro-sig-block { display: grid !important; grid-template-columns: repeat(3,1fr) !important; gap: 5mm !important; padding: 3mm 2mm !important; border-top: 0.5pt solid #aaa !important; margin-top: 2mm !important; page-break-inside: avoid !important; }
-  .pro-sig-col { text-align: center !important; }
-  .pro-sig-line { border-bottom: 0.5pt solid #333 !important; height: 5mm !important; margin-bottom: 1mm !important; }
-  .pro-sig-lbl { font-size: 7pt !important; font-weight: 700 !important; color: #333 !important; margin-bottom: 2mm !important; }
-  .pro-sig-name { font-size: 10pt !important; font-weight: 600 !important; color: #333 !important; margin-top: 1mm !important; margin-bottom: -5mm !important; }
-  .pro-sig-date { font-size: 7pt !important; color: #666 !important; }
-   .pro-legend { font-size: 6pt !important; color: #999 !important; margin-top: 1mm !important; }
-   
-
- }
-</style>
+<link rel="stylesheet" href="evaluation.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
 
@@ -751,33 +122,18 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
        <button class="eval-tab active" id="tab-prospectus" onclick="switchEvalTab('prospectus')">
          <i class="fas fa-scroll"></i> Prospectus
        </button>
-       <button class="eval-tab" id="tab-advisement" onclick="switchEvalTab('advisement')">
-         <i class="fas fa-lightbulb"></i> Advisement
-         <span id="advBadge" style="display:none;background:var(--green);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;">0</span>
-       </button>
-       <button class="eval-tab" id="tab-notes" onclick="switchEvalTab('notes')">
-         <i class="fas fa-sticky-note"></i> Session Notes
-       </button>
-     </div>
+        <button class="eval-tab" id="tab-advisement" onclick="switchEvalTab('advisement')">
+          <i class="fas fa-lightbulb"></i> Advisement
+          <span id="advBadge" style="display:none;background:var(--green);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;">0</span>
+        </button>
+      </div>
      <div class="eval-body" id="tab-prospectus-body">
        <div class="empty-state"><div class="spinner"></div></div>
      </div>
-     <div class="eval-body" id="tab-advisement-body" style="display:none;">
-       <div class="empty-state"><div class="spinner"></div></div>
-     </div>
-     <div class="eval-body" id="tab-notes-body" style="display:none;">
-       <div class="session-bar" style="margin-top:0;">
-         <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
-           <i class="fas fa-clipboard" style="color:var(--gold-d);margin-right:7px;"></i>Evaluation Session Notes
-         </div>
-         <textarea id="sessionNotes" placeholder="Record observations, advisor recommendations, or any notes for this evaluation session…" style="min-height:120px;"></textarea>
-         <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-           <button class="btn btn-blue" onclick="switchEvalTab('advisement')"><i class="fas fa-lightbulb"></i> View Advisement</button>
-           <button class="btn btn-green" onclick="finalizeEval()"><i class="fas fa-check-circle"></i> Finalize Session</button>
-         </div>
-       </div>
-     </div>
-  </div>
+      <div class="eval-body" id="tab-advisement-body" style="display:none;">
+        <div class="empty-state"><div class="spinner"></div></div>
+      </div>
+   </div>
 </div>
 
 <!-- RESULT MODAL -->
@@ -1062,13 +418,13 @@ function applyFilters() {
  /* ═══════════════════════════════════════════════════════════
     TAB SWITCHER
  ═══════════════════════════════════════════════════════════ */
- function switchEvalTab(tab) {
-   ['prospectus','advisement','notes'].forEach(t => {
-     document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
-     document.getElementById(`tab-${t}-body`).style.display = t === tab ? 'block' : 'none';
-   });
-   if(tab === 'advisement' && currentStudent) buildAdvisement();
- }
+  function switchEvalTab(tab) {
+    ['prospectus','advisement'].forEach(t => {
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+      document.getElementById(`tab-${t}-body`).style.display = t === tab ? 'block' : 'none';
+    });
+    if(tab === 'advisement' && currentStudent) buildAdvisement();
+  }
  
  /* ═══════════════════════════════════════════════════════════
     OPEN / CLOSE EVAL
@@ -1080,6 +436,12 @@ let currentStudentType = null; // 'regular' | 'transfer' | 'non_ibm'
 
 function openEval(m) {
   if(typeof m === 'string') m = JSON.parse(m);
+
+  // If student already has student_type and is fully evaluated (all subjects graded), block access
+  if (m.student_type && m.graded_count >= m.total_subjects) {
+    toast('This student has already been fully evaluated and cannot be modified.', 'error', 4000);
+    return;
+  }
 
   // Check if student type already saved in database (m.student_type)
   if (m.student_type) {
@@ -1234,83 +596,122 @@ function closeEval() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   FOCUS BAR (Combined with GWA)
+   STICKY EVALUATE BAR (auto-detects current Year + Semester)
 ══════════════════════════════════════════════════════════════════ */
 function buildCombinedBar(gwaData) {
-  const issues = (gwaData.total_units||0)-(gwaData.units_passed||0);
-  return `<div class="eval-combined-bar" id="evalFocusBar">
-    <div class="eval-bar-left">
-      <div class="filter-box">
-        <button class="filter-toggle-btn" onclick="toggleFilterContainer()">
-          <i class="fas fa-filter"></i> Filter View
-        </button>
-        <div class="filter-container" id="filterContainer">
-          <div class="filter-controls">
-            <div class="filter-select-wrap">
-              <select class="filter-select" id="focusYearSel" onchange="onFocusChange()">
-                <option value="">— All Years —</option>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-                <option value="Bridging">Bridging</option>
-              </select>
-            </div>
-            <div class="filter-select-wrap">
-              <select class="filter-select" id="focusSemSel" onchange="onFocusChange()">
-                <option value="">— All Semesters —</option>
-                <option value="1st Semester">1st Semester</option>
-                <option value="2nd Semester">2nd Semester</option>
-              </select>
-            </div>
-            <button class="filter-clear-btn" onclick="clearFocus()" id="focusClearBtn" style="display:none;">
-              <i class="fas fa-times"></i> Clear
-            </button>
-          </div>
-          <div class="filter-active" id="focusActiveBadge" style="display:none;">
-            <i class="fas fa-eye"></i> <span id="focusBadgeText">—</span>
-          </div>
-        </div>
-      </div>
+  // Auto-detect current standing from student's year_level string
+  const standingStr = currentStudent?.year_level || '1st Year - 1st Semester';
+  const {yr, sem} = parseStudentStanding(standingStr);
+  const yearLabel = YEAR_LABELS[yr-1] || '1st Year';
+  const semLabel  = sem === 1 ? '1st Semester' : '2nd Semester';
+
+  // Set focusYear/focusSem automatically so downstream logic works unchanged
+  focusYear = yearLabel;
+  focusSem  = semLabel;
+
+  const fkey = `${yearLabel}|${semLabel}`;
+  const isAlreadyFinalized = !!finalizedMap[fkey];
+
+  return `<div class="eval-sticky-bar" id="evalStickyBar">
+    <div class="esb-left">
+      <span class="esb-eyebrow"><i class="fas fa-graduation-cap"></i> Current Standing</span>
+      <div class="esb-title">Evaluating <strong>${esc(yearLabel)} — ${esc(semLabel)}</strong></div>
+      <span class="esb-gwa">
+        <i class="fas fa-chart-line"></i> Current GWA: <strong id="currentGWA">—</strong>
+      </span>
     </div>
-    <div class="eval-bar-right">
-      <div class="stats-box">
-        <div class="stat-item">
-          <span class="stat-value gold" id="liveGWA">${gwaData.gwa!=null?parseFloat(gwaData.gwa).toFixed(2):'—'}</span>
-          <span class="stat-label">Current GWA</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value" id="statUnits">${gwaData.total_units||0}</span>
-          <span class="stat-label">Units Taken</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value" id="statPassed">${gwaData.units_passed||0}</span>
-          <span class="stat-label">Units Passed</span>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat-item">
-          <span class="stat-value red" id="statIssues">${issues}</span>
-          <span class="stat-label">w/ Issues</span>
-        </div>
-      </div>
-      <div class="actions-box">
-        <div class="hint-text">Enter grade → <span class="key-badge">Enter</span> to save <span class="lock-badge"><i class="fas fa-lock"></i> Locked</span> = pre-req not passed</div>
-        <button class="finalize-btn" id="btnFinalize" disabled onclick="triggerFinalize()" style="display:none;">
-          <i class="fas fa-check-circle"></i> Finalize Evaluation
-        </button>
-      </div>
+    <div class="esb-right">
+      <span class="esb-period-badge"><i class="fas fa-calendar-alt"></i> A.Y. ${esc(currentAY)}</span>
+      ${isAlreadyFinalized
+        ? `<button class="esb-secondary-btn" onclick="openGradesModal('${esc(yearLabel)}','${esc(semLabel)}')"><i class="fas fa-eye"></i> View Grades</button>
+           <button class="esb-evaluate-btn esb-done" disabled><i class="fas fa-check-circle"></i> Already Evaluated</button>`
+        : `<button class="esb-evaluate-btn" id="btnEvaluate" onclick="autoDetectAndEvaluate()"><i class="fas fa-clipboard-check"></i> Evaluate</button>`
+      }
     </div>
   </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AUTO-DETECT AND EVALUATE
+   Triggered by the single main "Evaluate" button.
+   Uses student's current year_level to determine which semester
+   to evaluate, then reuses the existing showResultModal flow.
+══════════════════════════════════════════════════════════════════ */
+function autoDetectAndEvaluate() {
+  if (!currentStudent) { toast('No student loaded.', 'error'); return; }
+
+  const standingStr = currentStudent.year_level || '1st Year - 1st Semester';
+  const {yr, sem} = parseStudentStanding(standingStr);
+  const yearLabel = YEAR_LABELS[yr-1] || '1st Year';
+  const semLabel  = sem === 1 ? '1st Semester' : '2nd Semester';
+  const semWant   = semLabel === '1st Semester' ? '1st' : '2nd';
+
+  focusYear = yearLabel;
+  focusSem  = semLabel;
+
+  const fkey = `${yearLabel}|${semLabel}`;
+  if (finalizedMap[fkey]) {
+    showAlreadyEvaluatedModal(yearLabel, semLabel);
+    return;
+  }
+
+  // Normalize matcher — trim + case-insensitive year compare, substring sem match
+  const yearMatches = (subYear) =>
+    (subYear||'').trim().toLowerCase() === yearLabel.toLowerCase();
+  const semMatches  = (subSem) =>
+    (subSem||'').toLowerCase().includes(semWant);
+
+  // Step 1: subjects in student's load for current period
+  let targeted = loadedSubjects.filter(s =>
+    yearMatches(s.year_level) && semMatches(s.semester) && s.is_in_load !== false
+  );
+
+  // Step 2: fallback — if nothing in load, use ALL subjects in the period
+  // (covers edge cases: freshly promoted students, transfer/non-IBM with empty
+  // current load, or data where is_in_load flag wasn't set correctly)
+  if (!targeted.length) {
+    targeted = loadedSubjects.filter(s =>
+      yearMatches(s.year_level) && semMatches(s.semester)
+    );
+  }
+
+  if (!targeted.length) {
+    toast(`No subjects found for ${yearLabel} — ${semLabel}. Please check the prospectus configuration for this period.`, 'error', 4500);
+    return;
+  }
+
+  // Check for missing grades — exclude credited subjects (they already have grades applied)
+  const missing = targeted.filter(s => gradeMap[s.id] == null && !s.is_credited);
+  if (missing.length) {
+    toast(`${missing.length} subject(s) still have no grade. Please enter all grades before evaluating.`, 'error', 4200);
+    missing.forEach(s => {
+      const inp = document.getElementById('g-'+s.id);
+      if (inp) {
+        inp.style.borderColor = 'var(--red)';
+        inp.style.boxShadow   = '0 0 0 3px rgba(220,38,38,.3)';
+        setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 2800);
+      }
+    });
+    const firstMissingRow = document.getElementById('row-' + missing[0].id);
+    if (firstMissingRow) firstMissingRow.scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
+  // All grades present — launch the result modal (promote / stay / retake flow)
+  showResultModal(targeted, yearLabel, semLabel);
 }
 
 /* ═══════════════════════════════════════════════════════════
    ON FOCUS CHANGE — blur/active states + auto-scroll
 ═══════════════════════════════════════════════════════════ */
 function onFocusChange() {
-  focusYear = document.getElementById('focusYearSel')?.value || '';
-  focusSem  = document.getElementById('focusSemSel')?.value  || '';
+  // Filter dropdowns removed — kept as no-op for backward compatibility.
+  // focusYear/focusSem are now auto-set from currentStudent.year_level.
+  if (currentStudent) {
+    const parsed = parseStudentStanding(currentStudent.year_level || '1st Year - 1st Semester');
+    focusYear = YEAR_LABELS[parsed.yr - 1] || '1st Year';
+    focusSem  = parsed.sem === 1 ? '1st Semester' : '2nd Semester';
+  }
   applyFocusVisuals();
 
   const fkey = `${focusYear}|${focusSem}`;
@@ -1458,73 +859,68 @@ function confirmEditWithPassword(year, sem) {
    applyFocusVisuals();
  }
  
- function unfinalizeSession(year, sem) {
-   if(!confirm(`Unfinalize ${year} — ${sem}? This will remove the finalization lock and allow editing grades again.`)) {
-     return;
-   }
-   
-   const fd = new FormData();
-   fd.append('action', 'unfinalize_session');
-   fd.append('student_id', currentStudent.id);
-   fd.append('major_id', currentStudent.major_id || 0);
-   fd.append('academic_year', currentAY);
-   fd.append('year_level', year);
-   fd.append('semester', sem);
-   
-   fetch(EVAL_PROC, {method:'POST', body:fd})
-     .then(r => r.json())
-     .then(data => {
-       if(data.success) {
-         const fkey = `${year}|${sem}`;
-         delete finalizedMap[fkey];
-         
-         const semCols = document.querySelectorAll(`.pro-sem-col[data-sem="${sem}"]`);
-         semCols.forEach(col => {
-           const yearBlock = col.closest('.pro-year-block');
-           if (yearBlock && yearBlock.dataset.year === year) {
-             const badge = col.querySelector('.sem-finalized-badge-inline');
-             if (badge) badge.remove();
-             
-             col.querySelectorAll('tr').forEach(row => {
-               row.classList.remove('row-finalized');
-               const inp = row.querySelector('.grade-inp');
-               const sbtn = row.querySelector('.save-btn');
-               if (inp) {
-                 inp.disabled = false;
-                 inp.style.pointerEvents = 'auto';
-                 inp.style.background = '';
-                 inp.style.borderColor = '';
-                 inp.style.opacity = '';
-                 inp.title = '1.00 to 5.00 · Enter to save';
-               }
-               if (sbtn) {
-                 sbtn.disabled = false;
-                 sbtn.style.pointerEvents = 'auto';
-                 sbtn.style.opacity = '';
-               }
-   }).catch(err => {
-     console.error('Error loading mentees:', err);
-     toast('Failed to load mentees. Please refresh the page.', 'error');
-   });
-           }
-   }).catch(err => {
-     console.error('Error loading evaluation data:', err);
-     toast('Error loading evaluation data.', 'error');
-   });
-         
-         closeAlreadyEvaluatedModal();
-         applyFocusVisuals();
-         toast(`${year} — ${sem} unfinalized successfully!`, 'success', 3000);
-       } else {
-         toast(data.message || 'Failed to unfinalize session', 'error');
-       }
-     })
-     .catch(() => {
-       toast('Error unfinalizing session', 'error');
-     });
- }
+  function unfinalizeSession(year, sem) {
+    if(!confirm(`Unfinalize ${year} — ${sem}? This will remove the finalization lock and allow editing grades again.`)) {
+      return;
+    }
 
-function closeAlreadyEvaluatedModal() {
+    const fd = new FormData();
+    fd.append('action', 'unfinalize_session');
+    fd.append('student_id', currentStudent.id);
+    fd.append('major_id', currentStudent.major_id || 0);
+    fd.append('academic_year', currentAY);
+    fd.append('year_level', year);
+    fd.append('semester', sem);
+
+    fetch(EVAL_PROC, {method:'POST', body:fd})
+      .then(r => r.json())
+      .then(data => {
+        if(data.success) {
+          const fkey = `${year}|${sem}`;
+          delete finalizedMap[fkey];
+
+          const semCols = document.querySelectorAll(`.pro-sem-col[data-sem="${sem}"]`);
+          semCols.forEach(col => {
+            const yearBlock = col.closest('.pro-year-block');
+            if (yearBlock && yearBlock.dataset.year === year) {
+              const badge = col.querySelector('.sem-finalized-badge-inline');
+              if (badge) badge.remove();
+
+              col.querySelectorAll('tr').forEach(row => {
+                row.classList.remove('row-finalized');
+                const inp = row.querySelector('.grade-inp');
+                const sbtn = row.querySelector('.save-btn');
+                if (inp) {
+                  inp.disabled = false;
+                  inp.style.pointerEvents = 'auto';
+                  inp.style.background = '';
+                  inp.style.borderColor = '';
+                  inp.style.opacity = '';
+                  inp.title = '1.00 to 5.00 · Enter to save';
+                }
+                if (sbtn) {
+                  sbtn.disabled = false;
+                  sbtn.style.pointerEvents = 'auto';
+                  sbtn.style.opacity = '';
+                }
+              });
+            }
+          });
+
+          closeAlreadyEvaluatedModal();
+          applyFocusVisuals();
+          toast(`${year} — ${sem} unfinalized successfully!`, 'success', 3000);
+        } else {
+          toast(data.message || 'Failed to unfinalize session', 'error');
+        }
+      })
+      .catch(err => {
+        console.error('Error unfinalizing session:', err);
+        toast('Error unfinalizing session', 'error');
+      });
+   }
+
+ function closeAlreadyEvaluatedModal() {
   document.getElementById('alreadyEvaluatedModal')?.remove();
   clearFocus();
 }
@@ -1534,303 +930,87 @@ function confirmViewEvaluated(year, sem) {
   openGradesModal(year, sem);
 }
 
-function toggleFilterContainer() {
-  const container = document.getElementById('filterContainer');
-  container.classList.toggle('open');
+/* Filter dropdowns removed — these helpers kept as no-ops for backward
+   compatibility with existing calls (e.g. closeAlreadyEvaluatedModal). */
+function toggleFilterContainer() { /* no-op: filter UI removed */ }
+
+function clearFocus() {
+  // Reset any lingering inline display styles from prior filtering
+  document.querySelectorAll('.pro-year-block').forEach(block => {
+    block.style.display = '';
+    block.classList.remove('yr-blurred','yr-active');
+  });
+  document.querySelectorAll('.pro-sem-col').forEach(col => {
+    col.style.display = '';
+    col.classList.remove('sem-blurred','sem-active');
+  });
+  document.querySelectorAll('.pro-table tbody tr').forEach(row => {
+    row.style.display = '';
+  });
+  // Re-detect current standing so focusYear/focusSem stay auto-synced
+  if (currentStudent) {
+    const {yr, sem} = parseStudentStanding(currentStudent.year_level || '1st Year - 1st Semester');
+    focusYear = YEAR_LABELS[yr-1] || '1st Year';
+    focusSem  = sem === 1 ? '1st Semester' : '2nd Semester';
+  }
+  applyFocusVisuals();
 }
 
- function clearFocus() {
-   focusYear = ''; focusSem = '';
-   const ys = document.getElementById('focusYearSel');
-   const ss = document.getElementById('focusSemSel');
-   if(ys) ys.value = '';
-   if(ss) ss.value = '';
-   applyFocusVisuals();
-   document.getElementById('focusBadgeText').textContent = '—';
-   
-   // Reset any inline display styles
-   document.querySelectorAll('.pro-year-block').forEach(block => {
-     block.style.display = '';
-     block.classList.remove('yr-blurred','yr-active');
-   });
-   document.querySelectorAll('.pro-sem-col').forEach(col => {
-     col.style.display = '';
-     col.classList.remove('sem-blurred','sem-active');
-   });
-   document.querySelectorAll('.pro-table tbody tr').forEach(row => {
-     row.style.display = '';
-   });
- }
+   function applyFocusVisuals() {
+    // Filter UI removed — no year/sem hiding. Just refresh GWA + evaluate button state.
+    document.querySelectorAll('.pro-year-block[data-year]').forEach(block => {
+      block.style.display = '';
+      block.classList.remove('yr-blurred','yr-active');
+      block.querySelectorAll('.pro-sem-col').forEach(col => {
+        col.style.display = '';
+        col.classList.remove('sem-blurred','sem-active');
+        col.querySelectorAll('.pro-table tbody tr').forEach(row => { row.style.display = ''; });
+        // Reset total row to original full total
+        const totalRow = col.querySelector('.pro-table .pro-total-row');
+        if (totalRow && totalRow.dataset.fullTotal !== undefined) {
+          const unitCell = totalRow.querySelector('td:nth-child(5)');
+          if (unitCell) unitCell.textContent = fmt(parseFloat(totalRow.dataset.fullTotal));
+        }
+      });
+    });
 
- function applyFocusVisuals() {
-   const hasAnyFilter = !!(focusYear || focusSem);
-   const hasFullFilter = !!(focusYear && focusSem);
-   const badge    = document.getElementById('focusActiveBadge');
-   const clearBtn = document.getElementById('focusClearBtn');
-   const badgeT   = document.getElementById('focusBadgeText');
-   if(badge)    badge.style.display    = hasAnyFilter ? 'inline-flex' : 'none';
-   if(clearBtn) clearBtn.style.display = hasAnyFilter ? 'flex' : 'none';
-   if(badgeT)   badgeT.textContent     = [focusYear, focusSem].filter(Boolean).join(' · ');
-
-   document.querySelectorAll('.pro-year-block[data-year]').forEach(block => {
-     const isBridging = block.dataset.year === 'Bridging';
-     const yearMatch = isBridging || !focusYear || block.dataset.year === focusYear;
-
-     // Visibility: hide non-matching years when full filter active (except Bridging)
-     if (hasFullFilter && !yearMatch) {
-       block.style.display = 'none';
-     } else {
-       block.style.display = '';
-     }
-
-     // Visual classes: blur non-matching when partial filter; active when matching under full filter
-     if (!hasAnyFilter) {
-       block.classList.remove('yr-blurred','yr-active');
-     } else if (yearMatch) {
-       block.classList.remove('yr-blurred');
-       if (hasFullFilter) block.classList.add('yr-active');
-       else block.classList.remove('yr-active');
-     } else {
-       block.classList.add('yr-blurred');
-       block.classList.remove('yr-active');
-     }
-
-     // Semester columns
-     block.querySelectorAll('.pro-sem-col').forEach(col => {
-       const semMatch = isBridging || !focusSem || col.dataset.sem === focusSem;
-
-       // Visibility: hide non-matching semesters when full filter active (except Bridging)
-       if (hasFullFilter && focusSem && !semMatch) {
-         col.style.display = 'none';
-       } else {
-         col.style.display = '';
-       }
-
-       // Visual classes
-       if (!hasAnyFilter) {
-         col.classList.remove('sem-blurred','sem-active');
-       } else if (semMatch && focusSem) {
-         col.classList.remove('sem-blurred');
-         if (hasFullFilter) col.classList.add('sem-active');
-         else col.classList.remove('sem-active');
-       } else {
-         col.classList.add('sem-blurred');
-         col.classList.remove('sem-active');
-       }
-
-       // Subject row filtering: when full filter, hide subjects not in load nor credited
-       // Bridging rows: always shown (they are pre-loaded for non-IBM)
-       // Total row: always shown
-       col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-         // Always show total row
-         if (row.classList.contains('pro-total-row')) {
-           row.style.display = '';
-           return;
-         }
-         const subjectId = row.id.replace('row-','');
-         const sub = loadedSubjects.find(s => String(s.id) === subjectId);
-         if (hasFullFilter && !isBridging) {
-           if (sub && (sub.is_in_load || sub.is_credited)) {
-             row.style.display = '';
-           } else {
-             row.style.display = 'none';
-           }
-         } else {
-           row.style.display = '';
-         }
-       });
-     });
-   });
-
-   const fkey  = `${focusYear}|${focusSem}`;
-   const btnFin = document.getElementById('btnFinalize');
-   if(btnFin) {
-     if(hasFullFilter) {
-       btnFin.style.display = 'flex';
-       if(finalizedMap[fkey]) {
-         btnFin.disabled = true;
-         btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
-         btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
-       } else {
-         btnFin.disabled = false;
-         btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
-         btnFin.style.background = '';
-       }
-     } else {
-       btnFin.style.display = 'none';
-     }
-   }
- }
-
-     // Visual classes: blur non-matching when partial filter; active when matching under full filter
-     if (!hasAnyFilter) {
-       block.classList.remove('yr-blurred','yr-active');
-     } else if (yearMatch) {
-       block.classList.remove('yr-blurred');
-       if (hasFullFilter) block.classList.add('yr-active');
-       else block.classList.remove('yr-active');
-     } else {
-       block.classList.add('yr-blurred');
-       block.classList.remove('yr-active');
-     }
-
-     // Semester columns
-     block.querySelectorAll('.pro-sem-col').forEach(col => {
-       const semMatch = !focusSem || col.dataset.sem === focusSem;
-
-       // Visibility: hide non-matching sems when full filter active
-       if (hasFullFilter && focusSem && !semMatch) {
-         col.style.display = 'none';
-       } else {
-         col.style.display = '';
-       }
-
-       // Visual classes
-       if (!hasAnyFilter) {
-         col.classList.remove('sem-blurred','sem-active');
-       } else if (semMatch && focusSem) {
-         col.classList.remove('sem-blurred');
-         if (hasFullFilter) col.classList.add('sem-active');
-         else col.classList.remove('sem-active');
-       } else {
-         col.classList.add('sem-blurred');
-         col.classList.remove('sem-active');
-       }
-
-       // Subject row filtering: when full filter, hide subjects not in load nor credited
-       col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-         const subjectId = row.id.replace('row-','');
-         const sub = loadedSubjects.find(s => String(s.id) === subjectId);
-         if (hasFullFilter) {
-           if (sub && (sub.is_in_load || sub.is_credited)) {
-             row.style.display = '';
-           } else {
-             row.style.display = 'none';
-           }
-         } else {
-           row.style.display = '';
-         }
-       });
-     });
-   });
-
-   const fkey  = `${focusYear}|${focusSem}`;
-   const btnFin = document.getElementById('btnFinalize');
-   if(btnFin) {
-     if(hasFullFilter) {
-       btnFin.style.display = 'flex';
-       if(finalizedMap[fkey]) {
-         btnFin.disabled = true;
-         btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
-         btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
-       } else {
-         btnFin.disabled = false;
-         btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
-         btnFin.style.background = '';
-       }
-     } else {
-       btnFin.style.display = 'none';
-     }
-   }
- }
-     }
-
-     // Semester filtering
-     if(yearMatch && focusSem) {
-       block.querySelectorAll('.pro-sem-col').forEach(col => {
-         const semMatch = col.dataset.sem === focusSem;
-         if (hasFullFilter && !semMatch) {
-           col.style.display = 'none';
-         } else {
-           col.style.display = '';
-           col.classList.add('sem-active');
-           col.classList.remove('sem-blurred');
-           // When fully filtered, hide subjects NOT in student load AND NOT credited
-           if (hasFullFilter) {
-             col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-               const subjectId = row.id.replace('row-','');
-               const sub = loadedSubjects.find(s => String(s.id) === subjectId);
-               if (sub && sub.is_in_load === false && !sub.is_credited) {
-                 row.style.display = 'none';
-               } else {
-                 row.style.display = '';
-               }
-             });
-           } else {
-             col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-               row.style.display = '';
-             });
-           }
-         }
-       });
-     } else {
-       block.querySelectorAll('.pro-sem-col').forEach(col => {
-         col.style.display = '';
-         col.classList.remove('sem-blurred','sem-active');
-         col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-           row.style.display = '';
-         });
-       });
-     }
-   });
- }
-     }
-
-     // Semester filtering and subject visibility
-     if(yearMatch && focusSem) {
-       block.querySelectorAll('.pro-sem-col').forEach(col => {
-         const semMatch = col.dataset.sem === focusSem;
-         if (!semMatch) {
-           col.style.display = 'none';
-         } else {
-           col.style.display = '';
-           col.classList.add('sem-active');
-           col.classList.remove('sem-blurred');
-           // Within the matching semester, hide subjects NOT in load and NOT credited
-           col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-             const subjectId = row.id.replace('row-','');
-             const sub = loadedSubjects.find(s => String(s.id) === subjectId);
-             if (sub && sub.is_in_load === false && !sub.is_credited) {
-               row.style.display = 'none';
-             } else {
-               row.style.display = '';
-             }
-           });
-         }
-       });
-     } else {
-       block.querySelectorAll('.pro-sem-col').forEach(col => {
-         col.style.display = '';
-         if (!hasFilter) {
-           col.classList.remove('sem-blurred','sem-active');
-         }
-         // Show all rows when no semester filter
-         col.querySelectorAll('.pro-table tbody tr').forEach(row => {
-           row.style.display = '';
-         });
-       });
-     }
-   });
-
-  const fkey  = `${focusYear}|${focusSem}`;
-  const btnFin = document.getElementById('btnFinalize');
-  if(btnFin) {
-    if(focusYear && focusSem) {
-      btnFin.style.display = 'flex';
-      if(finalizedMap[fkey]) {
-        btnFin.disabled = true;
-        btnFin.innerHTML = '<i class="fas fa-check-circle"></i> Already Finalized';
-        btnFin.style.background = 'linear-gradient(135deg,#64748b,#475569)';
+    // Refresh the "Evaluate" button state on the sticky bar
+    const fkey = `${focusYear}|${focusSem}`;
+    const btnEvaluate = document.getElementById('btnEvaluate');
+    if (btnEvaluate) {
+      if (finalizedMap[fkey]) {
+        btnEvaluate.innerHTML = '<i class="fas fa-check-circle"></i> Already Evaluated';
+        btnEvaluate.disabled = true;
+        btnEvaluate.classList.add('esb-done');
       } else {
-        btnFin.disabled = false;
-        btnFin.innerHTML = '<i class="fas fa-lock"></i> Finalize Evaluation';
-        btnFin.style.background = '';
+        btnEvaluate.innerHTML = '<i class="fas fa-clipboard-check"></i> Evaluate';
+        btnEvaluate.disabled = false;
+        btnEvaluate.classList.remove('esb-done');
       }
-    } else {
-      btnFin.style.display = 'none';
+    }
+
+    // Update Current GWA — based on all graded subjects in the current focus period
+    let gwaPoints = 0, gwaUnits = 0;
+    loadedSubjects.forEach(sub => {
+      if (focusYear && sub.year_level !== focusYear) return;
+      if (focusSem) {
+        const sSem = (sub.semester||'').toLowerCase();
+        const want = focusSem.includes('1st') ? '1st' : '2nd';
+        if (!sSem.includes(want)) return;
+      }
+      const raw = gradeMap[sub.id];
+      if (raw != null) {
+        const rounded = roundGrade(parseFloat(raw));
+        const units = parseFloat(sub.units) || 0;
+        gwaPoints += rounded * units;
+        gwaUnits  += units;
+      }
+    });
+    const gwaEl = document.getElementById('currentGWA');
+    if (gwaEl) {
+      gwaEl.textContent = gwaUnits > 0 ? (gwaPoints / gwaUnits).toFixed(2) : '—';
     }
   }
-}
 
 /* ═══════════════════════════════════════════════════════════
    TRIGGER FINALIZE
@@ -1877,15 +1057,14 @@ function triggerFinalize() {
         col.insertBefore(badge, col.firstChild);
       }
     });
-  });
+   });
 
-
-  fd.append('action','finalize_session'); fd.append('student_id',currentStudent.id);
-  fd.append('major_id',currentStudent.major_id||0); fd.append('academic_year',currentAY);
-  fd.append('year_level',focusYear); fd.append('semester',focusSem);
-  fd.append('notes',document.getElementById('sessionNotes')?.value||'');
-  fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
-}
+    const fd = new FormData();
+    fd.append('action','finalize_session'); fd.append('student_id',currentStudent.id);
+    fd.append('major_id',currentStudent.major_id||0); fd.append('academic_year',currentAY);
+    fd.append('year_level',focusYear); fd.append('semester',focusSem);
+    fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
+ }
 
 /* ═══════════════════════════════════════════════════════════
    SHOW RESULT MODAL — with flexible progression + customizable enrollment list
@@ -2191,14 +1370,16 @@ function closeResultModal() {
    GRADES VIEW MODAL
 ═══════════════════════════════════════════════════════════ */
 function openGradesModal(year, sem) {
-  // Filter subjects for the selected year and semester
+  // Filter subjects for the selected year and semester — only those in student's actual load,
+  // or credited (especially for Transfer students), or both
   const semNum = sem.includes('1st') ? 1 : 2;
   const filteredSubjects = loadedSubjects.filter(s => {
     const sYear = (s.year_level||'').trim();
     const sSem  = (s.semester||'').toLowerCase();
     const matchYear = sYear === year;
     const matchSem  = sSem.includes(sem.includes('1st') ? '1st' : '2nd');
-    return matchYear && matchSem;
+    const inLoad = s.is_in_load || s.is_credited; // show if enrolled OR credited
+    return matchYear && matchSem && inLoad;
   });
 
   // Build student name
@@ -2784,7 +1965,7 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
           currentStudent.semester = newSemLabel;
         }
         document.getElementById('evalSub').textContent = `${currentStudent.major_name||'No major'} · ${toYear} — ${toSem} · A.Y. ${currentAY}`;
-        
+
         const siStrip = document.querySelector('.student-info-strip');
         if(siStrip) {
           const yearItem = siStrip.querySelector('.si-item:nth-child(3) .si-value');
@@ -2792,11 +1973,73 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
           if(yearItem) yearItem.textContent = newYearLevel;
           if(semItem) semItem.textContent = newSemLabel;
         }
-        
-        toast(`Promoted to ${toSem} — ${toYear}!`,'success',3500);
-        
+
+        // ★ LOCK the evaluated (previous) semester
+        const fromKey = `${fromYear}|${fromSem}`;
+        finalizedMap[fromKey] = true;
+
+        // Persist finalization of the previous semester so it stays locked
+        const fdFinalize = new FormData();
+        fdFinalize.append('action','finalize_session');
+        fdFinalize.append('student_id',currentStudent.id);
+        fdFinalize.append('major_id',currentStudent.major_id||0);
+        fdFinalize.append('academic_year',currentAY);
+        fdFinalize.append('year_level',fromYear);
+        fdFinalize.append('semester',fromSem);
+        fetch(EVAL_PROC,{method:'POST',body:fdFinalize}).catch(()=>{});
+
+        // Visually lock all rows of the finalized (previous) semester
+        document.querySelectorAll(`.pro-year-block[data-year="${fromYear}"]`).forEach(block => {
+          block.querySelectorAll('.pro-sem-col').forEach(col => {
+            if(col.dataset.sem === fromSem) {
+              if(!col.querySelector('.sem-finalized-badge-inline')) {
+                const label = col.querySelector('.pro-sem-label');
+                if(label) {
+                  const badge = document.createElement('span');
+                  badge.className = 'sem-finalized-badge-inline';
+                  badge.innerHTML = '<i class="fas fa-check-circle"></i> Finalized';
+                  label.appendChild(badge);
+                }
+              }
+              col.querySelectorAll('tr').forEach(row => {
+                row.classList.add('row-finalized');
+                const inp = row.querySelector('.grade-inp');
+                const sbtn = row.querySelector('.save-btn');
+                if(inp) { inp.disabled = true; inp.title = 'Semester finalized — locked'; }
+                if(sbtn) sbtn.disabled = true;
+              });
+            }
+          });
+        });
+
+        // ★ UNLOCK the newly promoted semester's subjects (mark them as in-load and
+        //   clear any "not in load" lock so instructors can enter grades)
+        loadedSubjects.forEach(sub => {
+          const sYear = (sub.year_level||'').trim();
+          const sSem  = (sub.semester||'').toLowerCase();
+          const wantSem = toSem.includes('1st') ? '1st' : '2nd';
+          if(sYear === toYear && sSem.includes(wantSem)) {
+            sub.is_in_load = true;
+          }
+        });
+
+        // Update focus to the new semester and refresh lock states + visuals
+        focusYear = toYear;
+        focusSem  = toSem;
+        refreshLockStates();
+        applyFocusVisuals();
+
+        toast(`Promoted to ${toSem} — ${toYear}! Previous semester locked, new subjects unlocked.`,'success',4000);
+
         setTimeout(() => {
           closeResultModal();
+          // Reopen evaluation with fresh data so new semester's subject load is
+          // fully loaded and the sticky evaluate bar reflects the new standing
+          if(currentStudent) {
+            const studentCopy = {...currentStudent};
+            closeEval();
+            setTimeout(() => openEval(studentCopy), 200);
+          }
           loadMentees();
         }, 1500);
       } else {
@@ -2825,16 +2068,39 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
     loadedSubjects = subjects;
     subjects.forEach(sub => { if(sub.grade_rounded != null) gradeMap[sub.id] = parseFloat(sub.grade_rounded); });
 
+    // ── Determine the student's CURRENT evaluation period (year + sem) ─────
+    // Subjects in this period should ALWAYS be in-load so instructors can
+    // enter grades during the ongoing evaluation. This fixes the case where
+    // transfer / non-IBM workflows previously left the current semester's
+    // subjects flagged as "Not in student load".
+    const _standingStr = s.year_level || '1st Year - 1st Semester';
+    const _st          = parseStudentStanding(_standingStr);
+    const _curYear     = YEAR_LABELS[_st.yr - 1] || '1st Year';
+    const _curSemTok   = _st.sem === 1 ? '1st' : '2nd';
+    const _isCurrentPeriod = (sub) => {
+      const sy = (sub.year_level || '').trim();
+      const ss = (sub.semester || '').toLowerCase();
+      return sy === _curYear && ss.includes(_curSemTok);
+    };
+
     // Mark subject load status based on student type
     if (currentStudentType === 'transfer' && typeof TransferEvaluation !== 'undefined') {
       const currentLoad = TransferEvaluation.getCurrentLoad();
       subjects.forEach(sub => {
         const sid = String(sub.id);
         const isCredited = !!sub.is_credited;
-        sub.is_in_load = isCredited || !!currentLoad[sid];
+        // Include: credited subjects, subjects explicitly added to current
+        // load, AND every subject that belongs to the student's current
+        // standing semester (the period currently being evaluated).
+        sub.is_in_load = isCredited || !!currentLoad[sid] || _isCurrentPeriod(sub);
       });
     } else if (currentStudentType === 'non_ibm') {
-      // Non-IBM: is_in_load already set by NonIBMEvaluation callback; do nothing
+      // Non-IBM: preserve any flags set by NonIBMEvaluation, but ALSO force
+      // the current standing semester's subjects to be in-load so they can
+      // be graded during the active evaluation.
+      subjects.forEach(sub => {
+        if (_isCurrentPeriod(sub)) sub.is_in_load = true;
+      });
     } else {
       // Regular students: all subjects are in load
       subjects.forEach(sub => { sub.is_in_load = true; });
@@ -2848,9 +2114,12 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
     finalizedMap[fkey] = true;
   });
 
-  const bridging = subjects.filter(s2 => s2.year_level === 'Bridging');
-  const prereqUnlockMap = buildPrereqUnlockMap(subjects, gradeMap, prereqSetsData, s.major_id);
-  window.currentPrereqSetsMap = prereqSetsMap;
+   const bridging = subjects.filter(s2 => s2.year_level === 'Bridging');
+   const bridgingUnits = (bridging||[]).reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
+   let yearBlocks = ''; let grandTotal = bridgingUnits;
+
+   const prereqUnlockMap = buildPrereqUnlockMap(subjects, gradeMap, prereqSetsData, s.major_id);
+   window.currentPrereqSetsMap = prereqSetsMap;
 
   const full = `${s.first_name}${s.middle_name && s.middle_name[0]?' '+s.middle_name[0]+'.':''} ${s.last_name}${s.suffix?' '+s.suffix:''}`.trim();
   const studentStanding = s.year_level||'1st Year - 1st Semester';
@@ -2877,17 +2146,14 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
     <div class="sip-item"><span class="sip-label">Semester:</span><span class="sip-value">${esc(currentSem)}</span></div>
   </div>`;
 
-  const byYear = {};
-  subjects.forEach(sub => {
-    const y = sub.year_level||'1st Year';
-    if(!byYear[y]) byYear[y] = [];
-    byYear[y].push(sub);
-  });
+   const byYear = {};
+   subjects.forEach(sub => {
+     const y = sub.year_level||'1st Year';
+     if(!byYear[y]) byYear[y] = [];
+     byYear[y].push(sub);
+   });
 
-  const bridgingUnits = (bridging||[]).reduce((a,s2)=>a+(parseFloat(s2.units)||0),0);
-  let yearBlocks = ''; let grandTotal = bridgingUnits;
-
-  YEAR_ORDER.forEach(year => {
+   YEAR_ORDER.forEach(year => {
     if(year === 'Bridging') return;
     const all = byYear[year]||[];
     if(!all.length) return;
@@ -2974,10 +2240,10 @@ const sigHtml = `<div class="pro-sig-block">
                   <th class="pro-th" style="width:46px;">Bridging For</th>
                 </tr></thead>
                 <tbody>
-                  ${(bridging||[]).map(sub => {
-                    const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
-                    const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
-                    return `<tr id="row-${sub.id}">
+                   ${(bridging||[]).map(sub => {
+                     const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
+                     const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
+                      return `<tr id="row-${sub.id}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
                       <td>
                         <div class="grade-cell-wrap">
                           <div class="grade-row">
@@ -3000,13 +2266,13 @@ const sigHtml = `<div class="pro-sig-block">
                       <td class="pro-prereq-col">${esc(sub.bridging_for||'—')}</td>
                     </tr>`;
                   }).join('')}
-                  <tr class="pro-total-row">
-                    <td></td>
-                    <td class="pro-td-status"></td>
-                    <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
-                    <td class="pro-units">${fmt((bridging||[]).reduce((a,s2)=>a+(parseFloat(s2.units)||0),0))}</td>
-                    <td></td>
-                  </tr>
+                   <tr class="pro-total-row" data-full-total="${bridgingUnits}">
+                     <td></td>
+                     <td class="pro-td-status"></td>
+                     <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
+                     <td class="pro-units">${fmt(bridgingUnits)}</td>
+                     <td></td>
+                   </tr>
                 </tbody>
               </table>
             </div>
@@ -3096,7 +2362,7 @@ const sigHtml = `<div class="pro-sig-block">
        rowClass = isCredited ? 'row-credited' : 'row-locked';
      }
 
-    rows += `<tr id="row-${sub.id}" class="${rowClass}">
+    rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
       <td>
         <div class="grade-cell-wrap">
           <div class="grade-row">
@@ -3130,37 +2396,39 @@ const sigHtml = `<div class="pro-sig-block">
     </tr>`;
   });
 
-  let semTotalPoints = 0;
-  let semTotalUnits = 0;
-  subjects.forEach(sub => {
-    const raw = gradeMap[sub.id];
-    if (raw != null) {
-      const units = parseFloat(sub.units)||0;
-      semTotalPoints += parseFloat(raw) * units;
-      semTotalUnits += units;
-    }
-  });
-  const semGWA = semTotalUnits > 0 ? (semTotalPoints / semTotalUnits).toFixed(2) : null;
+   let semTotalPoints = 0;
+   let semTotalUnits = 0;
+   subjects.forEach(sub => {
+     const raw = gradeMap[sub.id];
+     if (raw != null) {
+       const units = parseFloat(sub.units)||0;
+       semTotalPoints += parseFloat(raw) * units;
+       semTotalUnits += units;
+     }
+   });
+   const semGWA = semTotalUnits > 0 ? (semTotalPoints / semTotalUnits).toFixed(2) : null;
 
-  // Total row — always render 6 cells to match the header (Grade | Status | Code | Description | Units | Pre-Req)
-  // When GWA exists, show it under the Grade column; otherwise keep that cell empty.
-  if (semGWA) {
-    rows += `<tr class="pro-total-row">
-      <td style="text-align:center;font-size:10px;font-weight:700;color:var(--green);background:#f0ece0;">GWA: ${semGWA}</td>
-      <td class="pro-td-status"></td>
-      <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
-      <td class="pro-units">${fmt(total)}</td>
-      <td></td>
-    </tr>`;
-  } else {
-    rows += `<tr class="pro-total-row">
-      <td></td>
-      <td class="pro-td-status"></td>
-      <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
-      <td class="pro-units">${fmt(total)}</td>
-      <td></td>
-    </tr>`;
-  }
+   // Total row — capture original total for resetting after filter
+   const originalTotal = total;  // total accumulated from all subjects in this semester
+
+   // Total row — always render 6 cells...
+   if (semGWA) {
+     rows += `<tr class="pro-total-row" data-full-total="${originalTotal}">
+       <td style="text-align:center;font-size:10px;font-weight:700;color:var(--green);background:#f0ece0;">GWA: ${semGWA}</td>
+       <td class="pro-td-status"></td>
+       <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
+       <td class="pro-units">${fmt(total)}</td>
+       <td></td>
+     </tr>`;
+   } else {
+     rows += `<tr class="pro-total-row" data-full-total="${originalTotal}">
+       <td></td>
+       <td class="pro-td-status"></td>
+       <td colspan="2" style="text-align:right;padding-right:8px;font-weight:700;color:var(--gold-d);">Total Units</td>
+       <td class="pro-units">${fmt(total)}</td>
+       <td></td>
+     </tr>`;
+   }
   return `<table class="pro-table">
     <thead><tr>
       <th class="pro-th" style="width:54px;text-align:center;">Final Grade</th><th class="pro-th pro-th-status" style="width:36px;text-align:center;">Status</th>
@@ -3221,11 +2489,12 @@ function saveGrade(sid, studentId, majorId, sem, year, ay) {
       if(gl) gl.textContent = d.label||gradeLabel(rounded);
       let pill = document.getElementById('pill-'+sid) || document.getElementById('bpill-'+sid);
       if(pill) { pill.className = pillClass(status); pill.textContent = statusText(status); }
-      gradeMap[sid] = parseFloat(rounded);
-      refreshLockStates();
-      recalcGWA();
-      buildAdvisement(true);
-      toast(`Saved: ${d.label||gradeLabel(rounded)} (${parseFloat(rounded).toFixed(2)})`,'success');
+       gradeMap[sid] = parseFloat(rounded);
+       refreshLockStates();
+       recalcGWA();
+       applyFocusVisuals();
+       buildAdvisement(true);
+       toast(`Saved: ${d.label||gradeLabel(rounded)} (${parseFloat(rounded).toFixed(2)})`,'success');
       
       setTimeout(() => focusNextInput(sid), 300);
     } else {
@@ -3278,8 +2547,17 @@ function refreshLockStates() {
     const fkey   = `${sub.year_level||''}|${subSem.includes('1st')?'1st Semester':'2nd Semester'}`;
     const isFinalized = finalizedMap[fkey];
 
-    // Check Non-IBM restrictions
-    const isNonIBMRestricted = currentStudentType === 'non_ibm' && typeof NonIBMEvaluation !== 'undefined' && !NonIBMEvaluation.isSubjectAllowed(sub.id);
+    // Check Non-IBM restrictions — but ALWAYS allow subjects that belong to
+    // the student's current standing semester (they're being evaluated now).
+    const _std = currentStudent ? parseStudentStanding(currentStudent.year_level || '1st Year - 1st Semester') : {yr:1, sem:1};
+    const _curY = YEAR_LABELS[_std.yr - 1] || '1st Year';
+    const _curTok = _std.sem === 1 ? '1st' : '2nd';
+    const _subInCurrentPeriod = (sub.year_level||'').trim() === _curY &&
+                                (sub.semester||'').toLowerCase().includes(_curTok);
+    const isNonIBMRestricted = currentStudentType === 'non_ibm' &&
+                               typeof NonIBMEvaluation !== 'undefined' &&
+                               !NonIBMEvaluation.isSubjectAllowed(sub.id) &&
+                               !_subInCurrentPeriod;
 
     // Check Transfer credited subjects
     const isTransferCredited = currentStudentType === 'transfer' && typeof TransferEvaluation !== 'undefined' && TransferEvaluation.isSubjectCredited(sub.id);
@@ -3373,19 +2651,24 @@ function renderAdvisement(d) {
   const badge = document.getElementById('advBadge');
   if(badge) { badge.style.display = nextRec.length ? 'inline-flex' : 'none'; badge.textContent = nextRec.length; }
 
-  let html = `<div class="summary-strip">
-    <div class="sum-card sum-done"><div class="sum-num">${done.length}</div><div class="sum-lbl">Completed</div></div>
-    <div class="sum-card sum-rec"><div class="sum-num">${nextRec.length}</div><div class="sum-lbl">Enroll Next</div></div>
-    <div class="sum-card sum-cond"><div class="sum-num">${condl.length}</div><div class="sum-lbl">Conditional</div></div>
-    <div class="sum-card sum-fail"><div class="sum-num">${retake.length}</div><div class="sum-lbl">Must Retake</div></div>
-    <div class="sum-card sum-block"><div class="sum-num">${blocked.length}</div><div class="sum-lbl">Blocked</div></div>
-  </div>
-  <div class="context-banner">
-    <div class="context-title"><i class="fas fa-calendar-alt" style="margin-right:6px;"></i>
-      Enrollment Recommendation for <strong>${nextSemLabel} — ${nextYearLabel} (${nextAY})</strong>
-    </div>
-    <div class="context-sub">Current standing: <strong>${esc(currentYearStr)}</strong> &nbsp;·&nbsp; Showing subjects recommended for the upcoming semester.</div>
-  </div>`;
+   let html = `<div class="summary-strip">
+     <div class="sum-card sum-done"><div class="sum-num">${done.length}</div><div class="sum-lbl">Completed</div></div>
+     <div class="sum-card sum-rec"><div class="sum-num">${nextRec.length}</div><div class="sum-lbl">Enroll Next</div></div>
+     <div class="sum-card sum-cond"><div class="sum-num">${condl.length}</div><div class="sum-lbl">Conditional</div></div>
+     <div class="sum-card sum-fail"><div class="sum-num">${retake.length}</div><div class="sum-lbl">Must Retake</div></div>
+     <div class="sum-card sum-block"><div class="sum-num">${blocked.length}</div><div class="sum-lbl">Blocked</div></div>
+   </div>
+   <div class="context-banner">
+     <div class="context-title"><i class="fas fa-calendar-alt" style="margin-right:6px;"></i>
+       Enrollment Recommendation for <strong>${nextSemLabel} — ${nextYearLabel} (${nextAY})</strong>
+     </div>
+     <div class="context-sub">Current standing: <strong>${esc(currentYearStr)}</strong> &nbsp;·&nbsp; Showing subjects recommended for the upcoming semester.</div>
+   </div>
+   <div style="text-align:right;margin:16px 0;">
+     <button class="btn btn-green" onclick="finalizeEval()" style="font-size:13px;padding:10px 18px;">
+       <i class="fas fa-check-circle"></i> Finalize Evaluation
+     </button>
+   </div>`;
 
   if(nextRec.length) {
     html += `<div class="adv-section"><div class="adv-sec-title ast-green"><i class="fas fa-check-circle"></i> Recommended for ${nextSemLabel} — ${nextYearLabel} <span style="opacity:.7;font-size:11px;">(${nextRec.length})</span></div><div class="adv-grid">`;
@@ -3507,7 +2790,7 @@ function renderAdvisement(d) {
      const span = inp.nextElementSibling;
      if(span && span.classList.contains('grade-print')) span.style.display = 'inline-block';
    });
-   pt.querySelectorAll('.save-btn,.grade-hint,.lock-badge,.prereq-chain-info,.gwa-strip,.session-bar,.eval-focus-bar,.sem-finalized-badge').forEach(el2 => el2?.remove && el2.remove());
+    pt.querySelectorAll('.save-btn,.grade-hint,.lock-badge,.prereq-chain-info,.gwa-strip,.eval-focus-bar,.sem-finalized-badge').forEach(el2 => el2?.remove && el2.remove());
    window.print();
    window.addEventListener('afterprint', () => { pt.innerHTML = ''; }, {once:true});
  }
@@ -3742,15 +3025,14 @@ function renderAdvisement(d) {
  }
 
 /* ═══════════════════════════════════════════════════════════
-   FINALIZE FROM NOTES TAB
+   FINALIZE FROM ADVISEMENT TAB — uses auto-detected standing
 ═══════════════════════════════════════════════════════════ */
 function finalizeEval() {
-  if(!currentStudent) return;
-  if(!focusYear || !focusSem) {
-    toast('Switch to the Prospectus tab, select a Year and Semester, then use the Finalize button.','info',4500);
-    switchEvalTab('prospectus');
-    return;
-  }
+  if (!currentStudent) return;
+  // Ensure focusYear/focusSem are auto-set from student's current standing
+  const {yr, sem} = parseStudentStanding(currentStudent.year_level || '1st Year - 1st Semester');
+  focusYear = YEAR_LABELS[yr-1] || '1st Year';
+  focusSem  = sem === 1 ? '1st Semester' : '2nd Semester';
   triggerFinalize();
 }
 
@@ -3779,8 +3061,44 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
     <a href="../../../data/logout.php" style="background:#dc2626;color:#fff;padding:10px 20px;border-radius:10px;text-decoration:none;font-weight:500;">
       <i class="fas fa-sign-out-alt"></i> Logout
     </a>
-  </div>
-</div>
-<?php endif; ?>
-</body>
-</html>
+   </div>
+ </div>
+ <?php endif; ?>
+
+ <!-- Evaluation Wizard Modal -->
+ <div class="eval-wizard-overlay" id="evalWizardModal">
+   <div class="eval-wizard-modal">
+     <div class="eval-wizard-header">
+       <i class="fas fa-clipboard-check"></i>
+       <h3 id="wizardTitle">Evaluate Semester</h3>
+     </div>
+     <div class="eval-wizard-body">
+       <!-- Step 1: Smart Info Summary -->
+       <div class="eval-wizard-step active" id="wizardStep1">
+         <h4>Smart Information</h4>
+         <p>Review the evaluation summary for this semester before confirming.</p>
+         <div id="wizardSummaryContainer"></div>
+       </div>
+       <!-- Step 2: Subject Load & Promote -->
+       <div class="eval-wizard-step" id="wizardStep2">
+         <h4>Subject Load for Next Semester</h4>
+         <p>Based on the evaluation results, the following subjects are recommended for the next semester.</p>
+         <div id="wizardSubjectList"></div>
+         <div style="margin-top:8px;font-weight:600;color:var(--dark);">
+           Total Units: <span id="wizardTotalUnits">0</span>
+         </div>
+       </div>
+       <!-- Actions -->
+       <div class="eval-wizard-actions">
+         <button class="eval-btn eval-btn-secondary" onclick="wizardPrevStep()" id="wizardBackBtn" style="display:none;">Back</button>
+         <button class="eval-btn eval-btn-secondary" onclick="closeEvaluationWizard()">Cancel</button>
+         <button class="eval-btn eval-btn-primary" onclick="wizardNextStep()" id="wizardNextBtn">Continue</button>
+         <button class="eval-btn eval-btn-primary" onclick="wizardFinish(true)" id="wizardFinishBtn" style="display:none;">Conform Subject Load and Promote</button>
+         <button class="eval-btn eval-btn-secondary" onclick="wizardFinish(false)" id="wizardStayBtn" style="display:none;">Stay on this Level</button>
+       </div>
+     </div>
+   </div>
+ </div>
+
+ </body>
+ </html>

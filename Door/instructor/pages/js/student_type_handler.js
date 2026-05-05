@@ -153,9 +153,13 @@ const StudentTypeHandler = (() => {
       if (!data.success) {
         console.error('Failed to save student type:', data.message);
         toast('Failed to save student type: ' + (data.message || 'Unknown error'), 'error', 4000);
-      } else {
-        console.log('Student type saved:', type);
-      }
+} else {
+  console.log('Student type saved:', type);
+  // Refresh mentee list to update student type display
+  if (typeof loadMentees === 'function') {
+    loadMentees();
+  }
+}
     }).catch(err => {
       console.error('Error saving student type:', err);
       toast('Error saving student type: ' + err.message, 'error', 4000);
