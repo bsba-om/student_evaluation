@@ -655,6 +655,12 @@ if (!$show_role_modal) {
         }
         .btn-modal-confirm:hover { background: #b91c1c; }
 
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
         /* Responsive */
         @media (max-width: 1200px) {
             .grid-2 { grid-template-columns: 1fr; }
@@ -749,6 +755,33 @@ if (!$show_role_modal) {
                             <p>Avg Mentees/Instructor</p>
                         </div>
                     </div>
+                </div>
+
+                <!-- Auto Assign Section -->
+                <div class="card" style="margin-bottom: 20px; border: 2px solid var(--gold-light); background: linear-gradient(135deg, #fffdf5 0%, #fff9e6 100%);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 48px; height: 48px; border-radius: 12px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">
+                                <i class="fas fa-magic"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 16px; font-weight: 700; color: var(--dark-text); margin: 0 0 4px 0;">Auto Assign Unassigned Students</h3>
+                                <p style="font-size: 13px; color: var(--light-text); margin: 0;">Evenly distribute <strong><?php echo $unassignedStudents; ?></strong> unassigned student(s) across <strong><?php echo count($instructors); ?></strong> instructor(s) using round-robin allocation based on current load.</p>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <button type="button" class="btn-assign" id="btn-auto-assign" onclick="autoAssignStudents()" style="padding: 12px 24px; font-size: 14px; border-radius: 10px; <?php echo ($unassignedStudents == 0 || count($instructors) == 0) ? 'opacity: 0.5; cursor: not-allowed;' : ''; ?>" <?php echo ($unassignedStudents == 0 || count($instructors) == 0) ? 'disabled' : ''; ?>>
+                                <i class="fas fa-magic"></i> Auto Assign All
+                            </button>
+                        </div>
+                    </div>
+                    <?php if ($unassignedStudents > 0 && count($instructors) > 0): ?>
+                    <div style="margin-top: 14px; padding: 10px 14px; background: rgba(184, 134, 11, 0.08); border-radius: 8px; font-size: 12px; color: var(--gold-dark);">
+                        <i class="fas fa-info-circle"></i> 
+                        Each instructor will receive approximately <strong><?php echo ceil($unassignedStudents / count($instructors)); ?></strong> student(s). 
+                        Students will be assigned to instructors with the fewest current mentees first.
+                    </div>
+                    <?php endif; ?>
                 </div>
                 
                 <div class="grid-2">
@@ -1354,6 +1387,109 @@ if (!$show_role_modal) {
             });
         }
         
+          // Auto Assign All Unassigned Students
+          async function autoAssignStudents() {
+              const btn = document.getElementById('btn-auto-assign');
+              const studentRows = document.querySelectorAll('.student-row');
+              
+              if (studentRows.length === 0) {
+                  showToast('No unassigned students to assign.', 'error');
+                  return;
+              }
+              
+              // Get all instructor IDs and their current mentee counts
+              const instructorIds = [];
+              const instructorNames = {};
+              <?php foreach ($instructors as $inst): ?>
+              instructorIds.push(<?php echo $inst['id']; ?>);
+              instructorNames[<?php echo $inst['id']; ?>] = "<?php echo htmlspecialchars(addslashes($inst['first_name'] . ' ' . $inst['last_name'])); ?>";
+              <?php endforeach; ?>
+              
+              if (instructorIds.length === 0) {
+                  showToast('No instructors available for assignment.', 'error');
+                  return;
+              }
+              
+              // Confirm action
+              if (!confirm(`Are you sure you want to auto-assign ${studentRows.length} unassigned student(s) evenly across ${instructorIds.length} instructor(s)?`)) {
+                  return;
+              }
+              
+              btn.disabled = true;
+              btn.innerHTML = '<span class="loading"></span> Auto Assigning...';
+              
+              // Sort instructors by current mentee count (ascending) for balanced distribution
+              instructorIds.sort((a, b) => (instructorMenteeCounts[a] || 0) - (instructorMenteeCounts[b] || 0));
+              
+              // Collect all unassigned student data
+              const studentsToAssign = [];
+              studentRows.forEach(row => {
+                  studentsToAssign.push({
+                      id: row.dataset.studentId,
+                      name: row.dataset.studentName
+                  });
+              });
+              
+              let successCount = 0;
+              let errorCount = 0;
+              let instructorIndex = 0;
+              
+              // Round-robin assignment based on least loaded instructor
+              for (const student of studentsToAssign) {
+                  // Re-sort by current count each iteration for true load balancing
+                  instructorIds.sort((a, b) => (instructorMenteeCounts[a] || 0) - (instructorMenteeCounts[b] || 0));
+                  const targetInstructorId = instructorIds[0]; // Always assign to least loaded
+                  
+                  try {
+                      const response = await fetch('../../data/assign_mentee.php', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                          body: 'instructor_id=' + encodeURIComponent(targetInstructorId) + '&student_id=' + encodeURIComponent(student.id)
+                      });
+                      
+                      const data = await response.json();
+                      
+                      if (data.success) {
+                          successCount++;
+                          const menteeId = data.mentee_id;
+                          // Update instructor panel
+                          updateInstructorData(targetInstructorId, menteeId, student.name, true);
+                          // Remove student row
+                          const row = document.querySelector(`.student-row[data-student-id="${student.id}"]`);
+                          if (row) row.remove();
+                      } else {
+                          errorCount++;
+                          console.error(`Failed to assign ${student.name}: ${data.message}`);
+                      }
+                  } catch (err) {
+                      errorCount++;
+                      console.error(`Error assigning ${student.name}: ${err.message}`);
+                  }
+              }
+              
+              // Show results
+              if (successCount > 0 && errorCount === 0) {
+                  showToast(`Successfully auto-assigned ${successCount} student(s) across ${instructorIds.length} instructor(s)!`, 'success');
+              } else if (successCount > 0) {
+                  showToast(`Auto-assigned ${successCount} student(s). ${errorCount} failed.`, 'success');
+              } else {
+                  showToast(`Auto-assign failed. ${errorCount} error(s) occurred.`, 'error');
+              }
+              
+              // Reset button
+              btn.innerHTML = '<i class="fas fa-magic"></i> Auto Assign All';
+              btn.disabled = true; // Keep disabled since all students are now assigned
+              
+              // Update counts
+              updateStudentCount();
+              
+              // Clear any selections
+              clearSelection();
+              
+              // Reload page after short delay to refresh all data
+              setTimeout(() => location.reload(), 2000);
+          }
+
           // Auto-dismiss toasts after 4 seconds
           document.addEventListener('DOMContentLoaded', function() {
               setTimeout(() => {

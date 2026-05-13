@@ -435,6 +435,12 @@ function filterMenteeSem(s) {
   });
   applyFilters();
 }
+function onYearChange(year) {
+  focusYear = year;
+}
+function onSemChange(sem) {
+  focusSem = sem;
+}
 function applyFilters() {
   const q = document.getElementById('menteeSearch').value.toLowerCase();
   document.querySelectorAll('.mentee-card').forEach(c => {
@@ -690,15 +696,251 @@ function buildCombinedBar(gwaData) {
       </span>
     </div>
     <div class="esb-right">
+      <select id="yearFilter" class="esb-filter-select" onchange="onYearChange(this.value)">
+        ${YEAR_LABELS.map(y => `<option value="${y}" ${y === yearLabel ? 'selected' : ''}>${y}</option>`).join('')}
+      </select>
+      <select id="semFilter" class="esb-filter-select" onchange="onSemChange(this.value)">
+        <option value="1st Semester" ${semLabel === '1st Semester' ? 'selected' : ''}>1st Semester</option>
+        <option value="2nd Semester" ${semLabel === '2nd Semester' ? 'selected' : ''}>2nd Semester</option>
+      </select>
+      <button class="esb-filter-btn" id="checkStatusBtn" onclick="checkSelectedPeriodStatus()"><i class="fas fa-check-circle"></i> Check</button>
       <span class="esb-period-badge"><i class="fas fa-calendar-alt"></i> A.Y. ${esc(currentAY)}</span>
-      ${isAlreadyFinalized
-        ? `<button class="esb-secondary-btn" onclick="openGradesModal('${esc(yearLabel)}','${esc(semLabel)}')"><i class="fas fa-eye"></i> View Grades</button>
-           <button class="esb-evaluate-btn esb-done" onclick="showAlreadyEvaluatedModal('${esc(yearLabel)}','${esc(semLabel)}')"><i class="fas fa-check-circle"></i> Current Standing</button>`
-        : `<button class="esb-evaluate-btn" id="btnEvaluate" onclick="autoDetectAndEvaluate()"><i class="fas fa-clipboard-check"></i> Evaluate</button>`
-      }
     </div>
   </div>`;
 }
+
+function checkSelectedPeriodStatus() {
+  const yearSel = document.getElementById('yearFilter');
+  const semSel = document.getElementById('semFilter');
+  const selYear = yearSel ? yearSel.value : (focusYear || '1st Year');
+  const selSem = semSel ? semSel.value : (focusSem || '1st Semester');
+  
+  if (!selYear || !selSem) {
+    toast('Please select both Year and Semester', 'error');
+    return;
+  }
+  
+  const fkey = `${selYear}|${selSem}`;
+  
+  if (finalizedMap[fkey]) {
+    focusYear = selYear;
+    focusSem = selSem;
+    showAlreadyEvaluatedModal(selYear, selSem);
+  } else {
+    focusYear = selYear;
+    focusSem = selSem;
+    showEnrollmentModal(selYear, selSem);
+  }
+}
+
+function showEnrollmentModal(year, sem) {
+  const fkey = `${year}|${sem}`;
+  
+  // Get subjects for the selected year/semester
+  const yearSubjects = loadedSubjects.filter(s => {
+    const subYear = (s.year_level || '').trim();
+    const subSem = (s.semester || '').toLowerCase();
+    const matchYear = subYear === year;
+    const matchSem = subSem.includes(sem.includes('1st') ? '1st' : '2nd');
+    return matchYear && matchSem;
+  });
+  
+  const totalUnits = yearSubjects.reduce((sum, s) => sum + (parseFloat(s.units) || 0), 0);
+  
+  // Check if subjects have grades (gradedCount > 0 means grades exist)
+  const gradedCount = yearSubjects.filter(s => gradeMap[s.id] != null || s.is_credited).length;
+  const hasGrades = gradedCount > 0;
+  
+  // Determine button text and action based on whether grades exist
+  const buttonText = hasGrades ? 'Finalize' : 'Start Evaluation';
+  const buttonIcon = hasGrades ? 'fa-lock' : 'fa-play';
+  const buttonAction = hasGrades ? `finalizeSelectedPeriod('${year}','${sem}')` : `proceedToEvaluate('${year}','${sem}')`;
+  const buttonGradient = hasGrades ? 'linear-gradient(135deg,var(--green),#15803d)' : 'linear-gradient(135deg,var(--gold-l),var(--gold-d))';
+  
+  const modalHtml = `
+    <div class="modal-overlay" id="enrollmentModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:15000;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:0;max-width:700px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);border:1px solid rgba(184,134,11,.2);font-family:'Poppins',sans-serif;">
+        <div style="background:linear-gradient(135deg,var(--gold-d),var(--gold));padding:16px 24px;color:#fff;">
+          <h3 style="margin:0;font-size:18px;font-weight:700;font-family:'Playfair Display',serif;"><i class="fas fa-user-graduate" style="margin-right:10px;"></i>Enrollment: ${year} — ${sem}</h3>
+        </div>
+        <div style="padding:20px;">
+          <div style="margin-bottom:16px;font-size:14px;color:var(--dark);font-weight:600;">
+            ${yearSubjects.length} subjects found • ${totalUnits} units total
+          </div>
+          <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;margin-bottom:16px;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr style="background:linear-gradient(135deg,var(--gold-d),var(--gold));">
+                  <th style="padding:10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid var(--gold-d);">Code</th>
+                  <th style="padding:10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid var(--gold-d);">Subject</th>
+                  <th style="padding:10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid var(--gold-d);">Units</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${yearSubjects.map(s => {
+                  const hasGrade = gradeMap[s.id] != null || s.is_credited;
+                  return `
+                  <tr style="background:${yearSubjects.indexOf(s) % 2 === 0 ? '#fff' : '#fafaf8'};">
+                    <td style="padding:10px;font-weight:600;color:var(--dark);border-bottom:1px solid var(--border);">${esc(s.subject_code)}</td>
+                    <td style="padding:10px;color:var(--mid);border-bottom:1px solid var(--border);">${esc(s.subject_name)}${hasGrade ? '<span style="margin-left:8px;font-size:10px;color:var(--green);"><i class="fas fa-check"></i> Graded</span>' : ''}</td>
+                    <td style="padding:10px;text-align:center;font-weight:600;border-bottom:1px solid var(--border);">${parseFloat(s.units) || 0}</td>
+                  </tr>
+                `}).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;">
+            <button onclick="closeEnrollmentModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:8px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
+            <button onclick="${buttonAction}" style="padding:10px 20px;border:none;border-radius:8px;background:${buttonGradient};color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;"><i class="fas ${buttonIcon}" style="margin-right:6px;"></i>${buttonText}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('enrollmentModal')?.remove();
+  const modalDiv = document.createElement('div');
+  modalDiv.id = 'enrollmentModal';
+  modalDiv.innerHTML = modalHtml;
+  document.body.appendChild(modalDiv);
+}
+
+function finalizeSelectedPeriod(year, sem) {
+  closeEnrollmentModal();
+  
+  // Set focus
+  focusYear = year;
+  focusSem = sem;
+  
+  // Mark all subjects in this period as in-load
+  const semWant = sem === '1st Semester' ? '1st' : '2nd';
+  loadedSubjects.forEach(s => {
+    const subYear = (s.year_level || '').trim();
+    const subSem = (s.semester || '').toLowerCase();
+    if (subYear === year && subSem.includes(semWant)) {
+      s.is_in_load = true;
+    }
+  });
+  
+  // Get targeted subjects
+  let targeted = loadedSubjects.filter(s => {
+    const subYear = (s.year_level || '').trim();
+    const subSem = (s.semester || '').toLowerCase();
+    return subYear === year && subSem.includes(semWant);
+  });
+  
+  const graded = targeted.filter(s => gradeMap[s.id] != null || s.is_credited);
+  
+  if (graded.length === 0) {
+    toast('No grades found for this period.', 'error');
+    return;
+  }
+  
+  // Finalize directly
+  const fkey = `${year}|${sem}`;
+  const confirmFinal = confirm(`Finalize evaluation for ${year} — ${sem}?\n\nThis will lock ${graded.length} graded subject(s).`);
+  if (!confirmFinal) return;
+  
+  // Lock the subjects
+  graded.forEach(s => {
+    const inp = document.getElementById('g-' + s.id);
+    const sbtn = document.getElementById('sbtn-' + s.id);
+    if (inp) { inp.disabled = true; inp.style.cursor = 'not-allowed'; }
+    if (sbtn) { sbtn.disabled = true; }
+  });
+  
+  finalizedMap[fkey] = true;
+  applyFocusVisuals();
+  
+  // Save finalization to server
+  const fd = new FormData();
+  fd.append('action', 'finalize_session');
+  fd.append('student_id', currentStudent?.id || 0);
+  fd.append('major_id', currentStudent?.major_id || 0);
+  fd.append('academic_year', currentAY);
+  fd.append('year_level', year);
+  fd.append('semester', sem);
+  fetch(EVAL_PROC, { method: 'POST', body: fd }).catch(() => {});
+  
+  // Add finalized badge to the correct year block
+  const yearBlocks = document.querySelectorAll('.pro-year-block[data-year="' + year + '"]');
+  yearBlocks.forEach(block => {
+    const semCol = block.querySelector('.pro-sem-col[data-sem="' + sem + '"]');
+    if (semCol && !semCol.querySelector('.sem-finalized-badge')) {
+      const badge = document.createElement('div');
+      badge.className = 'sem-finalized-badge';
+      badge.innerHTML = '<i class="fas fa-check-circle"></i> Finalized';
+      semCol.insertBefore(badge, semCol.firstChild);
+    }
+  });
+  
+  toast(`${year} — ${sem} finalized successfully!`, 'success');
+}
+
+function closeEnrollmentModal() {
+  document.getElementById('enrollmentModal')?.remove();
+}
+
+function proceedToEvaluate(year, sem) {
+  closeEnrollmentModal();
+  
+  // Set focus
+  focusYear = year;
+  focusSem = sem;
+  
+  const semWant = sem === '1st Semester' ? '1st' : '2nd';
+  
+  // Mark all subjects in this period as in-load
+  loadedSubjects.forEach(s => {
+    const subYear = (s.year_level || '').trim();
+    const subSem = (s.semester || '').toLowerCase();
+    if (subYear === year && subSem.includes(semWant)) {
+      s.is_in_load = true;
+    }
+  });
+  
+  // Get targeted subjects (now marked as in-load)
+  let targeted = loadedSubjects.filter(s => {
+    const subYear = (s.year_level || '').trim();
+    const subSem = (s.semester || '').toLowerCase();
+    return subYear === year && subSem.includes(semWant);
+  });
+  
+  if (!targeted.length) {
+    toast(`No subjects found for ${year} — ${sem}`, 'error');
+    return;
+  }
+  
+  const graded = targeted.filter(s => gradeMap[s.id] != null || s.is_credited);
+  if (graded.length === 0) {
+    toast('Please enter at least one grade before evaluating.', 'error');
+    return;
+  }
+  
+  showResultModal(graded, year, sem);
+}
+
+function showComingSoonModal() {
+  const modalHtml = `
+    <div class="modal-overlay" id="comingSoonModal" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:15000;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:28px;max-width:400px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border:1px solid rgba(184,134,11,.2);">
+        <div style="width:60px;height:60px;margin:0 auto 16px;background:linear-gradient(135deg,var(--amber-l),var(--amber));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#92400e;"><i class="fas fa-clock"></i></div>
+        <h3 style="font-size:18px;font-weight:700;color:var(--dark);margin-bottom:12px;">Coming Soon</h3>
+        <p style="font-size:14px;color:var(--muted);margin-bottom:22px;line-height:1.6;">
+          <strong>${esc(focusYear)} — ${esc(focusSem)}</strong> is not yet finalized or in progress.
+          <br><br>This feature will be available once evaluation begins for this period.
+        </p>
+        <button onclick="document.getElementById('comingSoonModal').remove()" style="padding:10px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;">OK</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('comingSoonModal')?.remove();
+  const modalDiv = document.createElement('div');
+  modalDiv.id = 'comingSoonModal';
+  modalDiv.innerHTML = modalHtml;
+  document.body.appendChild(modalDiv);
+}
+
 
 /* ═══════════════════════════════════════════════════════════
    AUTO-DETECT AND EVALUATE
@@ -753,25 +995,39 @@ function autoDetectAndEvaluate() {
     return;
   }
 
-  // Check for missing grades — exclude credited subjects (they already have grades applied)
+  // Check which subjects have grades entered (exclude credited subjects - they already have grades)
+  const graded = targeted.filter(s => gradeMap[s.id] != null || s.is_credited);
   const missing = targeted.filter(s => gradeMap[s.id] == null && !s.is_credited);
-  if (missing.length) {
-    toast(`${missing.length} subject(s) still have no grade. Please enter all grades before evaluating.`, 'error', 4200);
-    missing.forEach(s => {
-      const inp = document.getElementById('g-'+s.id);
-      if (inp) {
-        inp.style.borderColor = 'var(--red)';
-        inp.style.boxShadow   = '0 0 0 3px rgba(220,38,38,.3)';
-        setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 2800);
-      }
-    });
-    const firstMissingRow = document.getElementById('row-' + missing[0].id);
-    if (firstMissingRow) firstMissingRow.scrollIntoView({behavior:'smooth', block:'center'});
+
+  // Allow evaluation as long as at least 1 subject has a grade
+  if (graded.length === 0) {
+    toast('Please enter at least one grade before evaluating.', 'error', 4200);
+    const firstInput = document.querySelector('.grade-inp:not([disabled])');
+    if (firstInput) firstInput.focus();
     return;
   }
 
-  // All grades present — launch the result modal (promote / stay / retake flow)
-  showResultModal(targeted, yearLabel, semLabel);
+  // If there are missing grades, show a confirmation but still allow proceeding
+  if (missing.length) {
+    const proceed = confirm(`${missing.length} subject(s) still have no grade.\n\nDo you want to proceed with evaluation using only the ${graded.length} graded subject(s)?\n\nSubjects without grades will be skipped in the GWA calculation.`);
+    if (!proceed) {
+      // Highlight missing inputs as a visual hint
+      missing.forEach(s => {
+        const inp = document.getElementById('g-'+s.id);
+        if (inp) {
+          inp.style.borderColor = 'var(--amber)';
+          inp.style.boxShadow   = '0 0 0 3px rgba(217,119,6,.2)';
+          setTimeout(() => { inp.style.borderColor = ''; inp.style.boxShadow = ''; }, 2800);
+        }
+      });
+      const firstMissingRow = document.getElementById('row-' + missing[0].id);
+      if (firstMissingRow) firstMissingRow.scrollIntoView({behavior:'smooth', block:'center'});
+      return;
+    }
+  }
+
+  // Launch the result modal with only the graded subjects for evaluation
+  showResultModal(graded, yearLabel, semLabel);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -825,12 +1081,11 @@ function showAlreadyEvaluatedModal(year, sem) {
         <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;">
           <strong>${year} — ${sem}</strong> has already been evaluated and finalized.<br>Do you want to view the grades or continue anyway?
         </p>
-         <div id="evalModalButtons" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-           <button onclick="closeAlreadyEvaluatedModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
-           <button onclick="confirmViewEvaluated('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">View Grades</button>
-           <button onclick="showEditPasswordPrompt('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--green),#15803d);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;"><i class="fas fa-edit" style="margin-right:6px;"></i> Edit Grades</button>
-           <button onclick="unfinalizeSession('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--red),#dc2626);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;"><i class="fas fa-undo" style="margin-right:6px;"></i> Unfinalize</button>
-         </div>
+          <div id="evalModalButtons" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button onclick="closeAlreadyEvaluatedModal()" style="padding:10px 20px;border:1px solid var(--border);border-radius:10px;background:var(--cream);color:var(--mid);font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">Cancel</button>
+            <button onclick="confirmViewEvaluated('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">View Grades</button>
+            <button onclick="unfinalizeSession('${year}','${sem}')" style="padding:10px 20px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--red),#dc2626);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;"><i class="fas fa-undo" style="margin-right:6px;"></i> Unfinalize</button>
+          </div>
         <div id="evalPasswordPrompt" style="display:none;margin-top:18px;text-align:left;">
           <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Enter your password to confirm edit mode:</p>
           <input type="password" id="evalEditPassword" placeholder="Your password" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:12px;box-sizing:border-box;font-family:'Poppins',sans-serif;">
@@ -1047,32 +1302,35 @@ function clearFocus() {
       });
     });
 
-    // Refresh the "Evaluate" button state on the sticky bar
+    // Refresh the Evaluate button state on the sticky bar
     const fkey = `${focusYear}|${focusSem}`;
-    const btnEvaluate = document.getElementById('btnEvaluate');
-    if (btnEvaluate) {
+    
+    // Refresh the FAB button state (main page floating button)
+    const fabEvaluateMain = document.getElementById('fabEvaluateMain');
+    if (fabEvaluateMain) {
       if (finalizedMap[fkey]) {
-        btnEvaluate.innerHTML = '<i class="fas fa-check-circle"></i> Current Standing';
-        btnEvaluate.disabled = false;
-        btnEvaluate.classList.add('esb-done');
-        btnEvaluate.onclick = function() { showAlreadyEvaluatedModal(focusYear, focusSem); };
+        fabEvaluateMain.innerHTML = '<i class="fas fa-check-circle"></i>';
+        fabEvaluateMain.classList.add('done');
       } else {
-        btnEvaluate.innerHTML = '<i class="fas fa-clipboard-check"></i> Evaluate';
-        btnEvaluate.disabled = false;
-        btnEvaluate.classList.remove('esb-done');
-        btnEvaluate.onclick = function() { autoDetectAndEvaluate(); };
+        fabEvaluateMain.innerHTML = '<i class="fas fa-bolt"></i>';
+        fabEvaluateMain.classList.remove('done');
       }
     }
 
-    // Update Current GWA — based on all graded subjects in the current focus period
+    // Update Current GWA — based on subjects in the current year-semester combination from student's standing
+    // Get the current standing from year_level and filter subjects accordingly
     let gwaPoints = 0, gwaUnits = 0;
+    const currentStanding = currentStudent?.year_level || '1st Year - 1st Semester';
+    const {yr, sem} = parseStudentStanding(currentStanding);
+    const curYearLabel = YEAR_LABELS[yr-1] || '1st Year';
+    const curSemWant = sem === 1 ? '1st' : '2nd';
+    
     loadedSubjects.forEach(sub => {
-      if (focusYear && sub.year_level !== focusYear) return;
-      if (focusSem) {
-        const sSem = (sub.semester||'').toLowerCase();
-        const want = focusSem.includes('1st') ? '1st' : '2nd';
-        if (!sSem.includes(want)) return;
-      }
+      // Filter by current year and semester from student's standing
+      if (sub.year_level !== curYearLabel) return;
+      const sSem = (sub.semester||'').toLowerCase();
+      if (!sSem.includes(curSemWant)) return;
+      
       const raw = gradeMap[sub.id];
       if (raw != null) {
         const rounded = roundGrade(parseFloat(raw));
@@ -1102,14 +1360,22 @@ function triggerFinalize() {
    );
   if(!targeted.length) { toast('No subjects found for this year/semester.','error'); return; }
 
-  const missing = targeted.filter(s => gradeMap[s.id] == null);
-  if(missing.length) {
-    toast(`${missing.length} subject(s) still have no grade. Please enter all grades before finalizing.`,'error',4000);
-    missing.forEach(s => {
-      const inp = document.getElementById('g-'+s.id);
-      if(inp) { inp.style.borderColor='var(--red)'; inp.style.boxShadow='0 0 0 3px rgba(220,38,38,.3)'; setTimeout(()=>{inp.style.borderColor='';inp.style.boxShadow='';},2800); }
-    });
+  const gradedForFinalize = targeted.filter(s => gradeMap[s.id] != null || s.is_credited);
+  const missingForFinalize = targeted.filter(s => gradeMap[s.id] == null && !s.is_credited);
+  
+  if(gradedForFinalize.length === 0) {
+    toast('Please enter at least one grade before finalizing.','error',4000);
     return;
+  }
+
+  if(missingForFinalize.length) {
+    if(!confirm(`${missingForFinalize.length} subject(s) still have no grade.\n\nDo you want to finalize with only the ${gradedForFinalize.length} graded subject(s)?`)) {
+      missingForFinalize.forEach(s => {
+        const inp = document.getElementById('g-'+s.id);
+        if(inp) { inp.style.borderColor='var(--amber)'; inp.style.boxShadow='0 0 0 3px rgba(217,119,6,.2)'; setTimeout(()=>{inp.style.borderColor='';inp.style.boxShadow='';},2800); }
+      });
+      return;
+    }
   }
   if(!confirm(`Finalize evaluation for ${focusYear} — ${focusSem}?\n\nThis will lock grades for this period and cannot be undone.`)) return;
 
@@ -1285,73 +1551,85 @@ function showResultModal(subjects, yearLabel, semLabel) {
                  <span style="display:inline-block;padding:3px 8px;background:var(--red-l);color:#991b1b;border-radius:10px;font-size:9px;font-weight:700;"><i class="fas fa-lock" style="margin-right:3px;"></i>Locked</span>
                </td>
              </tr>`).join('')}
-           </tbody>
-         </table>
-       </div>
-       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;padding:10px 12px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:10px;">
-         <div style="font-size:12px;color:#fff;font-weight:600;">
-           <i class="fas fa-calculator" style="margin-right:4px;"></i>
-           <span id="rmSelectedCount">${availableNextSubs.length}</span> subjects · <span id="rmTotalUnits">${totalAvailUnits}</span> units selected
-         </div>
-         <button onclick="rmConfirmEnrollmentList('${nextYearLabel}','${nextSemLabel}')"
-           style="padding:8px 18px;background:#fff;color:var(--gold-d);border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(0,0,0,.2);transition:all .2s;" id="rmConfirmBtn">
-           <i class="fas fa-check-double"></i> Confirm Subject Load
-         </button>
-       </div>
-     </div>`;
-     
-     // Add cross-year same semester subjects table
-     const sameSemOtherYearSubs = loadedSubjects.filter(s => {
-       const sSem = (s.semester || '').toLowerCase();
-       const targetSem = nextSemLabel.toLowerCase();
-       const sYear = YEAR_NUM[s.year_level] || 0;
-       const isSameSem = sSem.includes(targetSem.includes('1st') ? '1st' : '2nd');
-       const isDifferentYear = sYear !== nYr;
-       const notTaken = !gradeMap[s.id] || gradeMap[s.id] == null;
-       return isSameSem && isDifferentYear && notTaken;
-     });
-     
-     if(sameSemOtherYearSubs.length > 0) {
-       bodyHtml += `
-       <div style="margin-bottom:18px;">
-         <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
-           <i class="fas fa-plus-circle" style="color:var(--blue);margin-right:7px;"></i>
-           Additional Subjects (Same Semester, Other Years)
-           <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">(Cross-year same semester subjects available)</span>
-         </div>
-         <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-           <table style="width:100%;border-collapse:collapse;font-size:11px;">
-             <thead>
-               <tr style="background:linear-gradient(135deg,var(--blue),#1e40af);">
-                 <th style="width:30px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">✓</th>
-                 <th style="width:60px;padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Year</th>
-                 <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Course Code</th>
-                 <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Subject Title</th>
-                 <th style="width:60px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Units</th>
-               </tr>
-             </thead>
-             <tbody>
-               ${sameSemOtherYearSubs.map(s=>`
-               <tr id="rmrow-extra-${s.id}" style="background:#fff;cursor:pointer;" onclick="document.getElementById('rmchk-extra-${s.id}').click();">
-                 <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
-                   <input type="checkbox" id="rmchk-extra-${s.id}" onchange="rmToggleExtraSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
-                 </td>
-                 <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600;color:var(--mid);">${esc(s.year_level)}</td>
-                 <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(s.subject_code)}</td>
-                 <td style="padding:7px 10px;border-bottom:1px solid var(--border);">${esc(s.subject_name)}</td>
-                 <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;">${parseFloat(s.units)||0}</td>
-               </tr>`).join('')}
-             </tbody>
-           </table>
-         </div>
-       </div>`;
-       window._rmExtraSubs = sameSemOtherYearSubs;
-       window._rmExtraSelectedIds = new Set();
-     }
-     
-     window._rmAvailableSubs = availableNextSubs;
-     window._rmSelectedIds   = new Set(availableNextSubs.map(s => s.id));
-   }
+</tbody>
+          </table>
+        </div>
+      </div>`;
+      
+      // Add cross-year same semester subjects table
+      const sameSemOtherYearSubs = loadedSubjects.filter(s => {
+        const sSem = (s.semester || '').toLowerCase();
+        const targetSem = nextSemLabel.toLowerCase();
+        const sYear = YEAR_NUM[s.year_level] || 0;
+        const isSameSem = sSem.includes(targetSem.includes('1st') ? '1st' : '2nd');
+        const isDifferentYear = sYear !== nYr;
+        const notTaken = !gradeMap[s.id] || gradeMap[s.id] == null;
+        return isSameSem && isDifferentYear && notTaken;
+      });
+      
+      if(sameSemOtherYearSubs.length > 0) {
+        bodyHtml += `
+        <div style="margin-bottom:18px;">
+          <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
+            <i class="fas fa-plus-circle" style="color:var(--blue);margin-right:7px;"></i>
+            Additional Subjects (Same Semester, Other Years)
+            <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">(Cross-year same semester subjects available)</span>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead>
+                <tr style="background:linear-gradient(135deg,var(--blue),#1e40af);">
+                  <th style="width:30px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">✓</th>
+                  <th style="width:60px;padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Year</th>
+                  <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Course Code</th>
+                  <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Subject Title</th>
+                  <th style="width:60px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #1e40af;">Units</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${sameSemOtherYearSubs.map(s=>`
+                <tr id="rmrow-extra-${s.id}" style="background:#fff;cursor:pointer;" onclick="document.getElementById('rmchk-extra-${s.id}').click();">
+                  <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
+                    <input type="checkbox" id="rmchk-extra-${s.id}" onchange="rmToggleExtraSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
+                  </td>
+                  <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:600;color:var(--mid);">${esc(s.year_level)}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(s.subject_code)}</td>
+                  <td style="padding:7px 10px;border-bottom:1px solid var(--border);">${esc(s.subject_name)}</td>
+                  <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;">${parseFloat(s.units)||0}</td>
+                </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;padding:10px 12px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:10px;">
+            <div style="font-size:12px;color:#fff;font-weight:600;">
+              <i class="fas fa-calculator" style="margin-right:4px;"></i>
+              <span id="rmSelectedCount">${availableNextSubs.length}</span> subjects · <span id="rmTotalUnits">${totalAvailUnits}</span> units selected (including additional)
+            </div>
+            <button onclick="rmConfirmEnrollmentList('${nextYearLabel}','${nextSemLabel}')"
+              style="padding:8px 18px;background:#fff;color:var(--gold-d);border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(0,0,0,.2);transition:all .2s;" id="rmConfirmBtn">
+              <i class="fas fa-check-double"></i> Confirm Subject Load
+            </button>
+          </div>
+        </div>`;
+        window._rmExtraSubs = sameSemOtherYearSubs;
+        window._rmExtraSelectedIds = new Set();
+      } else {
+        bodyHtml += `
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;padding:10px 12px;background:linear-gradient(135deg,var(--gold-d),var(--gold));border-radius:10px;">
+          <div style="font-size:12px;color:#fff;font-weight:600;">
+            <i class="fas fa-calculator" style="margin-right:4px;"></i>
+            <span id="rmSelectedCount">${availableNextSubs.length}</span> subjects · <span id="rmTotalUnits">${totalAvailUnits}</span> units selected
+          </div>
+          <button onclick="rmConfirmEnrollmentList('${nextYearLabel}','${nextSemLabel}')"
+            style="padding:8px 18px;background:#fff;color:var(--gold-d);border:none;border-radius:8px;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(0,0,0,.2);transition:all .2s;" id="rmConfirmBtn">
+            <i class="fas fa-check-double"></i> Confirm Subject Load
+          </button>
+        </div>`;
+      }
+      
+      window._rmAvailableSubs = availableNextSubs;
+      window._rmSelectedIds   = new Set(availableNextSubs.map(s => s.id));
+    }
 
   // Failed subjects
   if(failedSubs.length) {
@@ -1462,6 +1740,8 @@ function showResultModal(subjects, yearLabel, semLabel) {
         <div class="rm-verdict-sub">${verdictSub}</div>
         ${semGWA!=null?`<div class="rm-gwa-chip"><i class="fas fa-chart-line"></i> Semester GWA: ${semGWA.toFixed(2)}</div>`:''}
       </div>
+      <div class="rm-header-actions">
+      </div>
     </div>
     <div class="rm-body">
       ${breakdownHtml}
@@ -1469,6 +1749,8 @@ function showResultModal(subjects, yearLabel, semLabel) {
       ${actionsHtml}
     </div>`;
   document.getElementById('resultModal').classList.add('open');
+  
+
 }
 
 function closeResultModal() {
@@ -1973,251 +2255,346 @@ function printGradesTable() {
    document.getElementById('rmTotalUnits').textContent = units;
  }
  
- function rmConfirmEnrollmentList(toYear, toSem) {
-   const selected = (window._rmAvailableSubs||[]).filter(s => window._rmSelectedIds.has(s.id));
-   const selectedExtra = (window._rmExtraSubs||[]).filter(s => window._rmExtraSelectedIds.has(s.id));
-   const allSelected = [...selected, ...selectedExtra];
-   const units    = allSelected.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
-   
-   // Store for promoteStudent to use when unlocking subjects after promotion
-   confirmedEnrollmentSubjectIds = allSelected.map(s => s.id);
-   
-   if(currentStudent) {
-     const fd = new FormData();
-     fd.append('action','save_enrollment_list'); fd.append('student_id',currentStudent.id);
-     fd.append('academic_year',currentAY); fd.append('subject_ids',JSON.stringify(allSelected.map(s=>s.id)));
-     fd.append('to_year',toYear||''); fd.append('to_sem',toSem||'');
-     fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
-   }
-   toast(`Subject load confirmed — ${allSelected.length} subjects (${units} units) will be loaded for ${toYear} ${toSem}`,'success',3800);
-   
-   // Update confirm button
-   const btn = document.getElementById('rmConfirmBtn');
-   if(btn) { 
-     btn.innerHTML='<i class="fas fa-check-circle"></i> Load Confirmed'; 
-     btn.style.background='linear-gradient(135deg,var(--green),#15803d)'; 
-     btn.disabled=true; 
-   }
-
-   // ★ Unlock the "Finalize Subject Load" button now that a load is confirmed
-   const finalizeLoadBtn = document.getElementById('rmFinalizeLoadBtn');
-   if(finalizeLoadBtn) {
-     finalizeLoadBtn.disabled = false;
-     finalizeLoadBtn.style.opacity = '1';
-     finalizeLoadBtn.style.cursor = 'pointer';
-     finalizeLoadBtn.style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
-     finalizeLoadBtn.innerHTML = '<i class="fas fa-check-square"></i> Finalize Subject Load';
-     // Update gate notice text
-     const gateDiv = document.getElementById('rmFinalizeGate');
-     if(gateDiv) {
-       const subText = gateDiv.querySelector('div:nth-child(2)');
-       if(subText) subText.innerHTML = '<strong style="color:#166534;">' + allSelected.length + ' subjects confirmed.</strong> Click <strong>Finalize Subject Load</strong> to lock the list and enable Proceed / Stay.';
-       const hint = gateDiv.querySelector('div:last-child');
-       if(hint) hint.style.display = 'none';
+   function rmConfirmEnrollmentList(toYear, toSem) {
+     const selected = (window._rmAvailableSubs||[]).filter(s => window._rmSelectedIds.has(s.id));
+     const selectedExtra = (window._rmExtraSubs||[]).filter(s => window._rmExtraSelectedIds.has(s.id));
+     const allSelected = [...selected, ...selectedExtra];
+     const units    = allSelected.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
+     
+     // ★ CHECK: If all subjects for the selected year+semester are selected,
+     // prevent finalization and show a warning message.
+     const allYearSemSubjects = loadedSubjects.filter(s => {
+       const sYear = (s.year_level||'').trim();
+       const sSem  = (s.semester||'').toLowerCase();
+       const matchYear = sYear === toYear;
+       const matchSem  = sSem.includes(toSem.includes('1st') ? '1st' : '2nd');
+       return matchYear && matchSem;
+     });
+     
+     // Check if every single subject in the target year/semester is included in the selection
+     const allYearSemSelected = allYearSemSubjects.length > 0 && allYearSemSubjects.every(s => selectedIds.has(s.id));
+     
+     if (allYearSemSelected) {
+       // All subjects selected — show warning and block confirmation
+       const warningHtml = `
+         <div class="modal-overlay" id="fullLoadWarningOverlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:16000;display:flex;align-items:center;justify-content:center;padding:20px;">
+           <div style="background:linear-gradient(145deg,#fff,#fafaf8);border-radius:16px;padding:26px 30px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;border:2px solid var(--amber);">
+             <div style="width:58px;height:58px;margin:0 auto 16px;background:linear-gradient(135deg,var(--amber-l),var(--amber));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;color:#92400e;"><i class="fas fa-exclamation-triangle"></i></div>
+             <h3 style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:10px;">Cannot Finalize Full Load</h3>
+             <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.6;">
+               All <strong>${allSelected.length}</strong> subjects for <strong>${toYear} — ${toSem}</strong> have been selected.
+               <br><br>
+               Finalization is not allowed when the entire subject load is selected. Please review the enrollment list and ensure only appropriate subjects are included.
+             </p>
+             <button onclick="closeFullLoadWarning()" style="padding:10px 24px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--gold-l),var(--gold-d));color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif;">OK</button>
+           </div>
+         </div>
+       `;
+       document.getElementById('fullLoadWarningOverlay')?.remove();
+       const modalDiv = document.createElement('div');
+       modalDiv.id = 'fullLoadWarningOverlay';
+       modalDiv.innerHTML = warningHtml;
+       document.body.appendChild(modalDiv);
+       return;
+     }
+     
+     // Store for promoteStudent to use when unlocking subjects after promotion
+     confirmedEnrollmentSubjectIds = allSelected.map(s => s.id);
+     
+     // Store for confirmed subjects
+     window._confirmedSubjects = allSelected;
+     window._confirmedYear = toYear;
+     window._confirmedSem = toSem;
+     
+     if(currentStudent) {
+       const fd = new FormData();
+       fd.append('action','save_enrollment_list'); fd.append('student_id',currentStudent.id);
+       fd.append('academic_year',currentAY); fd.append('subject_ids',JSON.stringify(allSelected.map(s=>s.id)));
+       fd.append('to_year',toYear||''); fd.append('to_sem',toSem||'');
+       fetch(EVAL_PROC,{method:'POST',body:fd}).catch(()=>{});
+     }
+     toast(`Subject load confirmed — ${allSelected.length} subjects (${units} units) will be loaded for ${toYear} ${toSem}`,'success',3800);
+     
+     // Update confirm button
+     const btn = document.getElementById('rmConfirmBtn');
+     if(btn) { 
+       btn.innerHTML='<i class="fas fa-check-circle"></i> Load Confirmed'; 
+       btn.style.background='linear-gradient(135deg,var(--green),#15803d)'; 
+       btn.disabled=true; 
+     }
+     
+     
+     // ★ Enable the "Finalize Subject Load" button now that a load is confirmed
+     const finalizeLoadBtn = document.getElementById('rmFinalizeLoadBtn');
+     if(finalizeLoadBtn) {
+       finalizeLoadBtn.disabled = false;
+       finalizeLoadBtn.style.opacity = '1';
+       finalizeLoadBtn.style.cursor = 'pointer';
+       finalizeLoadBtn.style.background = 'linear-gradient(135deg,#16a34a,#15803d)';
+       finalizeLoadBtn.innerHTML = '<i class="fas fa-check-square"></i> Finalize Subject Load';
+       // Update gate notice text
+       const gateDiv = document.getElementById('rmFinalizeGate');
+       if(gateDiv) {
+         const subText = gateDiv.querySelector('div:nth-child(2)');
+         if(subText) subText.innerHTML = '<strong style="color:#166534;">' + allSelected.length + ' subjects confirmed.</strong> Click <strong>Finalize Subject Load</strong> to lock the list and enable Proceed / Stay.';
+         const hint = gateDiv.querySelector('div:last-child');
+         if(hint) hint.style.display = 'none';
+       }
      }
    }
-   
-   // Add print button for selected subjects
-   const buttonContainer = btn.parentElement;
-   if(buttonContainer && !document.getElementById('rmPrintBtn')) {
-     const printBtn = document.createElement('button');
-     printBtn.id = 'rmPrintBtn';
-     printBtn.innerHTML = '<i class="fas fa-print"></i> Print Subjects';
-     printBtn.style.cssText = 'padding:8px 18px;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#fff;border:none;border-radius:8px;font-family:\'Poppins\',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 3px 10px rgba(184,134,11,.3);transition:all .2s;margin-left:8px;';
-     printBtn.onclick = function() { printEnrollmentList(toYear, toSem, allSelected); };
-     buttonContainer.appendChild(printBtn);
+  
+   function closeFullLoadWarning() {
+     document.getElementById('fullLoadWarningOverlay')?.remove();
    }
- }
- 
- function printEnrollmentList(year, sem, subjects) {
-   // Create print window
-   const printWindow = window.open('', '_blank');
-   
-   printWindow.document.write(`
-     <!DOCTYPE html>
-     <html>
-     <head>
-       <title>Enrollment List — ${year} ${sem}</title>
-       <style>
-         @page { size: A4 portrait; margin: 12mm 10mm 12mm 10mm; }
-         * {
-           font-family: 'Times New Roman', Times, serif;
-           line-height: 1.4;
-           box-sizing: border-box;
-         }
-         body {
-           margin: 0;
-           padding: 0;
-           background: white;
-         }
-         .header {
-           text-align: center;
-           border-bottom: 2pt solid #8B6914;
-           padding-bottom: 4mm;
-           margin-bottom: 4mm;
-         }
-         .school-name {
-           font-size: 14pt;
-           font-weight: bold;
-           text-transform: uppercase;
-           letter-spacing: 0.5pt;
-           margin-bottom: 1mm;
-         }
-         .school-address {
-           font-size: 10pt;
-           font-style: italic;
-           margin-bottom: 1mm;
-         }
-         .institute {
-           font-size: 11pt;
-           font-weight: bold;
-           margin-bottom: 2mm;
-         }
-         .title {
-           text-align: center;
-           font-size: 13pt;
-           font-weight: bold;
-           margin-bottom: 4mm;
-           padding: 3mm;
-           background: #8B6914;
-           color: white;
-         }
-         .student-info {
-           border: 1pt solid #ddd;
-           padding: 4mm;
-           margin-bottom: 4mm;
-           background: #fafafa;
-           display: grid;
-           grid-template-columns: 1fr 1fr;
-           gap: 3mm;
-         }
-         .student-info span {
-           font-size: 11pt;
-         }
-         table {
-           width: 100%;
-           border-collapse: collapse;
-           font-size: 11pt;
-           margin-bottom: 4mm;
-         }
-         th {
-           background: #8B6914;
-           color: white;
-           padding: 2.5mm 2mm;
-           font-weight: bold;
-           text-align: left;
-           border: 1pt solid #8B6914;
-         }
-         td {
-           padding: 2mm 2mm;
-           border: 1pt solid #ccc;
-           vertical-align: middle;
-         }
-         .units {
-           text-align: center;
-           font-weight: 600;
-         }
-         .total {
-           background: #f0ece0;
-           font-weight: bold;
-           color: #8B6914;
-           border-top: 0.5pt solid #B8860B;
-         }
-         .signature-block {
-           margin-top: 8mm;
-           padding-top: 4mm;
-           border-top: 1pt solid #8B6914;
-           display: grid;
-           grid-template-columns: 1fr 1fr;
-           gap: 15mm;
-         }
-         .sig-col {
-           text-align: center;
-         }
-         .sig-name {
-           font-size: 12pt;
-           font-weight: bold;
-           margin-bottom: -5mm;
-         }
-         .sig-line {
-           border-bottom: 1pt solid #333;
-           height: 6mm;
-           margin-bottom: 1mm;
-         }
-         .sig-label {
-           font-weight: bold;
-           color: #8B6914;
-           font-size: 10pt;
-         }
-       </style>
-     </head>
-     <body>
-       <div class="header">
-         <div class="school-name">Northern Bukidnon State College</div>
-         <div class="school-address">Manolo Fortich, Bukidnon</div>
-         <div class="institute">Institute for Business Management</div>
-       </div>
-       
-       <div class="title">
-         ENROLLMENT LIST — ${year} · ${sem} · A.Y. ${currentAY}
-       </div>
-       
-       <div class="student-info">
-         <div><strong>Student:</strong> ${currentStudent ? currentStudent.first_name + ' ' + (currentStudent.middle_name ? currentStudent.middle_name + ' ' : '') + currentStudent.last_name + (currentStudent.suffix ? ' ' + currentStudent.suffix : '') : '—'}</div>
-         <div><strong>Student ID:</strong> ${currentStudent ? (currentStudent.student_number || currentStudent.student_id || '—') : '—'}</div>
-         <div><strong>Year Level:</strong> ${year}</div>
-         <div><strong>Semester:</strong> ${sem}</div>
-       </div>
-       
-       <table>
-         <thead>
-           <tr>
-             <th style="width:15%;">Course Code</th>
-             <th>Subject Title</th>
-             <th style="width:10%;text-align:center;">Units</th>
-           </tr>
-         </thead>
-         <tbody>
-           ${subjects.map(s => `
-           <tr>
-             <td style="font-weight:700;">${s.subject_code}</td>
-             <td>${s.subject_name}</td>
-             <td class="units">${parseFloat(s.units)||0}</td>
-           </tr>`).join('')}
-           <tr class="total">
-             <td colspan="2" style="text-align:right;padding-right:8px;"><strong>TOTAL UNITS</strong></td>
-             <td class="units">${subjects.reduce((a,s)=>a+(parseFloat(s.units)||0),0)}</td>
-           </tr>
-         </tbody>
-       </table>
-       
-       <div class="signature-block">
-         <div class="sig-col">
-           <div class="sig-name">${window.advisorName || 'Adviser'}</div>
-           <div class="sig-line"></div>
-           <div class="sig-label">Adviser's Signature</div>
-           <div style="font-size:9pt;color:#666;">Date: ___________________</div>
-         </div>
-         <div class="sig-col">
-           <div class="sig-name">${window.programHeadName || 'Program Head'}</div>
-           <div class="sig-line"></div>
-           <div class="sig-label">Program Head's Signature</div>
-           <div style="font-size:9pt;color:#666;">Date: ___________________</div>
-         </div>
-       </div>
-     </body>
-     </html>
-   `);
-   
-   printWindow.document.close();
-   
-   setTimeout(() => {
-     printWindow.print();
-     printWindow.addEventListener('afterprint', () => {
-       printWindow.close();
-     });
-   }, 300);
- }
+
+   function printEnrollmentList(year, sem, subjects) {
+    // Create print window
+    const printWindow = window.open('', '_blank');
+    
+    const totalUnits = subjects.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
+    const studentName = currentStudent ? 
+      (currentStudent.first_name + ' ' + (currentStudent.middle_name ? currentStudent.middle_name + ' ' : '') + 
+       currentStudent.last_name + (currentStudent.suffix ? ' ' + currentStudent.suffix : '')).trim() : '—';
+    const studentId = currentStudent ? (currentStudent.student_number || currentStudent.student_id || '—') : '—';
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Enrollment List — ${year} ${sem}</title>
+        <style>
+          @page { 
+            size: A4 portrait; 
+            margin: 15mm 12mm 12mm 12mm; 
+          }
+          * {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.3;
+            box-sizing: border-box;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: #000;
+          }
+          .container {
+            padding: 0;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2pt solid #8B6914;
+            padding-bottom: 3mm;
+            margin-bottom: 3mm;
+          }
+          .school-name {
+            font-size: 16pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.8pt;
+            margin-bottom: 1mm;
+            color: #000;
+          }
+          .school-address {
+            font-size: 11pt;
+            font-style: italic;
+            margin-bottom: 1mm;
+            color: #333;
+          }
+          .institute {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+            color: #000;
+          }
+          .title {
+            text-align: center;
+            font-size: 14pt;
+            font-weight: bold;
+            margin: 4mm 0 3mm 0;
+            padding: 2.5mm;
+            background: #8B6914;
+            color: white;
+            letter-spacing: 1pt;
+          }
+          .student-info {
+            border: 1pt solid #333;
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 3mm;
+            font-size: 11pt;
+          }
+          .student-info td {
+            border: 1pt solid #333;
+            padding: 2mm 2.5mm;
+            vertical-align: top;
+          }
+          .student-info .label {
+            font-weight: bold;
+            width: 22mm;
+            background: #f0ece0;
+          }
+          table.subjects {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11pt;
+            margin-bottom: 3mm;
+            page-break-inside: avoid;
+          }
+          table.subjects th {
+            background: #8B6914;
+            color: white;
+            padding: 2mm 1.5mm;
+            font-weight: bold;
+            text-align: left;
+            border: 1pt solid #8B6914;
+            font-size: 11pt;
+          }
+          table.subjects td {
+            padding: 2mm 1.5mm;
+            border: 1pt solid #333;
+            vertical-align: middle;
+            font-size: 11pt;
+          }
+          .units {
+            text-align: center;
+            font-weight: 600;
+            width: 15mm;
+          }
+          .code {
+            width: 25mm;
+            font-weight: 700;
+          }
+          .total-row td {
+            background: #f0ece0;
+            font-weight: bold;
+            color: #000;
+            border-top: 1.5pt solid #8B6914;
+          }
+          .total-label {
+            text-align: right;
+            padding-right: 3mm;
+            font-size: 11pt;
+          }
+          .footer {
+            margin-top: 8mm;
+            padding-top: 4mm;
+            border-top: 1pt solid #8B6914;
+            width: 100%;
+          }
+          .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11pt;
+          }
+          .footer-table td {
+            width: 50%;
+            text-align: center;
+            vertical-align: top;
+            padding: 0 2mm;
+          }
+          .sig-line {
+            border-bottom: 1pt solid #000;
+            height: 6mm;
+            margin: 2mm 0;
+          }
+          .sig-label {
+            font-weight: bold;
+            color: #8B6914;
+            font-size: 10pt;
+          }
+          .sig-name {
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: -4mm;
+          }
+          .date-line {
+            font-size: 10pt;
+            color: #333;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="school-name">Northern Bukidnon State College</div>
+            <div class="school-address">Manolo Fortich, Bukidnon</div>
+            <div class="institute">Institute for Business Management</div>
+          </div>
+          
+          <div class="title">
+            ENROLLMENT LIST — ${year} · ${sem} · A.Y. ${currentAY}
+          </div>
+          
+          <table class="student-info">
+            <tr>
+              <td class="label">Student:</td>
+              <td>${studentName}</td>
+              <td class="label">Student ID:</td>
+              <td style="width:35mm;">${studentId}</td>
+            </tr>
+            <tr>
+              <td class="label">Year Level:</td>
+              <td style="width:35mm;">${year}</td>
+              <td class="label">Semester:</td>
+              <td>${sem}</td>
+            </tr>
+          </table>
+          
+          <table class="subjects">
+            <thead>
+              <tr>
+                <th class="code">Course Code</th>
+                <th>Subject Title</th>
+                <th class="units">Units</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${subjects.map(s => `
+              <tr>
+                <td class="code">${s.subject_code}</td>
+                <td>${s.subject_name}</td>
+                <td class="units">${parseFloat(s.units)||0}</td>
+              </tr>`).join('')}
+              <tr class="total-row">
+                <td colspan="2" class="total-label">TOTAL UNITS</td>
+                <td class="units">${totalUnits}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <table class="footer-table">
+              <tr>
+                <td>
+                  <div class="sig-name">${window.advisorName || 'Adviser'}</div>
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Adviser's Signature</div>
+                  <div class="date-line">Date: ___________________</div>
+                </td>
+                <td>
+                  <div class="sig-name">${window.programHeadName || 'Program Head'}</div>
+                  <div class="sig-line"></div>
+                  <div class="sig-label">Program Head's Signature</div>
+                  <div class="date-line">Date: ___________________</div>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.addEventListener('afterprint', () => {
+        printWindow.close();
+      });
+    }, 300);
+  }
 
 /* ═══════════════════════════════════════════════════════════
    PROMOTE STUDENT
@@ -2676,19 +3053,19 @@ const sigHtml = `<div class="pro-sig-block">
        rowClass = isCredited ? 'row-credited' : 'row-locked';
      }
 
-    rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
-      <td>
-        <div class="grade-cell-wrap">
-          <div class="grade-row">
-            <input type="number" class="grade-inp ${inpCls}" id="g-${sub.id}"
-              value="${raw!=null?parseFloat(raw).toFixed(2):''}"
-              min="1" max="5" step="0.01" placeholder="—"
-              onchange="onGradeChange(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}');}"
-              ${shouldDisable?'disabled title="'+lockDesc+'"':'title="1.00 to 5.00 · Enter to save"'}>
-            <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
-            <button class="save-btn" id="sbtn-${sub.id}"
-              onclick="saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
+rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
+       <td>
+         <div class="grade-cell-wrap">
+           <div class="grade-row">
+             <input type="number" class="grade-inp ${inpCls}" id="g-${sub.id}"
+               value="${raw!=null?parseFloat(raw).toFixed(2):''}"
+               min="1" max="5" step="0.01" placeholder="—"
+               onchange="onGradeChange(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}');}"
+               ${shouldDisable && !isCredited?'disabled title="'+lockDesc+'" style="cursor:pointer;" onclick="enableGradeForNonLoad('+sub.id+',\''+lockDesc+'\')"':'title="1.00 to 5.00 · Enter to save"'}>
+             <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
+             <button class="save-btn" id="sbtn-${sub.id}"
+               onclick="saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
               ${shouldDisable?'disabled':''} title="Save grade"><i class="fas fa-save"></i></button>
             ${(shouldDisable && !isCredited) ? `<button class="edit-btn" id="ebtn-${sub.id}" onclick="requestEditGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')" title="Edit this grade (requires password)"><i class="fas fa-edit"></i></button>` : ''}
           </div>
@@ -2853,6 +3230,56 @@ function focusNextInput(currentSid) {
       }
     }
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ENABLE GRADE FOR NON-LOAD SUBJECT
+   Allows instructor to click on a disabled grade cell to enable input
+   for subjects not in the current student's confirmed load.
+═══════════════════════════════════════════════════════════ */
+function enableGradeForNonLoad(subjectId, lockReason) {
+  // For non-IBM students, use the existing confirmation flow
+  if (currentStudentType === 'non_ibm') {
+    NonIBMEvaluation.confirmSubjectLoad(subjectId);
+    return;
+  }
+  
+  // For regular/transfer students, show prompt explaining the situation
+  const confirmMsg = lockReason ? 
+    `This subject is ${lockReason}. Click OK to temporarily enable grade input.` :
+    'Click OK to temporarily enable grade input for this subject.';
+  
+  if (!confirm(confirmMsg)) return;
+  
+  // Enable the input
+  const inp = document.getElementById('g-' + subjectId);
+  const sbtn = document.getElementById('sbtn-' + subjectId);
+  const row = document.getElementById('row-' + subjectId);
+  
+  if (inp) {
+    inp.disabled = false;
+    inp.style.cursor = '';
+    inp.title = '1.00 to 5.00 · Enter to save';
+    inp.focus();
+  }
+  if (sbtn) {
+    sbtn.disabled = false;
+    sbtn.style.opacity = '';
+  }
+  if (row) {
+    row.classList.remove('row-locked');
+  }
+  
+  // Mark as manually unlocked (temporary)
+  manuallyUnlockedSubjects.add(parseInt(subjectId));
+  manuallyUnlockedSubjects.add(subjectId);
+  
+  // Add visual indicator
+  if (row) {
+    row.classList.add('row-edit-unlocked');
+  }
+  
+  toast('Grade input enabled for this subject', 'info');
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -3531,8 +3958,22 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
          <button class="eval-btn eval-btn-secondary" onclick="wizardFinish(false)" id="wizardStayBtn" style="display:none;">Stay on this Level</button>
        </div>
      </div>
-   </div>
- </div>
+</div>
+  </div>
 
- </body>
- </html>
+  <!-- Floating Evaluate Button - Always visible on main page -->
+  <button class="fab-eval-btn" id="fabEvaluateMain" title="Quick Evaluate Current Student" onclick="quickEvaluate()"><i class="fas fa-bolt"></i></button>
+
+  <script>
+  function quickEvaluate() {
+    const overlay = document.getElementById('evalOverlay');
+    if (overlay && overlay.classList.contains('open')) {
+      autoDetectAndEvaluate();
+    } else {
+      toast('Open a student prospectus first by clicking on a mentee card', 'info');
+    }
+  }
+  </script>
+
+  </body>
+  </html>
