@@ -297,9 +297,21 @@ function statusText(s)  { return {passed:'Passed',failed:'Failed',conditional:'C
 /* ═══════════════════════════════════════════════════════════
    PREREQUISITE LOGIC
 ═══════════════════════════════════════════════════════════ */
+function normalizePrereqCode(code) {
+  return String(code||'').replace(/\s+/g,'').trim().toUpperCase();
+}
+function parsePrereqCodes(value) {
+  return String(value||'')
+    .split(/\s*(?:[;,\/\|]|\u2013|\u2014)\s*|\s+and\s+|\s+or\s+/i)
+    .map(normalizePrereqCode)
+    .filter(Boolean);
+}
 function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
   const byCode = {};
-  subjects.forEach(s => { if(s.subject_code) byCode[s.subject_code.trim().toUpperCase()] = s; });
+  subjects.forEach(s => {
+    const codeKey = normalizePrereqCode(s.subject_code);
+    if(codeKey) byCode[codeKey] = s;
+  });
   const byId = {};
   subjects.forEach(s => { byId[s.id] = s; });
 
@@ -311,7 +323,7 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
       const tid = parseInt(set.target_subject_id);
       if(!setPrereqs[tid]) setPrereqs[tid] = [];
       (set.subjects||[]).forEach(ps => {
-        const found = byId[ps.id] || subjects.find(s=>s.subject_code===ps.subject_code);
+        const found = byId[ps.id] || subjects.find(s => normalizePrereqCode(s.subject_code) === normalizePrereqCode(ps.subject_code));
         if(found) setPrereqs[tid].push(found);
       });
     });
@@ -319,15 +331,18 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
 
   const result = {};
   subjects.forEach(s => {
-    const prereqCode = (s.prerequisite||'').trim().toUpperCase();
-    let directLocked = false, directPrereqSubj = null;
-    if(prereqCode) {
-      directPrereqSubj = byCode[prereqCode] || null;
-      if(directPrereqSubj) {
-        const pg = gMap[directPrereqSubj.id];
-        directLocked = !(pg != null && gradeStatus(roundGrade(pg)) === 'passed');
-      }
+    const prereqField = s.display_prerequisite || s.prerequisite || s.prerequisite_subject_code || '';
+    const prereqCodes = parsePrereqCodes(prereqField);
+    const prereqSubjects = prereqCodes.map(code => byCode[code]).filter(Boolean);
+    let directLocked = false;
+    let directPrereqSubj = prereqSubjects.length ? prereqSubjects[0] : null;
+    if(prereqSubjects.length) {
+      directLocked = prereqSubjects.some(ps => {
+        const pg = gMap[ps.id];
+        return !(pg != null && gradeStatus(roundGrade(pg)) === 'passed');
+      });
     }
+
     const setPrereqList = setPrereqs[parseInt(s.id)] || [];
     let setLocked = false, setBlockedBy = [];
     setPrereqList.forEach(ps => {
@@ -336,7 +351,10 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
     });
     result[s.id] = {
       unlocked: !(directLocked || setLocked),
-      directPrereqCode: prereqCode||null, directPrereqSubj, directLocked,
+      directPrereqCode: prereqCodes.join(', ') || null,
+      directPrereqSubj,
+      directPrereqSubjects: prereqSubjects,
+      directLocked,
       setLocked, setBlockedBy, setPrereqList
     };
   });
@@ -1144,8 +1162,63 @@ function showResultModal(subjects, yearLabel, semLabel) {
     .filter(s => (YEAR_NUM[s.year_level]||0) === nYr && (SEM_NUM[s.semester]||0) === nSem)
     .map(s => ({...s, isBlocked: !(prereqUnlockMapCurrent[s.id]?.unlocked ?? true)}));
 
+  const blockedByFailedPrereq = nextSemSubsWithStatus.filter(sub => {
+    const pi = prereqUnlockMapCurrent[sub.id] || {};
+    const directFailed = pi.directLocked && pi.directPrereqSubj && gradeMap[pi.directPrereqSubj.id] != null && gradeStatus(roundGrade(gradeMap[pi.directPrereqSubj.id])) === 'failed';
+    const setFailed = pi.setLocked && (pi.setBlockedBy||[]).some(ps => gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
+    return directFailed || setFailed;
+  });
+  const blockedByUnmetPrereq = nextSemSubsWithStatus.filter(sub => {
+    if (!sub.isBlocked) return false;
+    const pi = prereqUnlockMapCurrent[sub.id] || {};
+    const directFailed = pi.directLocked && pi.directPrereqSubj && gradeMap[pi.directPrereqSubj.id] != null && gradeStatus(roundGrade(gradeMap[pi.directPrereqSubj.id])) === 'failed';
+    const setFailed = pi.setLocked && (pi.setBlockedBy||[]).some(ps => gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
+    return !directFailed && !setFailed;
+  });
+  const blockedNextSubs   = nextSemSubsWithStatus.filter(s => s.isBlocked && !blockedByFailedPrereq.some(f => f.id === s.id) && !blockedByUnmetPrereq.some(f => f.id === s.id));
   const availableNextSubs = nextSemSubsWithStatus.filter(s => !s.isBlocked);
-  const blockedNextSubs   = nextSemSubsWithStatus.filter(s => s.isBlocked);
+
+  const nextSemStatusInfo = {};
+  const normalizeCode = code => String(code||'').replace(/\s+/g,'').trim().toUpperCase();
+  const findSubjectByCode = code => {
+    const normalized = normalizeCode(code);
+    return loadedSubjects.find(ls => normalizeCode(ls.subject_code) === normalized) || null;
+  };
+  const hasFailedSamePrereqSetMember = subject => {
+    if (!Array.isArray(prereqSetsData) || !currentStudent?.major_id) return false;
+    return prereqSetsData.some(set => {
+      if (set.major_id != currentStudent.major_id) return false;
+      if (!Array.isArray(set.subjects)) return false;
+      const memberIds = set.subjects.map(ps => parseInt(ps.id));
+      if (!memberIds.includes(parseInt(subject.id))) return false;
+      return set.subjects.some(ps => parseInt(ps.id) !== parseInt(subject.id) && gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
+    });
+  };
+  nextSemSubsWithStatus.forEach(s => {
+    const pi = prereqUnlockMapCurrent[s.id] || {};
+    const directSubjects = pi.directPrereqSubjects || (pi.directPrereqSubj ? [pi.directPrereqSubj] : []);
+    const failedDirect = directSubjects.some(ps => {
+      const pg = gradeMap[ps.id];
+      return pg != null && gradeStatus(roundGrade(pg)) === 'failed';
+    });
+
+    const fallbackFailedDirect = !failedDirect ? (() => {
+      const prereqField = String(s.display_prerequisite || s.prerequisite || s.prerequisite_subject_code || '');
+      const prereqCodes = parsePrereqCodes(prereqField);
+      return prereqCodes.some(code => {
+        const prereqSub = findSubjectByCode(code);
+        return prereqSub && gradeMap[prereqSub.id] != null && gradeStatus(roundGrade(gradeMap[prereqSub.id])) === 'failed';
+      });
+    })() : false;
+
+    const setFailed = pi.setLocked && (pi.setBlockedBy||[]).some(ps => gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
+    const sameSetFailed = hasFailedSamePrereqSetMember(s);
+    nextSemStatusInfo[s.id] = {
+      failedDirect: failedDirect || fallbackFailedDirect,
+      setFailed,
+      sameSetFailed
+    };
+  });
 
   // Retake schedule for failed subjects (same semester, next A.Y.)
   const retakeSchedule = failedSubs.map(s => ({
@@ -1206,18 +1279,28 @@ function showResultModal(subjects, yearLabel, semLabel) {
              </tr>
            </thead>
            <tbody>
-             ${availableNextSubs.map(s=>`
-             <tr id="rmrow-${s.id}" style="background:#fff;cursor:pointer;" onclick="document.getElementById('rmchk-${s.id}').click();">
+             ${availableNextSubs.map(s=>{
+               const statusInfo = nextSemStatusInfo[s.id] || {}; 
+               const isUnavailable = statusInfo.failedDirect || statusInfo.setFailed || statusInfo.sameSetFailed;
+               const statusLabel = isUnavailable ? 'Unavailable' : 'Available';
+               const statusStyle = isUnavailable ? 'background:var(--red-l);color:#991b1b;' : 'background:var(--green-l);color:#166534;';
+               const disabledAttr = isUnavailable ? 'disabled' : '';
+               const rowCursor = isUnavailable ? 'default' : 'pointer';
+               const rowOpacity = isUnavailable ? 'opacity:.65;' : '';
+               const titleText = isUnavailable ? 'Prerequisite failed or another subject in the same prereq group failed' : '';
+               return `
+             <tr id="rmrow-${s.id}" style="background:#fff;${rowOpacity}cursor:${rowCursor};" ${isUnavailable ? '' : `onclick="document.getElementById('rmchk-${s.id}').click();"`} title="${titleText}">
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
-                 <input type="checkbox" id="rmchk-${s.id}" checked onchange="rmToggleSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;">
+                 <input type="checkbox" id="rmchk-${s.id}" checked onchange="rmToggleSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;" ${disabledAttr}>
                </td>
                <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(s.subject_code)}</td>
                <td style="padding:7px 10px;border-bottom:1px solid var(--border);">${esc(s.subject_name)}</td>
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;">${parseFloat(s.units)||0}</td>
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
-                 <span style="display:inline-block;padding:3px 8px;background:var(--green-l);color:#166534;border-radius:10px;font-size:9px;font-weight:700;">Available</span>
+                 <span style="display:inline-block;padding:3px 8px;${statusStyle}border-radius:10px;font-size:9px;font-weight:700;">${statusLabel}</span>
                </td>
-             </tr>`).join('')}
+             </tr>`;
+             }).join('')}
              ${blockedNextSubs.map(s=>`
              <tr style="background:#f9f9f9;opacity:0.7;">
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
@@ -1242,8 +1325,10 @@ function showResultModal(subjects, yearLabel, semLabel) {
         const sYear = YEAR_NUM[s.year_level] || 0;
         const isSameSem = sSem.includes(targetSem.includes('1st') ? '1st' : '2nd');
         const isDifferentYear = sYear !== nYr;
-        const notTaken = !gradeMap[s.id] || gradeMap[s.id] == null;
-        return isSameSem && isDifferentYear && notTaken;
+        const rawGrade = gradeMap[s.id];
+        const hasFailedGrade = rawGrade != null && gradeStatus(roundGrade(rawGrade)) === 'failed';
+        const notTakenOrFailed = rawGrade == null || hasFailedGrade;
+        return isSameSem && isDifferentYear && notTakenOrFailed;
       });
       
       if(sameSemOtherYearSubs.length > 0) {
@@ -1252,7 +1337,7 @@ function showResultModal(subjects, yearLabel, semLabel) {
           <div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px;">
             <i class="fas fa-plus-circle" style="color:var(--blue);margin-right:7px;"></i>
             Additional Subjects (Same Semester, Other Years)
-            <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">(Cross-year same semester subjects available)</span>
+            <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">Includes failed subjects that can be retaken in the same semester.</span>
           </div>
           <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
             <table style="width:100%;border-collapse:collapse;font-size:11px;">
@@ -1309,6 +1394,84 @@ function showResultModal(subjects, yearLabel, semLabel) {
       window._rmAvailableSubs = availableNextSubs;
       window._rmSelectedIds   = new Set(availableNextSubs.map(s => s.id));
     }
+
+  if(blockedByFailedPrereq.length) {
+    bodyHtml += `<div style="margin-top:18px;margin-bottom:18px;">
+      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:10px;">
+        <i class="fas fa-ban" style="margin-right:7px;"></i>
+        Blocked Subjects — Failed Prerequisite
+        <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">These subjects cannot be loaded because one or more prerequisites were failed.</span>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:linear-gradient(135deg,var(--red),#b91c1c);">
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #991b1b;">Course Code</th>
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #991b1b;">Subject Title</th>
+              <th style="width:70px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #991b1b;">Units</th>
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #991b1b;">Prerequisite Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${blockedByFailedPrereq.map(sub => {
+              const pi = prereqUnlockMapCurrent[sub.id] || {};
+              const direct = pi.directLocked && pi.directPrereqSubj ? pi.directPrereqSubj : null;
+              const directGrade = direct ? gradeMap[direct.id] : null;
+              const directText = direct ? `${esc(direct.subject_code)} — ${esc(direct.subject_name)} (${directGrade!=null?parseFloat(directGrade).toFixed(2):'No grade'})` : '';
+              const setFails = (pi.setBlockedBy||[]).filter(ps => gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
+              const setText = setFails.map(ps => `${esc(ps.subject_code)} — ${esc(ps.subject_name)} (${parseFloat(gradeMap[ps.id]).toFixed(2)})`).join('<br>');
+              const details = directText ? `Failed prerequisite: ${directText}` : setText ? `Failed prerequisite(s):<br>${setText}` : 'Prerequisite failed';
+              return `<tr style="background:#fff;">
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(sub.subject_code)}</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--muted);">${esc(sub.subject_name)}</td>
+                <td style="padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;color:var(--dark);">${parseFloat(sub.units)||0}</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--red);font-size:11px;line-height:1.4;">${details}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
+
+  if(blockedByUnmetPrereq.length) {
+    bodyHtml += `<div style="margin-top:18px;margin-bottom:18px;">
+      <div style="font-size:13px;font-weight:700;color:var(--amber);margin-bottom:10px;">
+        <i class="fas fa-exclamation-circle" style="margin-right:7px;"></i>
+        Blocked Subjects — Prerequisite Not Yet Met
+        <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px;">These subjects cannot be loaded because prerequisite subject(s) are still pending or have no grade.</span>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+          <thead>
+            <tr style="background:linear-gradient(135deg,var(--amber),#b45309);">
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #92400e;">Course Code</th>
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #92400e;">Subject Title</th>
+              <th style="width:70px;padding:8px 10px;text-align:center;color:#fff;font-weight:700;border-bottom:2px solid #92400e;">Units</th>
+              <th style="padding:8px 10px;text-align:left;color:#fff;font-weight:700;border-bottom:2px solid #92400e;">Prerequisite Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${blockedByUnmetPrereq.map(sub => {
+              const pi = prereqUnlockMapCurrent[sub.id] || {};
+              const direct = pi.directLocked && pi.directPrereqSubj ? pi.directPrereqSubj : null;
+              const directGrade = direct ? gradeMap[direct.id] : null;
+              const directText = direct ? `${esc(direct.subject_code)} — ${esc(direct.subject_name)} (${directGrade!=null?parseFloat(directGrade).toFixed(2):'No grade'})` : '';
+              const setPending = (pi.setBlockedBy||[]).filter(ps => gradeMap[ps.id] == null);
+              const setText = setPending.map(ps => `${esc(ps.subject_code)} — ${esc(ps.subject_name)} (No grade)`).join('<br>');
+              const details = directText ? `Pending prerequisite: ${directText}` : setText ? `Pending prerequisite(s):<br>${setText}` : 'Prerequisite pending';
+              return `<tr style="background:#fff;">
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(sub.subject_code)}</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--muted);">${esc(sub.subject_name)}</td>
+                <td style="padding:8px 10px;text-align:center;border-bottom:1px solid var(--border);font-weight:600;color:var(--dark);">${parseFloat(sub.units)||0}</td>
+                <td style="padding:8px 10px;border-bottom:1px solid var(--border);color:#92400e;font-size:11px;line-height:1.4;">${details}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }
 
   // Failed subjects
   if(failedSubs.length) {
