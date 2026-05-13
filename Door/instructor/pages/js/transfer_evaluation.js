@@ -245,16 +245,17 @@ const TransferEvaluation = (() => {
                  style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;">
              </td>
              <td style="font-weight:700;font-size:11px;padding:6px 8px;">${_escHtml(s.subject_code)}</td>
-             <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
-             <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
-             <td style="padding:6px 8px;">
-               <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
-                 value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
-                 style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
-                 ${gradeDisabled ? 'disabled' : ''}
-                 onchange="TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
-             </td>
-           </tr>`;
+<td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
+              <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
+              <td style="padding:6px 8px;">
+                <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
+                       value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
+                       style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
+                       ${gradeDisabled ? 'disabled' : ''}
+                       oninput="TransferEvaluation.formatGradeInput(${s.id}, this)"
+                       onkeydown="TransferEvaluation.blockExtraInput(${s.id}, event); if(event.key==='Enter') TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
+              </td>
+            </tr>`;
          });
        });
 
@@ -541,6 +542,39 @@ const TransferEvaluation = (() => {
     }
     _save();
     _updatePrevCount();
+  }
+
+  function formatGradeInput(sid, inp) {
+    if (!inp || inp.disabled) return;
+    const val = inp.value;
+    if (val === '' || val === null || val === undefined) return;
+    let s = String(val).replace(/[^0-9.]/g, '');
+    if (s === '' || s === '.') return;
+    let digits = s.replace(/\./g, '');
+    if (digits.length > 3) digits = digits.slice(0, 3);
+    if (digits.length === 1) {
+      inp.value = digits;
+      return;
+    }
+    if (digits.length === 2) {
+      inp.value = digits[0] + '.' + digits[1];
+      return;
+    }
+    if (digits.length === 3) {
+      inp.value = digits[0] + '.' + digits[1] + digits[2];
+      return;
+    }
+  }
+
+  function blockExtraInput(sid, evt) {
+    const inp = document.getElementById('te-grade-'+sid);
+    if (!inp || inp.disabled) return;
+    const val = inp.value;
+    const digits = val.replace(/\./g, '').replace(/[^0-9]/g, '');
+    const isDigit = /[0-9]/.test(evt.key);
+    if (digits.length >= 3 && isDigit) {
+      evt.preventDefault();
+    }
   }
 
   function updatePrevGrade(sid, value) {

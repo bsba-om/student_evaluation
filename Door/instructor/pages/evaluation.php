@@ -764,11 +764,11 @@ function showComingSoonModal() {
 
 
 /* ═══════════════════════════════════════════════════════════
-   AUTO-DETECT AND EVALUATE
-   Triggered by the single main "Evaluate" button.
-   Uses student's current year_level to determine which semester
-   to evaluate, then reuses the existing showResultModal flow.
-══════════════════════════════════════════════════════════════════ */
+    AUTO-DETECT AND EVALUATE
+    Triggered by the single main "Evaluate" button.
+    Uses student's current year_level to determine which semester
+    to evaluate, then reuses the existing showResultModal flow.
+ ══════════════════════════════════════════════════════════════════ */
 function autoDetectAndEvaluate() {
   if (!currentStudent) { toast('No student loaded.', 'error'); return; }
 
@@ -798,12 +798,13 @@ function autoDetectAndEvaluate() {
   // This ensures that only selected subjects are evaluated, even if they are from other semesters.
   let targeted = loadedSubjects.filter(s => s.is_in_load === true);
 
-  if (!targeted.length) {
-    toast(`No subjects selected for evaluation. Please use the enrollment modal to select subjects for this student.`, 'error', 4500);
+  // If no subjects selected and NOT finalized, show enrollment modal
+  if (!targeted.length && !finalizedMap[fkey]) {
+    showEnrollmentResultModal(yearLabel, semLabel);
     return;
   }
 
-  // Check which subjects have grades entered (exclude credited subjects - they already have grades)
+  // Check which subjects have grades entered (exclude credited subjects - they already have grade)
   const graded = targeted.filter(s => gradeMap[s.id] != null || s.is_credited);
 
   // Allow evaluation as long as at least 1 subject has a grade
@@ -816,6 +817,93 @@ function autoDetectAndEvaluate() {
 
   // Launch the result modal with only the graded subjects for evaluation
   showResultModal(graded, yearLabel, semLabel);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SHOW ENROLLMENT RESULT MODAL
+   When no subjects are selected and period is not finalized,
+   show the enrollment modal directly from Quick Evaluate button.
+ ═══════════════════════════════════════════════════════════ */
+function showEnrollmentResultModal(yearLabel, semLabel) {
+  // Get next year/semester for the Proceed button
+  const {yr, sem} = parseStudentStanding(`${yearLabel} - ${semLabel}`);
+  const {yr:nYr, sem:nSem} = getNextSemester(yr, sem);
+  const nextYearLabel = YEAR_LABELS[nYr-1] || '—';
+  const nextSemLabel  = nSem===1 ? '1st Semester' : '2nd Semester';
+
+  // Compute next A.Y.
+  const nextAYStr = (() => {
+    const parts = currentAY.split('-');
+    return parts.length===2 ? `${parseInt(parts[0])+1}-${parseInt(parts[1])+1}` : currentAY;
+  })();
+
+  // Get current subjects for this semester
+  const currentSubs = loadedSubjects.filter(s => {
+    const sy = (s.year_level || '').trim().toLowerCase();
+    const ss = (s.semester || '').toLowerCase();
+    return sy === yearLabel.toLowerCase() && ss.includes(semLabel === '1st Semester' ? '1st' : '2nd');
+  });
+
+  // Build prereq unlock map
+  const prereqUnlockMapCurrent = buildPrereqUnlockMap(loadedSubjects, gradeMap, prereqSetsData, currentStudent?.major_id);
+
+  const bodyHtml = `
+    <div style="font-size:13px;font-weight:700;color:var(--gold-d);margin-bottom:10px;">
+      <i class="fas fa-list-ul" style="margin-right:7px;"></i>Select Subjects for ${yearLabel} — ${semLabel}
+    </div>
+    <div id="rmSubjectList" style="max-height:280px;overflow-y:auto;margin-bottom:12px;">
+      ${currentSubs.length ? currentSubs.map(s => {
+        const isBlocked = !(prereqUnlockMapCurrent[s.id]?.unlocked ?? true);
+        return `<div class="rm-sub-row" data-id="${s.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid var(--border);${isBlocked ? 'opacity:0.6;' : ''}">
+          <input type="checkbox" class="rm-sub-check" data-id="${s.id}" ${isBlocked ? 'disabled' : ''} style="width:16px;height:16px;accent-color:var(--gold);">
+          <div style="flex:1;">
+            <div style="font-weight:700;color:var(--dark);font-size:12px;">${esc(s.subject_code)} <span style="color:var(--muted);font-weight:400;font-size:11px;">(${parseFloat(s.units)||0}u)</span></div>
+            <div style="font-size:11px;color:var(--mid);">${esc(s.subject_name)}</div>
+          </div>
+          ${isBlocked ? '<span style="font-size:10px;color:var(--amber);font-weight:600;"><i class="fas fa-lock"></i> Locked</span>' : ''}
+        </div>`;
+      }).join('') : '<div style="padding:20px;text-align:center;color:var(--muted);font-size:12px;">No subjects found for this period.</div>'}
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:15px;">
+      <span id="rmSelectedCount" style="font-size:12px;font-weight:600;color:var(--gold-d);">0 selected</span>
+      <span id="rmTotalUnits" style="font-size:12px;color:var(--muted);">0 units</span>
+    </div>
+    <button id="rmConfirmBtn" onclick="rmConfirmEnrollmentFromQuickEval('${yearLabel}','${semLabel}')"
+      style="width:100%;padding:12px;background:linear-gradient(135deg,var(--gold),var(--gold-d));color:#fff;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:14px;font-weight:700;cursor:pointer;">
+      Confirm Subject Load
+    </button>`;
+
+  document.getElementById('resultModalContent').innerHTML = `
+    <div class="rm-header rm-pass">
+      <div class="rm-icon pass-icon">📚</div>
+      <div class="rm-header-text">
+        <div class="rm-semester-tag">${esc(yearLabel)} · ${esc(semLabel)} · A.Y. ${esc(currentAY)}</div>
+        <div class="rm-verdict">Select Subject Load</div>
+        <div class="rm-verdict-sub">Choose the subjects to evaluate for this semester.</div>
+      </div>
+    </div>
+    <div class="rm-body">
+      ${bodyHtml}
+    </div>`;
+  document.getElementById('resultModal').classList.add('open');
+}
+
+function rmConfirmEnrollmentFromQuickEval(yearLabel, semLabel) {
+  const selected = [];
+  document.querySelectorAll('.rm-sub-check:checked').forEach(cb => {
+    const id = parseInt(cb.dataset.id);
+    const sub = loadedSubjects.find(s => s.id === id);
+    if (sub) selected.push(sub);
+  });
+  if (selected.length === 0) {
+    toast('Please select at least one subject', 'error');
+    return;
+  }
+  confirmedEnrollmentSubjectIds = selected.map(s => s.id);
+  selected.forEach(s => { s.is_in_load = true; });
+  toast(`${selected.length} subjects confirmed for ${yearLabel} — ${semLabel}`, 'success');
+  closeResultModal();
+  setTimeout(() => autoDetectAndEvaluate(), 300);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1158,8 +1246,13 @@ function showResultModal(subjects, yearLabel, semLabel) {
   // Build prereq unlock map to identify blocked next-sem subjects
   const prereqUnlockMapCurrent = buildPrereqUnlockMap(loadedSubjects, gradeMap, prereqSetsData, currentStudent?.major_id);
 
+  const isPreviouslyLoadedUngraded = s => {
+    return s.load_year && s.load_semester && gradeMap[s.id] == null && !s.is_credited;
+  };
+
   const nextSemSubsWithStatus = loadedSubjects
     .filter(s => (YEAR_NUM[s.year_level]||0) === nYr && (SEM_NUM[s.semester]||0) === nSem)
+    .filter(s => !isPreviouslyLoadedUngraded(s))
     .map(s => ({...s, isBlocked: !(prereqUnlockMapCurrent[s.id]?.unlocked ?? true)}));
 
   const blockedByFailedPrereq = nextSemSubsWithStatus.filter(sub => {
@@ -1285,13 +1378,14 @@ function showResultModal(subjects, yearLabel, semLabel) {
                const statusLabel = isUnavailable ? 'Unavailable' : 'Available';
                const statusStyle = isUnavailable ? 'background:var(--red-l);color:#991b1b;' : 'background:var(--green-l);color:#166534;';
                const disabledAttr = isUnavailable ? 'disabled' : '';
+               const checkedAttr = isUnavailable ? '' : 'checked';
                const rowCursor = isUnavailable ? 'default' : 'pointer';
                const rowOpacity = isUnavailable ? 'opacity:.65;' : '';
                const titleText = isUnavailable ? 'Prerequisite failed or another subject in the same prereq group failed' : '';
                return `
              <tr id="rmrow-${s.id}" style="background:#fff;${rowOpacity}cursor:${rowCursor};" ${isUnavailable ? '' : `onclick="document.getElementById('rmchk-${s.id}').click();"`} title="${titleText}">
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
-                 <input type="checkbox" id="rmchk-${s.id}" checked onchange="rmToggleSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;" ${disabledAttr}>
+                 <input type="checkbox" id="rmchk-${s.id}" ${checkedAttr} onchange="rmToggleSubject(${s.id})" style="width:16px;height:16px;accent-color:var(--gold-d);cursor:pointer;" ${disabledAttr}>
                </td>
                <td style="padding:7px 10px;border-bottom:1px solid var(--border);font-weight:700;color:var(--dark);">${esc(s.subject_code)}</td>
                <td style="padding:7px 10px;border-bottom:1px solid var(--border);">${esc(s.subject_name)}</td>
@@ -1328,7 +1422,7 @@ function showResultModal(subjects, yearLabel, semLabel) {
         const rawGrade = gradeMap[s.id];
         const hasFailedGrade = rawGrade != null && gradeStatus(roundGrade(rawGrade)) === 'failed';
         const notTakenOrFailed = rawGrade == null || hasFailedGrade;
-        return isSameSem && isDifferentYear && notTakenOrFailed;
+        return isSameSem && isDifferentYear && notTakenOrFailed && !isPreviouslyLoadedUngraded(s);
       });
       
       if(sameSemOtherYearSubs.length > 0) {
@@ -1392,7 +1486,10 @@ function showResultModal(subjects, yearLabel, semLabel) {
       }
       
       window._rmAvailableSubs = availableNextSubs;
-      window._rmSelectedIds   = new Set(availableNextSubs.map(s => s.id));
+      window._rmSelectedIds   = new Set(availableNextSubs.filter(s => {
+        const statusInfo = nextSemStatusInfo[s.id] || {};
+        return !(statusInfo.failedDirect || statusInfo.setFailed || statusInfo.sameSetFailed);
+      }).map(s => s.id));
     }
 
   if(blockedByFailedPrereq.length) {
@@ -1483,32 +1580,8 @@ function showResultModal(subjects, yearLabel, semLabel) {
         <div class="rm-sub-code">${esc(s.subject_code)}</div>
         <div class="rm-sub-name">${esc(s.subject_name)}</div>
         <div style="font-size:9px;font-weight:700;color:var(--red);margin-top:3px;">Grade: ${s.grade.toFixed(2)} — Failed</div>
-      </div>`).join('')}
+</div>`).join('')}
     </div>`;
-  }
-
-  // ★ RETAKE SCHEDULE
-  if(retakeSchedule.length) {
-    bodyHtml += `
-    <details style="margin-top:14px;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-      <summary style="padding:10px 14px;background:var(--cream);font-size:12px;font-weight:700;color:var(--dark);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-calendar-plus" style="color:var(--amber);"></i>
-        Retake Schedule — A.Y. ${nextAYStr}
-        <span style="margin-left:auto;font-size:10px;color:var(--muted);">${retakeSchedule.length} subject(s) · click to expand</span>
-      </summary>
-      <div style="padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;">
-        ${retakeSchedule.map(s=>`
-          <div style="padding:10px 12px;border-radius:9px;border:1px solid var(--amber-b);background:var(--amber-l);">
-            <div style="font-size:12px;font-weight:700;color:#92400e;">${esc(s.subject_code)}</div>
-            <div style="font-size:10px;color:#a16207;margin-top:2px;line-height:1.3;">${esc(s.subject_name)}</div>
-            <div style="font-size:9px;font-weight:700;color:#92400e;margin-top:5px;display:flex;align-items:center;gap:4px;">
-              <i class="fas fa-calendar-alt" style="font-size:8px;"></i>
-              ${esc(s.retakeSem)} · A.Y. ${esc(s.retakeAY)}
-            </div>
-            <div style="font-size:8px;color:#a16207;margin-top:2px;">Same offering semester as original</div>
-          </div>`).join('')}
-      </div>
-    </details>`;
   }
 
   // Conditional
@@ -1695,7 +1768,28 @@ function stayStudent(fromYear, fromSem) {
       // Even if the server returns a "not found" action, we still handle it gracefully —
       // the finalization + enrollment list save was already done by rmFinalizeSubjectLoad
       // and rmConfirmEnrollmentList respectively.
-      toast(`Student stays at ${fromYear} — ${fromSem}. Subject load saved.`, 'success', 4000);
+
+      // Unfinalize the current semester so the instructor can continue editing
+      const unfinalizefd = new FormData();
+      unfinalizefd.append('action', 'unfinalize_session');
+      unfinalizefd.append('student_id', currentStudent.id);
+      unfinalizefd.append('major_id', currentStudent.major_id || 0);
+      unfinalizefd.append('academic_year', currentAY);
+      unfinalizefd.append('year_level', fromYear);
+      unfinalizefd.append('semester', fromSem);
+
+      return fetch(EVAL_PROC, {method:'POST', body:unfinalizefd})
+        .then(r => r.json())
+        .then(unfinalizeData => {
+          if(unfinalizeData.success) {
+            const fkey = `${fromYear}|${fromSem}`;
+            delete finalizedMap[fkey];
+          }
+        })
+        .catch(err => console.error('Unfinalize error:', err));
+    })
+    .then(() => {
+      toast(`Student stays at ${fromYear} — ${fromSem}. Subject load saved & unfin realized.`, 'success', 4000);
 
       setTimeout(() => {
         closeResultModal();
@@ -1709,7 +1803,10 @@ function stayStudent(fromYear, fromSem) {
     })
     .catch(() => {
       // Network error — still proceed locally since the important data was already saved
-      toast(`Student stays at ${fromYear} — ${fromSem}.`, 'success', 3500);
+      toast(`Student stays at ${fromYear} — ${fromSem}. (offline)`, 'success', 3500);
+      const fkey = `${fromYear}|${fromSem}`;
+      delete finalizedMap[fkey];
+
       setTimeout(() => {
         closeResultModal();
         if(currentStudent) {
@@ -2062,7 +2159,10 @@ function printGradesTable() {
    // Select/deselect regular subjects
    (window._rmAvailableSubs||[]).forEach(s => {
      const chk = document.getElementById('rmchk-'+s.id);
-     if(chk) { chk.checked = checked; rmToggleSubject(s.id); }
+     if(chk && !chk.disabled) {
+       chk.checked = checked;
+       rmToggleSubject(s.id);
+     }
    });
    
    // Also select/deselect extra cross-year subjects
@@ -2711,33 +2811,33 @@ const sigHtml = `<div class="pro-sig-block">
                   <th class="pro-th" style="width:32px;text-align:center;">Units</th>
                   <th class="pro-th" style="width:46px;">Bridging For</th>
                 </tr></thead>
-                <tbody>
-                   ${(bridging||[]).map(sub => {
-                     const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
-                     const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
-                      return `<tr id="row-${sub.id}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
-                      <td>
-                        <div class="grade-cell-wrap">
-                          <div class="grade-row">
-                            <input type="number" class="grade-inp ${raw!=null?gClass(status):''}" id="g-${sub.id}"
-                              value="${raw!=null?parseFloat(raw).toFixed(2):''}"
-                              min="1" max="5" step="0.01" placeholder="—"
-                              title="1.00 to 5.00 · Enter to save"
-                              onchange="onGradeChange(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')"
-                              onkeydown="if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}');}">
-                            <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
-                            <button class="save-btn" id="sbtn-${sub.id}" onclick="saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')" title="Save grade"><i class="fas fa-save"></i></button>
+<tbody>
+                    ${(bridging||[]).map(sub => {
+                      const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
+                      const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
+                       return `<tr id="row-${sub.id}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
+                       <td>
+<div class="grade-cell-wrap">
+                            <div class="grade-row">
+                              <input type="number" class="grade-inp ${raw!=null?gClass(status):''}" id="g-${sub.id}"
+                                value="${raw!=null?parseFloat(raw).toFixed(2):''}"
+                                min="1" max="5" step="0.01" placeholder="—"
+                                oninput="onGradeInput(${sub.id}, event)"
+                                onkeydown="onGradeKeydown(${sub.id}, event); if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}');}"
+                                onchange="onGradeChange(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')">
+                              <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
+                              <button class="save-btn" id="sbtn-${sub.id}" onclick="saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')" title="Save grade"><i class="fas fa-save"></i></button>
+                            </div>
+                            <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
                           </div>
-                          <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
-                        </div>
-                      </td>
-                      <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
-                      <td class="pro-code">${esc(sub.subject_code)}</td>
-                      <td style="font-size:10px;">${esc(sub.subject_name)}</td>
-                      <td class="pro-units">${parseFloat(sub.units)||0}</td>
-                      <td class="pro-prereq-col">${esc(sub.bridging_for||'—')}</td>
-                    </tr>`;
-                  }).join('')}
+                       </td>
+                       <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
+                       <td class="pro-code">${esc(sub.subject_code)}</td>
+                       <td style="font-size:10px;">${esc(sub.subject_name)}</td>
+                       <td class="pro-units">${parseFloat(sub.units)||0}</td>
+                       <td class="pro-prereq-col">${esc(sub.bridging_for||'—')}</td>
+                     </tr>`;
+                   }).join('')}
                    <tr class="pro-total-row" data-full-total="${bridgingUnits}">
                      <td></td>
                      <td class="pro-td-status"></td>
@@ -2856,26 +2956,26 @@ const sigHtml = `<div class="pro-sig-block">
        rowClass = isCredited ? 'row-credited' : 'row-locked';
      }
 
-    rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
-      <td>
-        <div class="grade-cell-wrap">
-          <div class="grade-row">
-            <input type="number" class="grade-inp ${inpCls}" id="g-${sub.id}"
-              value="${raw!=null?parseFloat(raw).toFixed(2):''}"
-              min="1" max="5" step="0.01" placeholder="—"
-              onchange="onGradeChange(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}');}"
-              ${shouldDisable?'disabled title="'+lockDesc+'"':'title="1.00 to 5.00 · Enter to save"'}>
-            <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
-            <button class="save-btn" id="sbtn-${sub.id}"
-              onclick="saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
-              ${shouldDisable?'disabled':''} title="Save grade"><i class="fas fa-save"></i></button>
-            ${(shouldDisable && !isCredited) ? `<button class="edit-btn" id="ebtn-${sub.id}" onclick="requestEditGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')" title="Edit this grade (requires password)"><i class="fas fa-edit"></i></button>` : ''}
-          </div>
-          <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
-             ${shouldDisable && !isFinalizedLocked ? `<span class="lock-badge" style="${badgeStyle}"><i class="fas ${badgeIcon}" style="font-size:7px;"></i>${lockDesc||'Locked'}</span>` : ''}
-          </div>
-      </td>
+rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
+       <td>
+         <div class="grade-cell-wrap">
+           <div class="grade-row">
+             <input type="number" class="grade-inp ${inpCls}" id="g-${sub.id}"
+               value="${raw!=null?parseFloat(raw).toFixed(2):''}"
+               min="1" max="5" step="0.01" placeholder="—"
+               oninput="onGradeInput(${sub.id}, event)"
+               onkeydown="onGradeKeydown(${sub.id}, event); if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}');}"
+               ${shouldDisable?'disabled title="'+lockDesc+'"':'title="1.00 to 5.00 · Enter to save"'}>
+             <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
+             <button class="save-btn" id="sbtn-${sub.id}"
+               onclick="saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')"
+               ${shouldDisable?'disabled':''} title="Save grade"><i class="fas fa-save"></i></button>
+             ${(shouldDisable && !isCredited) ? `<button class="edit-btn" id="ebtn-${sub.id}" onclick="requestEditGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}')" title="Edit this grade (requires password)"><i class="fas fa-edit"></i></button>` : ''}
+           </div>
+           <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
+              ${shouldDisable && !isFinalizedLocked ? `<span class="lock-badge" style="${badgeStyle}"><i class="fas ${badgeIcon}" style="font-size:7px;"></i>${lockDesc||'Locked'}</span>` : ''}
+           </div>
+       </td>
       <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
       <td class="pro-code">${esc(sub.subject_code)}</td>
       <td style="font-size:10px;">${esc(sub.subject_name)}</td>
@@ -2934,23 +3034,65 @@ const sigHtml = `<div class="pro-sig-block">
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ON GRADE CHANGE
-═══════════════════════════════════════════════════════════ */
-function onGradeChange(sid, studentId, majorId, sem, year, ay) {
-  let inp = document.getElementById('g-'+sid);
-  if(!inp) inp = document.getElementById('bg-'+sid);
-  if(!inp) { toast('Input not found','error'); return; }
-  const raw = parseFloat(inp.value);
-  if(isNaN(raw)||raw<1||raw>5) { toast('Grade must be 1.00–5.00','error'); return; }
-  const rounded = roundGrade(raw);
-  const status  = gradeStatus(rounded);
-  inp.className = 'grade-inp '+gClass(status);
-  const glEl = document.getElementById('gl-'+sid);
-  if(glEl) glEl.textContent = `→ ${rounded.toFixed(2)} ${gradeLabel(rounded)}`;
-  inp.style.boxShadow = (rounded !== raw) ? '0 0 0 2px var(--amber)' : '';
-  const btn = document.getElementById('sbtn-'+sid);
-  if(btn) { btn.style.background = 'var(--amber-l)'; btn.style.color = 'var(--amber)'; }
-}
+     GRADE INPUT FORMATTING
+     Progressive input: 2 → 2.2 → 2.22 (max 3 digits)
+     Blocks additional input after 3 digits, allows backspace
+    ═══════════════════════════════════════════════════════════ */
+  function formatGradeInput(val) {
+    if (val === '' || val === null || val === undefined) return val;
+    let s = String(val).replace(/[^0-9.]/g, '');
+    if (s === '' || s === '.') return '';
+    let digits = s.replace(/\./g, '');
+    if (digits.length > 3) digits = digits.slice(0, 3);
+    if (digits.length === 0) return '';
+    if (digits.length === 1) return digits;
+    if (digits.length === 2) return digits[0] + '.' + digits[1];
+    if (digits.length === 3) return digits[0] + '.' + digits[1] + digits[2];
+    return val;
+  }
+
+  function onGradeInput(sid, evt) {
+    const inp = document.getElementById('g-'+sid);
+    if (!inp || inp.disabled) return;
+    const val = inp.value;
+    let digits = val.replace(/\./g, '').replace(/[^0-9]/g, '');
+    let formatted = formatGradeInput(val);
+    if (formatted && formatted !== val) {
+      inp.value = formatted;
+    }
+  }
+
+  function onGradeKeydown(sid, evt) {
+    const inp = document.getElementById('g-'+sid);
+    if (!inp || inp.disabled) return;
+    const val = inp.value;
+    const digits = val.replace(/\./g, '').replace(/[^0-9]/g, '');
+    const isDigit = /[0-9]/.test(evt.key);
+    const isBackspace = evt.key === 'Backspace';
+    const isArrowKey = ['ArrowLeft', 'ArrowRight', 'Delete'].includes(evt.key);
+    if (digits.length >= 3 && isDigit && !isBackspace) {
+      evt.preventDefault();
+    }
+  }
+
+ /* ═══════════════════════════════════════════════════════════
+    ON GRADE CHANGE
+    ═══════════════════════════════════════════════════════════ */
+  function onGradeChange(sid, studentId, majorId, sem, year, ay) {
+    let inp = document.getElementById('g-'+sid);
+    if(!inp) inp = document.getElementById('bg-'+sid);
+    if(!inp) { toast('Input not found','error'); return; }
+    const raw = parseFloat(inp.value);
+    if(isNaN(raw)||raw<1||raw>5) { toast('Grade must be 1.00–5.00','error'); return; }
+    const rounded = roundGrade(raw);
+    const status  = gradeStatus(rounded);
+    inp.className = 'grade-inp '+gClass(status);
+    const glEl = document.getElementById('gl-'+sid);
+    if(glEl) glEl.textContent = `→ ${rounded.toFixed(2)} ${gradeLabel(rounded)}`;
+    inp.style.boxShadow = (rounded !== raw) ? '0 0 0 2px var(--amber)' : '';
+    const btn = document.getElementById('sbtn-'+sid);
+    if(btn) { btn.style.background = 'var(--amber-l)'; btn.style.color = 'var(--amber)'; }
+  }
 
 /* ═══════════════════════════════════════════════════════════
    SAVE GRADE
