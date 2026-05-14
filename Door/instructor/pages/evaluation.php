@@ -22,7 +22,235 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 <link rel="stylesheet" href="evaluation.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <style>
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM GOLD EVALUATION BUTTON
+═══════════════════════════════════════════════════════════ */
+.fab-eval-btn {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 26px;
+  background: linear-gradient(135deg, #f5c842 0%, #d4a017 35%, #b8860b 70%, #9a6f00 100%);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow:
+    0 4px 18px rgba(184, 134, 11, 0.55),
+    0 2px 6px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.28);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1.5px solid rgba(255,255,255,0.22);
+  text-shadow: 0 1px 2px rgba(100,60,0,0.35);
+}
+.fab-eval-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 60%);
+  pointer-events: none;
+}
+.fab-eval-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow:
+    0 8px 28px rgba(184, 134, 11, 0.7),
+    0 4px 12px rgba(0,0,0,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+  background: linear-gradient(135deg, #ffd84d 0%, #e0b020 35%, #c4920f 70%, #a87800 100%);
+}
+.fab-eval-btn:active {
+  transform: translateY(0px) scale(0.98);
+  box-shadow:
+    0 3px 10px rgba(184, 134, 11, 0.45),
+    0 1px 4px rgba(0,0,0,0.2);
+}
+.fab-eval-btn i {
+  font-size: 15px;
+  filter: drop-shadow(0 1px 2px rgba(100,60,0,0.3));
+}
+.fab-eval-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
 
+/* ═══════════════════════════════════════════════════════════
+   GRADUATION PREMIUM CARD
+═══════════════════════════════════════════════════════════ */
+.graduation-premium-card {
+  position: relative;
+  overflow: hidden;
+  margin: 8px 0 4px 0;
+  padding: 32px 28px 24px 28px;
+  background: linear-gradient(145deg, #fff9e6, #fffbf0, #fef3c7);
+  border: 2px solid #d4a017;
+  border-radius: 20px;
+  box-shadow:
+    0 12px 40px rgba(212, 160, 23, 0.25),
+    0 2px 8px rgba(0,0,0,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.9);
+  text-align: center;
+}
+.graduation-premium-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(212,160,23,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.graduation-premium-card::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: -40px;
+  width: 160px; height: 160px;
+  background: radial-gradient(circle, rgba(212,160,23,0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.graduation-confetti {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    radial-gradient(circle, #f5c842 1px, transparent 1px),
+    radial-gradient(circle, #d4a017 1px, transparent 1px),
+    radial-gradient(circle, rgba(212,160,23,0.4) 1.5px, transparent 1.5px);
+  background-size: 60px 60px, 90px 90px, 45px 45px;
+  background-position: 10px 10px, 30px 30px, 50px 5px;
+  opacity: 0.18;
+  pointer-events: none;
+  animation: confettiDrift 8s ease-in-out infinite alternate;
+}
+@keyframes confettiDrift {
+  from { background-position: 10px 10px, 30px 30px, 50px 5px; }
+  to   { background-position: 20px 25px, 45px 10px, 60px 20px; }
+}
+.graduation-icon-ring {
+  position: relative;
+  z-index: 1;
+  width: 90px; height: 90px;
+  margin: 0 auto 18px auto;
+  background: linear-gradient(145deg, #f5c842, #d4a017, #b8860b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; color: #fff;
+  box-shadow:
+    0 6px 24px rgba(184,134,11,0.45),
+    0 0 0 6px rgba(212,160,23,0.15),
+    0 0 0 12px rgba(212,160,23,0.07);
+  animation: pulseGold 2.4s ease-in-out infinite;
+}
+@keyframes pulseGold {
+  0%, 100% { box-shadow: 0 6px 24px rgba(184,134,11,0.45), 0 0 0 6px rgba(212,160,23,0.15), 0 0 0 12px rgba(212,160,23,0.07); }
+  50% { box-shadow: 0 8px 30px rgba(184,134,11,0.6), 0 0 0 10px rgba(212,160,23,0.2), 0 0 0 18px rgba(212,160,23,0.05); }
+}
+.graduation-badge-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.graduation-cap-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  background: linear-gradient(135deg, #d4a017, #9a6f00);
+  color: #fff;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(154,111,0,0.35);
+}
+.graduation-status-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 14px;
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  color: #166534;
+  border: 1.5px solid #4ade80;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+}
+.graduation-lead {
+  position: relative; z-index: 1;
+  font-size: 13px; color: #92400e; line-height: 1.6;
+  margin: 0 0 20px 0;
+  max-width: 500px; margin-left: auto; margin-right: auto;
+}
+.graduation-stat-grid {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.graduation-stat {
+  padding: 16px 12px;
+  background: rgba(212,160,23,0.08);
+  border: 1.5px solid rgba(212,160,23,0.25);
+  border-radius: 14px;
+  transition: all 0.2s;
+}
+.graduation-stat:hover {
+  background: rgba(212,160,23,0.14);
+  transform: translateY(-2px);
+}
+.graduation-stat-gold {
+  background: linear-gradient(135deg, rgba(212,160,23,0.18), rgba(245,200,66,0.12));
+  border-color: rgba(212,160,23,0.45);
+}
+.graduation-stat-label {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.7px; color: #a16207; margin-bottom: 6px;
+}
+.graduation-stat-value {
+  font-size: 26px; font-weight: 800; color: #92400e;
+  font-family: 'Playfair Display', serif; line-height: 1;
+}
+.graduation-stat-value.graduation-stat-sm {
+  font-size: 14px; font-family: 'Poppins', sans-serif;
+  color: #166534; font-weight: 700;
+}
+.graduation-confirm-btn {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 15px 32px;
+  background: linear-gradient(135deg, #f5c842 0%, #d4a017 40%, #b8860b 80%, #9a6f00 100%);
+  color: #fff;
+  border: none; border-radius: 50px;
+  font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.3px;
+  box-shadow: 0 6px 24px rgba(184,134,11,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1.5px solid rgba(255,255,255,0.2);
+  text-shadow: 0 1px 2px rgba(100,60,0,0.3);
+}
+.graduation-confirm-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 10px 32px rgba(184,134,11,0.65), inset 0 1px 0 rgba(255,255,255,0.28);
+  background: linear-gradient(135deg, #ffd84d 0%, #e0b020 40%, #c4920f 80%, #a87800 100%);
+}
+.graduation-confirm-btn:active {
+  transform: translateY(0) scale(0.98);
+}
+.graduation-confirm-btn:disabled {
+  opacity: 0.6; cursor: not-allowed; transform: none;
+}
+.graduation-footnote {
+  position: relative; z-index: 1;
+  font-size: 10px; color: #a16207; margin: 12px 0 0 0;
+  line-height: 1.5;
+}
 </style>
 </head>
 <body>
@@ -45,6 +273,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
     <a href="../dashboard.php" class="sidebar-nav-item"><i class="fas fa-chart-pie"></i><span>Overview</span></a>
     <a href="students.php" class="sidebar-nav-item"><i class="fas fa-user-graduate"></i><span>Students mentees</span></a>
     <a href="evaluation.php" class="sidebar-nav-item active"><i class="fas fa-comment-dots"></i><span>Evaluation</span></a>
+    <a href="../../../setup_graduate.php" class="sidebar-nav-item"><i class="fas fa-award"></i><span>Graduates</span></a>
     <a href="reports.php" class="sidebar-nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
     <a href="profile.php" class="sidebar-nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
   </nav>
@@ -276,6 +505,14 @@ function isSubjectInCurrentPeriod(sub) {
   return subYear === curYear && subSem.includes(curTok);
 }
 
+/* Strips the " - Xst/nd/rd/th Semester" suffix from a year_level string so
+   only the year portion is shown in display fields (e.g. "4th Year - 2nd Semester"
+   → "4th Year").  The raw value must be preserved for parseStudentStanding. */
+function yearLevelOnly(yearLevelStr) {
+  if (!yearLevelStr) return '—';
+  return String(yearLevelStr).replace(/\s*[-–]\s*\d+(st|nd|rd|th)\s*Semester.*/i, '').trim();
+}
+
 /* ═══════════════════════════════════════════════════════════
    GRADE HELPERS
 ═══════════════════════════════════════════════════════════ */
@@ -418,14 +655,15 @@ function loadMentees() {
         </div>
         <div class="mc-bottom">
           <div class="mc-pills">
-            <span class="pill pill-blue"><i class="fas fa-layer-group" style="font-size:9px;margin-right:3px;"></i>${esc(m.year_level||'—')}</span>
+            <span class="pill pill-blue"><i class="fas fa-layer-group" style="font-size:9px;margin-right:3px;"></i>${esc(yearLevelOnly(m.year_level)||'—')}</span>
             ${m.major_name?`<span class="pill pill-gold">${esc(m.major_name)}</span>`:''}
             <span class="pill ${m.graded_count>0?'pill-green':'pill-gray'}"><i class="fas fa-star" style="font-size:9px;margin-right:3px;"></i>${m.graded_count}/${m.total_subjects} graded</span>
+            ${m.status === 'graduated' ? '<span class="pill pill-graduated"><i class="fas fa-user-graduate" style="font-size:9px;margin-right:3px;"></i>Graduated</span>' : ''}
           </div>
           <div class="mc-progress-track"><div class="mc-progress-bar" style="width:${pct}%;"></div></div>
           <div class="mc-progress-label"><span>${pct}% evaluated</span><span>${m.graded_count} of ${m.total_subjects}</span></div>
         </div>
-        <div class="mc-action"><i class="fas fa-scroll" style="font-size:11px;"></i> Open Prospectus</div>
+        <button type="button" class="mc-action evaluate-main-btn"><i class="fas fa-clipboard-check"></i><span>Evaluation</span></button>
       </div>`;
     });
     c.innerHTML = html + '</div>';
@@ -523,7 +761,7 @@ function _proceedWithEval(m, studentType) {
   switchEvalTab('prospectus');
   const full = `${m.first_name}${m.middle_name?' '+m.middle_name:''} ${m.last_name}${m.suffix?' '+m.suffix:''}`.trim();
   document.getElementById('evalName').innerHTML = full + _getTypeBadgeHTML(studentType);
-  document.getElementById('evalSub').textContent  = `${m.major_name||'No major'} · ${m.year_level||'—'} · A.Y. ${currentAY}`;
+  document.getElementById('evalSub').textContent  = `${m.major_name||'No major'} · ${yearLevelOnly(m.year_level)||'—'} · A.Y. ${currentAY}`;
   document.getElementById('tab-prospectus-body').innerHTML = `<div class="empty-state"><div class="spinner"></div><p style="margin-top:12px;">Loading prospectus…</p></div>`;
 
   Promise.all([
@@ -535,6 +773,9 @@ function _proceedWithEval(m, studentType) {
       return;
     }
     if(evalData.ph_settings) phSettings = {...phSettings,...evalData.ph_settings};
+    if (evalData.student) {
+      currentStudent = {...m, ...evalData.student};
+    }
     prereqSetsData = (prereqData.success && prereqData.sets) || [];
 
     // Store subjects temporarily for workflow modals
@@ -771,6 +1012,10 @@ function showComingSoonModal() {
  ══════════════════════════════════════════════════════════════════ */
 function autoDetectAndEvaluate() {
   if (!currentStudent) { toast('No student loaded.', 'error'); return; }
+  if (window.evaluationLocked) {
+    toast('This student has graduated. Evaluation is locked.', 'error', 4500);
+    return;
+  }
 
   const standingStr = currentStudent.year_level || '1st Year - 1st Semester';
   const {yr, sem} = parseStudentStanding(standingStr);
@@ -794,8 +1039,9 @@ function autoDetectAndEvaluate() {
     (subSem||'').toLowerCase().includes(semWant);
 
   // Build the targeted subject list:
-  // Only subjects that are in the confirmed load (selected by the instructor in the enrollment modal)
-  // This ensures that only selected subjects are evaluated, even if they are from other semesters.
+  // Only subjects that are in the confirmed load (is_in_load = true).
+  // For the current semester this is always true. For past semesters it
+  // reflects the server-persisted enrollment list saved during evaluation.
   let targeted = loadedSubjects.filter(s => s.is_in_load === true);
 
   // If no subjects selected and NOT finalized, show enrollment modal
@@ -1215,21 +1461,31 @@ function showResultModal(subjects, yearLabel, semLabel) {
   const allPassed = failedSubs.length === 0 && condSubs.length === 0 && noGradeSubs.length === 0;
   const allFailed = passedSubs.length === 0 && failedSubs.length > 0 && condSubs.length === 0;
 
-  // ★ FLEXIBLE PROGRESSION: verdict reflects results but PROMOTION IS ALWAYS OFFERED
-  let verdict, headerClass, iconClass, iconContent, verdictSub;
-  if(allPassed) {
-    verdict='Student PASSED'; headerClass='rm-pass'; iconClass='pass-icon'; iconContent='🎓';
-    verdictSub=`All ${passedSubs.length} subject(s) passed with a semester GWA of <strong>${semGWA?.toFixed(2)||'—'}</strong>.`;
-  } else if(condSubs.length > 0 && failedSubs.length === 0) {
-    verdict='CONDITIONAL Status'; headerClass='rm-cond'; iconClass='cond-icon'; iconContent='⚠️';
-    verdictSub=`${condSubs.length} subject(s) received a conditional grade (4.00). Removal exam required.`;
-  } else if(failedSubs.length > 0) {
-    verdict='Has FAILED Subject(s)'; headerClass='rm-fail'; iconClass='fail-icon'; iconContent='📋';
-    verdictSub=`${failedSubs.length} subject(s) failed. Student may still proceed; only dependent subjects will be locked.`;
-  } else {
-    verdict='Results Recorded'; headerClass='rm-mixed'; iconClass='mixed-icon'; iconContent='📄';
-    verdictSub='Evaluation complete. Review the details below.';
-  }
+   // ★ FLEXIBLE PROGRESSION: verdict reflects results but PROMOTION IS ALWAYS OFFERED
+   let verdict, headerClass, iconClass, iconContent, verdictSub;
+   if(allPassed) {
+     verdict='Student PASSED'; headerClass='rm-pass'; iconClass='pass-icon'; iconContent='🎓';
+     verdictSub=`All ${passedSubs.length} subject(s) passed with a semester GWA of <strong>${semGWA?.toFixed(2)||'—'}</strong>.`;
+   } else if(condSubs.length > 0 && failedSubs.length === 0) {
+     verdict='CONDITIONAL Status'; headerClass='rm-cond'; iconClass='cond-icon'; iconContent='⚠️';
+     verdictSub=`${condSubs.length} subject(s) received a conditional grade (4.00). Removal exam required.`;
+   } else if(failedSubs.length > 0) {
+     verdict='Has FAILED Subject(s)'; headerClass='rm-fail'; iconClass='fail-icon'; iconContent='📋';
+     verdictSub=`${failedSubs.length} subject(s) failed. Student may still proceed; only dependent subjects will be locked.`;
+   } else {
+     verdict='Results Recorded'; headerClass='rm-mixed'; iconClass='mixed-icon'; iconContent='📄';
+     verdictSub='Evaluation complete. Review the details below.';
+   }
+   
+   const cur = window.lastCurriculumStats || {};
+   const curriculumReady = cur.complete === true;
+const isGraduationEligible = yearLabel === '4th Year' &&
+                            semLabel === '2nd Semester' &&
+                            allPassed &&
+                            noGradeSubs.length === 0 &&
+                            passedSubs.length > 0;
+   const finalGwaStr = (cur.gwa != null && cur.gwa !== '') ? Number(cur.gwa).toFixed(4) : (semGWA != null ? semGWA.toFixed(2) : '—');
+   const totalProgSubjects = (cur.total_required != null && cur.total_required > 0) ? cur.total_required : passedSubs.length;
 
   // Next semester subjects
   const {yr:cYr, sem:cSem} = parseStudentStanding(`${yearLabel} - ${semLabel}`);
@@ -1412,18 +1668,18 @@ function showResultModal(subjects, yearLabel, semLabel) {
         </div>
       </div>`;
       
-      // Add cross-year same semester subjects table
-      const sameSemOtherYearSubs = loadedSubjects.filter(s => {
-        const sSem = (s.semester || '').toLowerCase();
-        const targetSem = nextSemLabel.toLowerCase();
-        const sYear = YEAR_NUM[s.year_level] || 0;
-        const isSameSem = sSem.includes(targetSem.includes('1st') ? '1st' : '2nd');
-        const isDifferentYear = sYear !== nYr;
-        const rawGrade = gradeMap[s.id];
-        const hasFailedGrade = rawGrade != null && gradeStatus(roundGrade(rawGrade)) === 'failed';
-        const notTakenOrFailed = rawGrade == null || hasFailedGrade;
-        return isSameSem && isDifferentYear && notTakenOrFailed && !isPreviouslyLoadedUngraded(s);
-      });
+// Add cross-year same semester subjects table
+       const sameSemOtherYearSubs = loadedSubjects.filter(s => {
+         const sSem = (s.semester || '').toLowerCase();
+         const targetSem = nextSemLabel.toLowerCase();
+         const sYear = YEAR_NUM[s.year_level] || 0;
+         const isSameSem = sSem.includes(targetSem.includes('1st') ? '1st' : '2nd');
+         const isDifferentYear = sYear !== cYr;  // Changed from nYr to cYr to include current year subjects
+         const rawGrade = gradeMap[s.id];
+         const hasFailedGrade = rawGrade != null && gradeStatus(roundGrade(rawGrade)) === 'failed';
+         const notTakenOrFailed = rawGrade == null || hasFailedGrade;
+         return isSameSem && isDifferentYear && notTakenOrFailed && !isPreviouslyLoadedUngraded(s);
+       });
       
       if(sameSemOtherYearSubs.length > 0) {
         bodyHtml += `
@@ -1605,65 +1861,111 @@ function showResultModal(subjects, yearLabel, semLabel) {
       <div style="font-size:10px;color:#a16207;line-height:1.5;">Student may proceed to the next semester. Only subjects with unmet prerequisites remain locked. Failed subjects without prerequisites can be retaken in a future term.</div>
     </div>` : '';
 
-  // Gate notice shown above the buttons before finalization
-  const gateNoticeHtml = `
-    <div id="rmFinalizeGate" style="padding:12px 16px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px dashed #f59e0b;border-radius:12px;margin-bottom:12px;text-align:center;">
-      <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">
-        <i class="fas fa-lock" style="margin-right:6px;"></i>Finalize Subject Load to Continue
-      </div>
-      <div style="font-size:11px;color:#a16207;margin-bottom:10px;line-height:1.5;">
-        Confirm and finalize the subject load above, then choose to <strong>Proceed</strong> to the next semester or <strong>Stay</strong> on the current one.
-      </div>
-      <button id="rmFinalizeLoadBtn" onclick="rmFinalizeSubjectLoad('${yearLabel}','${semLabel}','${nextYearLabel}','${nextSemLabel}')"
-        style="padding:10px 24px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(217,119,6,.35);transition:all .2s;"
-        disabled>
-        <i class="fas fa-check-square"></i> Finalize Subject Load
-      </button>
-      <div style="font-size:10px;color:#92400e;margin-top:8px;opacity:0.8;">
-        <i class="fas fa-arrow-up" style="font-size:8px;"></i> Confirm the subject load list above first
-      </div>
+   // Gate notice shown above the buttons before finalization
+   const gateNoticeHtml = `
+   <div id="rmFinalizeGate" style="padding:12px 16px;background:linear-gradient(135deg,#fef3c7,#fde68a);border:2px dashed #f59e0b;border-radius:12px;margin-bottom:12px;text-align:center;">
+     <div style="font-size:13px;font-weight:700;color:#92400e;margin-bottom:4px;">
+       <i class="fas fa-lock" style="margin-right:6px;"></i>Finalize Subject Load to Continue
+     </div>
+     <div style="font-size:11px;color:#a16207;margin-bottom:10px;line-height:1.5;">
+       Confirm and finalize the subject load above, then choose to <strong>Proceed</strong> to the next semester or <strong>Stay</strong> on the current one.
+     </div>
+     <button id="rmFinalizeLoadBtn" onclick="rmFinalizeSubjectLoad('${yearLabel}','${semLabel}','${nextYearLabel}','${nextSemLabel}')"
+       style="padding:10px 24px;background:linear-gradient(135deg,#d97706,#b45309);color:#fff;border:none;border-radius:10px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(217,119,6,.35);transition:all .2s;"
+       disabled>
+       <i class="fas fa-check-square"></i> Finalize Subject Load
+     </button>
+     <div style="font-size:10px;color:#92400e;margin-top:8px;opacity:0.8;">
+       <i class="fas fa-arrow-up" style="font-size:8px;"></i> Confirm the subject load list above first
+     </div>
+   </div>`;
+
+   const graduationContainerHtml = isGraduationEligible ? `
+   <div id="graduationContainer" class="graduation-premium-card">
+     <div class="graduation-confetti" aria-hidden="true"></div>
+     <div class="graduation-icon-ring">
+       <i class="fas fa-user-graduate"></i>
+     </div>
+     <div class="graduation-badge-row">
+       <span class="graduation-cap-badge"><i class="fas fa-award"></i> Congratulations</span>
+       <span class="graduation-status-pill"><i class="fas fa-check-double"></i> Student Eligible for Graduation</span>
+     </div>
+     <p class="graduation-lead">All required curriculum subjects are completed with passing grades. No outstanding back subjects.</p>
+     <div class="graduation-stat-grid">
+       <div class="graduation-stat">
+         <div class="graduation-stat-label">Total subjects completed</div>
+         <div class="graduation-stat-value">${totalProgSubjects}</div>
+       </div>
+       <div class="graduation-stat graduation-stat-gold">
+         <div class="graduation-stat-label">Final GWA</div>
+         <div class="graduation-stat-value">${finalGwaStr}</div>
+       </div>
+       <div class="graduation-stat">
+         <div class="graduation-stat-label">Graduation status</div>
+         <div class="graduation-stat-value graduation-stat-sm">Eligible — pending confirmation</div>
+       </div>
+     </div>
+     <button type="button" onclick="confirmGraduation('${yearLabel}','${semLabel}')"
+       class="graduation-confirm-btn"
+       id="graduationConfirmBtn">
+       <i class="fas fa-certificate"></i> Confirm graduation &amp; generate prospectus PDF
+     </button>
+     <p class="graduation-footnote"><i class="fas fa-shield-alt"></i> This marks the student as graduated, saves the official PDF under <strong>C:\\graduate\\batch ${esc(currentAY)}\\…</strong>, and locks further evaluation.</p>
+     <div style="display:flex;justify-content:center;margin-top:14px;">
+       <button type="button" class="btn-modal-close" onclick="closeResultModal()"><i class="fas fa-times"></i> Close</button>
+     </div>
+   </div>` : '';
+
+    let actionsHtml = `<div class="rm-actions" style="flex-direction:column;gap:10px;">
+      ${flexNote}
+      ${isGraduationEligible ? graduationContainerHtml : `
+        ${gateNoticeHtml}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn-promote" id="rmProceedBtn"
+            onclick="promoteStudent('${yearLabel}','${semLabel}','${nextYearLabel}','${nextSemLabel}')"
+            disabled title="Finalize subject load first"
+            style="opacity:0.45;cursor:not-allowed;filter:grayscale(0.3);">
+            <i class="fas fa-lock" id="rmProceedIcon"></i>
+            <span id="rmProceedLabel">Proceed to ${nextSemLabel} — ${nextYearLabel}</span>
+          </button>
+          <button class="btn-stay" id="rmStayBtn"
+            onclick="stayStudent('${yearLabel}','${semLabel}')"
+            disabled title="Finalize subject load first"
+            style="padding:12px 22px;background:linear-gradient(135deg,#64748b,#475569);color:#fff;border:none;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(100,116,139,.3);transition:all .3s;opacity:0.45;filter:grayscale(0.3);">
+            <i class="fas fa-lock" id="rmStayIcon"></i>
+            <span id="rmStayLabel">Stay — ${yearLabel} · ${semLabel}</span>
+          </button>
+          <button class="btn-modal-close" onclick="closeResultModal()"><i class="fas fa-times"></i> Close</button>
+        </div>
+      `}
     </div>`;
 
-  let actionsHtml = `<div class="rm-actions" style="flex-direction:column;gap:10px;">
-    ${flexNote}
-    ${gateNoticeHtml}
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
-      <button class="btn-promote" id="rmProceedBtn"
-        onclick="promoteStudent('${yearLabel}','${semLabel}','${nextYearLabel}','${nextSemLabel}')"
-        disabled title="Finalize subject load first"
-        style="opacity:0.45;cursor:not-allowed;filter:grayscale(0.3);">
-        <i class="fas fa-lock" id="rmProceedIcon"></i>
-        <span id="rmProceedLabel">Proceed to ${nextSemLabel} — ${nextYearLabel}</span>
-      </button>
-      <button class="btn-stay" id="rmStayBtn"
-        onclick="stayStudent('${yearLabel}','${semLabel}')"
-        disabled title="Finalize subject load first"
-        style="padding:12px 22px;background:linear-gradient(135deg,#64748b,#475569);color:#fff;border:none;border-radius:12px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:not-allowed;display:inline-flex;align-items:center;gap:8px;box-shadow:0 4px 14px rgba(100,116,139,.3);transition:all .3s;opacity:0.45;filter:grayscale(0.3);">
-        <i class="fas fa-lock" id="rmStayIcon"></i>
-        <span id="rmStayLabel">Stay — ${yearLabel} · ${semLabel}</span>
-      </button>
-      <button class="btn-modal-close" onclick="closeResultModal()"><i class="fas fa-times"></i> Close</button>
-    </div>
-  </div>`;
-
-  document.getElementById('resultModalContent').innerHTML = `
-    <div class="rm-header ${headerClass}">
-      <div class="rm-icon ${iconClass}">${iconContent}</div>
-      <div class="rm-header-text">
-        <div class="rm-semester-tag">${esc(yearLabel)} · ${esc(semLabel)} · A.Y. ${esc(currentAY)}</div>
-        <div class="rm-verdict">${verdict}</div>
-        <div class="rm-verdict-sub">${verdictSub}</div>
-        ${semGWA!=null?`<div class="rm-gwa-chip"><i class="fas fa-chart-line"></i> Semester GWA: ${semGWA.toFixed(2)}</div>`:''}
-      </div>
-      <div class="rm-header-actions">
-      </div>
-    </div>
-    <div class="rm-body">
-      ${breakdownHtml}
-      ${bodyHtml}
-      ${actionsHtml}
-    </div>`;
-  document.getElementById('resultModal').classList.add('open');
+   document.getElementById('resultModalContent').innerHTML = `
+     <div class="rm-header ${headerClass}">
+       <div class="rm-icon ${iconClass}">${iconContent}</div>
+       <div class="rm-header-text">
+         <div class="rm-semester-tag">${esc(yearLabel)} · ${esc(semLabel)} · A.Y. ${esc(currentAY)}</div>
+         <div class="rm-verdict">${verdict}</div>
+         <div class="rm-verdict-sub">${verdictSub}</div>
+         ${semGWA!=null?`<div class="rm-gwa-chip"><i class="fas fa-chart-line"></i> Semester GWA: ${semGWA.toFixed(2)}</div>`:''}
+       </div>
+       <div class="rm-header-actions">
+       </div>
+     </div>
+     <div class="rm-body">
+       ${breakdownHtml}
+       ${bodyHtml}
+       ${actionsHtml}
+     </div>`;
+   document.getElementById('resultModal').classList.add('open');
+   
+   // Auto-confirm graduation if eligible
+   if(isGraduationEligible) {
+     toast('Auto-confirming graduation...', 'info', 1500);
+     setTimeout(() => {
+       confirmGraduation(yearLabel, semLabel);
+     }, 500);
+   }
   
 
 }
@@ -1801,40 +2103,186 @@ function stayStudent(fromYear, fromSem) {
         loadMentees();
       }, 1200);
     })
-    .catch(() => {
-      // Network error — still proceed locally since the important data was already saved
-      toast(`Student stays at ${fromYear} — ${fromSem}. (offline)`, 'success', 3500);
-      const fkey = `${fromYear}|${fromSem}`;
-      delete finalizedMap[fkey];
+     .catch(() => {
+       // Network error — still proceed locally since the important data was already saved
+       toast(`Student stays at ${fromYear} — ${fromSem}. (offline)`, 'success', 3500);
+       const fkey = `${fromYear}|${fromSem}`;
+       delete finalizedMap[fkey];
 
-      setTimeout(() => {
-        closeResultModal();
-        if(currentStudent) {
-          const studentCopy = {...currentStudent};
-          closeEval();
-          setTimeout(() => openEval(studentCopy), 200);
+       setTimeout(() => {
+         closeResultModal();
+         if(currentStudent) {
+           const studentCopy = {...currentStudent};
+           closeEval();
+           setTimeout(() => openEval(studentCopy), 200);
+         }
+         loadMentees();
+       }, 1200);
+     });
+}
+
+function confirmGraduation(yearLabel, semLabel) {
+  if(!currentStudent) { toast('No student loaded.', 'error'); return; }
+
+  // Show confirmation dialog
+  if(!confirm(`Are you sure you want to confirm graduation for this student?\n\nThis will:\n- Mark the student as graduated\n- Generate their prospectus PDF\n- Lock their evaluation record\n\nThis action cannot be undone.`)) {
+    return;
+  }
+
+  // Disable button during processing
+  const btn = document.getElementById('graduationConfirmBtn');
+  if(btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+  }
+
+  // Prepare data for graduation processing
+  const fd = new FormData();
+  fd.append('action', 'confirm_graduation');
+  fd.append('student_id', currentStudent.id);
+  fd.append('major_id', currentStudent.major_id || 0);
+  fd.append('academic_year', currentAY);
+  fd.append('year_level', yearLabel);
+  fd.append('semester', semLabel);
+
+  // Send request to server
+  fetch(EVAL_PROC, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(data => {
+      if(data.success) {
+        // Show success message
+        toast('Graduation confirmed successfully! Generating prospectus...', 'success', 3000);
+
+        // Update UI to show graduated status — premium success card
+        const graduationContainer = document.getElementById('graduationContainer');
+        if(graduationContainer) {
+          const gradDate = data.graduation_date || new Date().toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'});
+          graduationContainer.innerHTML = `
+            <div style="position:relative;overflow:hidden;padding:32px 28px 24px;background:linear-gradient(145deg,#f0fdf4,#dcfce7,#bbf7d0);border:2px solid #10b981;border-radius:20px;text-align:center;box-shadow:0 12px 40px rgba(16,185,129,0.22),0 2px 8px rgba(0,0,0,0.07);animation:slideInGreen .5s cubic-bezier(.34,1.56,.64,1);">
+              <style>@keyframes slideInGreen{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}</style>
+              <div style="width:90px;height:90px;margin:0 auto 16px;background:linear-gradient(145deg,#4ade80,#16a34a,#15803d);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;box-shadow:0 6px 24px rgba(22,163,74,.4),0 0 0 8px rgba(74,222,128,.15),0 0 0 16px rgba(74,222,128,.07);animation:popIn .6s .2s cubic-bezier(.34,1.56,.64,1) both;">
+                <i class="fas fa-user-graduate"></i>
+              </div>
+              <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center;">
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 2px 8px rgba(22,163,74,.4);">
+                  <i class="fas fa-award"></i> Congratulations!
+                </span>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:linear-gradient(135deg,#fef9e7,#fef3c7);color:#92400e;border:1.5px solid #d4a017;border-radius:20px;font-size:11px;font-weight:700;">
+                  <i class="fas fa-graduation-cap"></i> Officially Graduated
+                </span>
+              </div>
+              <h3 style="font-size:22px;font-weight:800;color:#166534;margin:0 0 6px 0;font-family:'Playfair Display',serif;">Student has Graduated!</h3>
+              <p style="font-size:12px;color:#166534;margin:0 0 20px 0;opacity:.85;">Curriculum completed. Evaluation locked. Official record saved.</p>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;">
+                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Subjects Completed</div>
+                  <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.total_subjects||0}</div>
+                </div>
+                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Final GWA</div>
+                  <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.gwa||'—'}</div>
+                </div>
+                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Graduation Status</div>
+                  <div style="font-size:16px;font-weight:700;color:#166534;margin-top:6px;"><i class="fas fa-check-circle"></i> Graduated</div>
+                </div>
+                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Graduation Date</div>
+                  <div style="font-size:12px;font-weight:700;color:#166534;margin-top:6px;">${gradDate}</div>
+                </div>
+              </div>
+              <div style="margin-bottom:16px;padding:10px 14px;background:rgba(22,163,74,.08);border-radius:10px;font-size:11px;color:#166534;">
+                <i class="fas fa-file-pdf" style="color:#dc2626;margin-right:5px;"></i> Prospectus PDF saved to <strong>C:\\graduate\\batch ${esc(currentAY)}\\</strong>
+              </div>
+              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <button onclick="window.open('${data.pdf_url||'setup_graduate.php'}', '_blank')"
+                  style="padding:12px 22px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:50px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(22,163,74,.35);transition:all .25s;">
+                  <i class="fas fa-download"></i> Download Prospectus PDF
+                </button>
+                <button onclick="window.location.href='../../../setup_graduate.php'"
+                  style="padding:12px 22px;background:linear-gradient(135deg,#d4a017,#9a6f00);color:#fff;border:none;border-radius:50px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(212,160,23,.35);transition:all .25s;">
+                  <i class="fas fa-award"></i> View Graduate Records
+                </button>
+              </div>
+            </div>`;
         }
-        loadMentees();
-      }, 1200);
+
+        // Disable proceed/stay buttons since student is graduated
+        const proceedBtn = document.getElementById('rmProceedBtn');
+        const stayBtn = document.getElementById('rmStayBtn');
+        if(proceedBtn) { proceedBtn.disabled = true; proceedBtn.style.opacity = '0.5'; proceedBtn.style.cursor = 'not-allowed'; }
+        if(stayBtn) { stayBtn.disabled = true; stayBtn.style.opacity = '0.5'; stayBtn.style.cursor = 'not-allowed'; }
+
+        // Add graduated badge to student info
+        setTimeout(() => {
+          closeResultModal();
+          if(currentStudent) {
+            const studentCopy = {...currentStudent, status: 'graduated'};
+            closeEval();
+            setTimeout(() => openEval(studentCopy), 200);
+          }
+          loadMentees();
+        }, 1500);
+      } else {
+        toast(data.message || 'Failed to confirm graduation', 'error');
+        if(btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+        }
+      }
+    })
+    .catch(err => {
+      console.error('Error confirming graduation:', err);
+      toast('Error confirming graduation', 'error');
+      if(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+      }
     });
 }
+
+/* ═════════════════════════════════════════════════════════════
 
 /* ═══════════════════════════════════════════════════════════
    GRADES VIEW MODAL
 ═══════════════════════════════════════════════════════════ */
 function openGradesModal(year, sem) {
-  // Filter subjects for the selected year and semester —
-  // ONLY show subjects that are in the student's actual load (is_in_load OR is_credited)
-  // for that specific year + semester. This ensures the grade view reflects
-  // exactly what was enrolled, not the entire curriculum for that period.
+  // Determine which subjects to display for this year+semester view.
+  //
+  // A subject is shown when it belongs to this period AND is "officially present":
+  //   • is_in_load = true  (explicitly enrolled via the enrollment modal), OR
+  //   • is_credited = true (transfer credited), OR
+  //   • grade_rounded != null (grade already saved — this covers past finalized
+  //     semesters re-opened from "View Grades" after a page refresh, where
+  //     load_target_year/sem annotations are no longer available in memory)
+  //
+  // Cross-year additional subjects (native year_level ≠ requested year) are
+  // included when load_target_year/sem match — these are stamped by
+  // rmConfirmEnrollmentList in the current session.  After a refresh they are
+  // identified by having a saved grade but a different native year_level, which
+  // is caught by the graded-fallback above only if they're in the right semester.
+  const semTok = sem.includes('1st') ? '1st' : '2nd';
+
   const filteredSubjects = loadedSubjects.filter(s => {
-    const sYear = (s.year_level||'').trim();
-    const sSem  = (s.semester||'').toLowerCase();
-    const matchYear = sYear === year;
-    const matchSem  = sSem.includes(sem.includes('1st') ? '1st' : '2nd');
-    // Only display subjects the student is actually enrolled in (in-load or credited)
-    const inLoad = !!(s.is_in_load || s.is_credited);
-    return matchYear && matchSem && inLoad;
+    const sYear  = (s.year_level||'').trim();
+    const sSem   = (s.semester||'').toLowerCase();
+    const isGraded  = gradeMap[s.id] != null || s.grade_rounded != null;
+    const isInLoad  = !!(s.is_in_load || s.is_credited || isGraded);
+
+    // 1. Native subject of this year+semester — show if in load or graded
+    const isNative = sYear === year && sSem.includes(semTok);
+    if (isNative && isInLoad) return true;
+
+    // 2. Cross-year additional: enrolled INTO this year+semester this session
+    //    (load_target_year/sem are set by rmConfirmEnrollmentList)
+    const targetYear = s.load_target_year || '';
+    const targetSem  = (s.load_target_sem  || '').toLowerCase();
+    if (targetYear && targetSem) {
+      const isAdditional = targetYear === year && targetSem.includes(semTok);
+      if (isAdditional && !!(s.is_in_load || s.is_credited)) return true;
+    }
+
+    return false;
   });
 
   // Build student name
@@ -1849,11 +2297,12 @@ function openGradesModal(year, sem) {
    document.getElementById('gmSemesterTitle').textContent = `${year} — ${sem} · A.Y. ${currentAY}`;
    document.getElementById('gmStudentName').textContent = fullName;
    
-   // Compute totals for the badge
+   // Compute totals for the hint badge
+   // "curriculum" total = all subjects natively belonging to this year+semester
    const totalInPeriod = loadedSubjects.filter(s => {
      const sYear = (s.year_level||'').trim();
      const sSem  = (s.semester||'').toLowerCase();
-     return sYear === year && sSem.includes(sem.includes('1st') ? '1st' : '2nd');
+     return sYear === year && sSem.includes(semTok);
    }).length;
    const loadedCount = filteredSubjects.length;
    
@@ -1906,9 +2355,15 @@ function openGradesModal(year, sem) {
         else gradeClass = 'fail';
       }
 
+      // Is this a cross-year additional subject? Show its native year as a tag.
+      const isNative = (s.year_level||'').trim() === year;
+      const additionalTag = !isNative
+        ? `<span style="display:inline-block;font-size:8px;padding:1px 5px;background:#dbeafe;color:#1e40af;border-radius:4px;border:1px solid #93c5fd;margin-left:4px;white-space:nowrap;font-weight:700;">+${esc(s.year_level)}</span>`
+        : '';
+
       return `
         <tr class="gm-tr">
-          <td class="gm-td gm-code">${esc(s.subject_code)}</td>
+          <td class="gm-td gm-code">${esc(s.subject_code)}${additionalTag}</td>
           <td class="gm-td gm-subject">${esc(s.subject_name)}</td>
           <td class="gm-td gm-units">${units}</td>
           <td class="gm-td gm-grade ${gradeClass}">${gradeDisplay}</td>
@@ -2203,6 +2658,19 @@ function printGradesTable() {
    const allSelected = [...selected, ...selectedExtra];
    const units    = allSelected.reduce((a,s)=>a+(parseFloat(s.units)||0),0);
    
+   // Annotate every confirmed subject with the semester it is being loaded INTO.
+   // This is needed so openGradesModal can include cross-year additional subjects
+   // (whose native year_level differs from toYear) in the correct grades view.
+   allSelected.forEach(s => {
+     const subObj = loadedSubjects.find(ls => ls.id === s.id || ls.id === parseInt(s.id));
+     if (subObj) {
+       subObj.load_target_year = toYear;
+       subObj.load_target_sem  = toSem;
+     }
+     s.load_target_year = toYear;
+     s.load_target_sem  = toSem;
+   });
+
 // Store for promoteStudent to use when unlocking subjects after promotion
     confirmedEnrollmentSubjectIds = allSelected.map(s => s.id);
     
@@ -2522,6 +2990,27 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
     .then(res => res.json())
     .then(data => {
       if(data.success) {
+        if (data.graduated) {
+          window.evaluationLocked = true;
+          toast(data.message || 'Student graduated. Official prospectus PDF saved under C:\\graduate\\…', 'success', 5000);
+          if (data.pdf_url) {
+            try { window.open(data.pdf_url, '_blank'); } catch (e) {}
+          }
+          if (currentStudent) {
+            currentStudent.status = 'graduated';
+            currentStudent.year_level = data.year_level || '4th Year - 2nd Semester';
+          }
+          setTimeout(() => {
+            closeResultModal();
+            if (currentStudent) {
+              const studentCopy = { ...currentStudent };
+              closeEval();
+              setTimeout(() => openEval(studentCopy), 200);
+            }
+            loadMentees();
+          }, 1200);
+          return;
+        }
         if(currentStudent) {
           currentStudent.year_level = newYearLevel;
           currentStudent.semester = newSemLabel;
@@ -2532,7 +3021,7 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
         if(siStrip) {
           const yearItem = siStrip.querySelector('.si-item:nth-child(3) .si-value');
           const semItem = siStrip.querySelector('.si-item:nth-child(4) .si-value');
-          if(yearItem) yearItem.textContent = newYearLevel;
+          if(yearItem) yearItem.textContent = yearLevelOnly(newYearLevel) || toYear;
           if(semItem) semItem.textContent = newSemLabel;
         }
 
@@ -2614,6 +3103,9 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
    const gwaData = data.gwa_data||{}; const ay = data.academic_year||currentAY;
    const prereqSetsMap = data.prereq_map||{};
    const finalizedSessions = data.finalized_sessions||{};
+   window.lastCurriculumStats = data.curriculum || null;
+   window.evaluationLocked = !!data.evaluation_locked;
+   window.graduationRecord = data.graduation_record || null;
    window.advisorName = data.advisor_name || '';
    window.programHeadName = data.program_head_name || '';
    const advisorName = window.advisorName;
@@ -2671,10 +3163,17 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
           if (_isCurrentPeriod(sub) || serverInLoad) sub.is_in_load = true;
         });
       } else {
-        // Regular students: all subjects are in load (but only the current period
-        // is editable — that is enforced separately by isSubjectInCurrentPeriod
-        // and refreshLockStates, not by is_in_load alone).
-        subjects.forEach(sub => { sub.is_in_load = true; });
+        // Regular students: respect the server-persisted is_in_load flag.
+        // Subjects in the student's CURRENT standing period are always editable
+        // (they are being evaluated right now). Past semesters that have a saved
+        // enrollment list honour the server flag — this preserves the "locked"
+        // state of subjects that were never officially loaded, even after a
+        // page refresh or re-open.
+        subjects.forEach(sub => {
+          const serverInLoad = sub.is_in_load === true || sub.is_in_load === 1 || sub.is_in_load === '1';
+          // Always allow the current standing period; otherwise use server flag.
+          sub.is_in_load = _isCurrentPeriod(sub) || serverInLoad;
+        });
       }
     }
 
@@ -2714,9 +3213,15 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
   <div class="student-info-strip-print">
     <div class="sip-item"><span class="sip-label">Student:</span><span class="sip-value">${esc(full)}</span></div>
     <div class="sip-item"><span class="sip-label">Student ID:</span><span class="sip-value">${esc(s.student_id||s.student_number||'—')}</span></div>
-    <div class="sip-item"><span class="sip-label">Year Level:</span><span class="sip-value">${esc(s.year_level||'—')}</span></div>
+    <div class="sip-item"><span class="sip-label">Year Level:</span><span class="sip-value">${esc(yearLevelOnly(s.year_level)||'—')}</span></div>
     <div class="sip-item"><span class="sip-label">Semester:</span><span class="sip-value">${esc(currentSem)}</span></div>
   </div>`;
+
+  const gradLockBanner = window.evaluationLocked ? `
+  <div class="pro-grad-lock-banner" role="status">
+    <i class="fas fa-user-graduate" aria-hidden="true"></i>
+    <div><strong>Graduated</strong> — Evaluation is finalized. Grades and subject loads are read-only.</div>
+  </div>` : '';
 
    const byYear = {};
    subjects.forEach(sub => {
@@ -2783,12 +3288,13 @@ const sigHtml = `<div class="pro-sig-block">
   const studentInfoHtml = `<div class="student-info-strip">
     <div class="si-item"><span class="si-label">Student</span><span class="si-value">${esc(full)}</span></div>
     <div class="si-item"><span class="si-label">Student ID</span><span class="si-value">${esc(s.student_id||s.student_number||'—')}</span></div>
-    <div class="si-item"><span class="si-label">Year Level</span><span class="si-value">${esc(s.year_level||'1st Year')}</span></div>
+    <div class="si-item"><span class="si-label">Year Level</span><span class="si-value">${esc(yearLevelOnly(s.year_level)||'1st Year')}</span></div>
     <div class="si-item"><span class="si-label">Semester</span><span class="si-value">${esc(currentSem)}</span></div>
   </div>`;
 
   const proHtml = `<div class="pro-wrap" id="liveProspectus">
     ${hdrHtml}
+    ${gradLockBanner}
     <div class="pro-body">
       ${!subjects.length?`<div class="empty-state"><i class="fas fa-book"></i><h3>No subjects configured</h3><p>Set up the prospectus in Department Management first.</p></div>`:''}
       ${studentInfoHtml}
@@ -2815,7 +3321,23 @@ const sigHtml = `<div class="pro-sig-block">
                     ${(bridging||[]).map(sub => {
                       const raw    = gradeMap[sub.id] != null ? gradeMap[sub.id] : null;
                       const status = raw != null ? gradeStatus(roundGrade(raw)) : (sub.grade_status||'not_taken');
-                       return `<tr id="row-${sub.id}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${sub.is_in_load ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
+                      // ── Bridging lock logic (mirrors buildGradeTable) ──────────────
+                      // A bridging subject is editable only when it has been officially
+                      // confirmed in the enrollment list (is_in_load = true).  Without
+                      // this check the row was always rendered as editable, so after a
+                      // page refresh subjects that were never loaded could be graded.
+                      const bIsInLoad  = !!sub.is_in_load;
+                      const bIsCredited = !!sub.is_credited;
+                      const bPrereqPi   = prereqUnlockMap ? (prereqUnlockMap[sub.id]||{unlocked:true}) : {unlocked:true};
+                      const bPrereqLocked = !bPrereqPi.unlocked;
+                      const bManuallyUnlocked = manuallyUnlockedSubjects.has(parseInt(sub.id)) || manuallyUnlockedSubjects.has(sub.id);
+                      let bShouldDisable = (window.evaluationLocked === true) || bPrereqLocked || bIsCredited || !bIsInLoad;
+                      if (bManuallyUnlocked && !bIsCredited) bShouldDisable = false;
+                      const bRowClass = bShouldDisable ? (bIsCredited ? 'row-credited' : 'row-locked') : '';
+                      const bLockDesc = !bIsInLoad ? 'Not in student load' : (bPrereqLocked ? 'Prerequisite required' : '');
+                      const bBadgeIcon = bPrereqLocked ? 'fa-lock' : 'fa-info-circle';
+                      const bBadgeStyle = !bIsInLoad ? 'background:rgba(128,128,128,.15);border-color:#999;color:#666;' : '';
+                       return `<tr id="row-${sub.id}" class="${bRowClass}" data-year-level="${esc(sub.year_level)}" data-semester="${esc(sub.semester)}" data-in-load="${bIsInLoad ? '1' : '0'}" data-units="${parseFloat(sub.units)||0}">
                        <td>
 <div class="grade-cell-wrap">
                             <div class="grade-row">
@@ -2824,11 +3346,14 @@ const sigHtml = `<div class="pro-sig-block">
                                 min="1" max="5" step="0.01" placeholder="—"
                                 oninput="onGradeInput(${sub.id}, event)"
                                 onkeydown="onGradeKeydown(${sub.id}, event); if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}');}"
-                                onchange="onGradeChange(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')">
+                                onchange="onGradeChange(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')"
+                                ${bShouldDisable ? `disabled title="${bLockDesc||'Locked'}"` : 'title="1.00 to 5.00 · Enter to save"'}>
                               <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
-                              <button class="save-btn" id="sbtn-${sub.id}" onclick="saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')" title="Save grade"><i class="fas fa-save"></i></button>
+                              <button class="save-btn" id="sbtn-${sub.id}" onclick="saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')" title="Save grade" ${bShouldDisable ? 'disabled' : ''}><i class="fas fa-save"></i></button>
+                              ${(bShouldDisable && !bIsCredited) ? `<button class="edit-btn" id="ebtn-${sub.id}" onclick="requestEditGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')" title="Edit this grade (requires password)"><i class="fas fa-edit"></i></button>` : ''}
                             </div>
                             <div class="grade-hint" id="gl-${sub.id}">${sub.grade_label||''}</div>
+                            ${bShouldDisable ? `<span class="lock-badge" style="${bBadgeStyle}"><i class="fas ${bBadgeIcon}" style="font-size:7px;"></i>${bLockDesc||'Locked'}</span>` : ''}
                           </div>
                        </td>
                        <td class="pro-td-status"><span class="${pillClass(status)}" id="pill-${sub.id}">${statusText(status)}</span></td>
@@ -2880,29 +3405,37 @@ const sigHtml = `<div class="pro-sig-block">
      const prereqCode = (sub.display_prerequisite||sub.prerequisite||'').trim();
      const pi = prereqUnlockMap ? (prereqUnlockMap[sub.id]||{unlocked:true}) : {unlocked:true};
      const isPrereqLocked = !pi.unlocked;
-     const isFinalizedLocked = isFinalized;
      const isInLoad = !!sub.is_in_load;
      const isCredited = !!sub.is_credited;
      const isInCurrentPeriod = isSubjectInCurrentPeriod(sub);
      const isManuallyUnlocked = manuallyUnlockedSubjects.has(parseInt(sub.id)) || manuallyUnlockedSubjects.has(sub.id);
 
+     // A subject is "finalization-locked" when the semester table it lives in is
+     // finalized — BUT only if it is NOT an additionally-loaded cross-year subject.
+     // Cross-year subjects (e.g. a 1st Year subject re-loaded into a 2nd Year
+     // semester as an "Additional Subject") have is_in_load = true but their native
+     // year_level doesn't match the current student standing.  Their native semester
+     // table may already be finalized, yet they must remain editable in their newly
+     // loaded period.  We detect this by checking whether the subject's own semester
+     // key is different from the semester table that called buildGradeTable.  In
+     // practice the simplest signal is: if isFinalized is true but is_in_load is
+     // true AND the subject is NOT in its native current period, it is a cross-year
+     // additional — skip the finalization lock so grade input stays open.
+     const isCrossYearAdditional = isFinalized && isInLoad && !isInCurrentPeriod && !isCredited;
+     const isFinalizedLocked = isFinalized && !isCrossYearAdditional;
+
      // Determine if input should be disabled.
      // A subject is editable when ALL of the following hold:
-     //   1. Prerequisites met
-     //   2. Semester not finalized
+     //   1. Prerequisites met (pi.unlocked)
+     //   2. Semester not finalization-locked (respects cross-year additional exception)
      //   3. Not a credited transfer subject
      //   4. Is in the student's confirmed load (is_in_load = true)
-     //      *** is_in_load is set by renderProspectus from confirmedEnrollmentSubjectIds
-     //          after promotion, so cross-year confirmed subjects are already true here
-     //          and do NOT need a separate isInCurrentPeriod exception.
-     //   5. Belongs to the student's current standing period OR is a confirmed
-     //      cross-year subject (i.e. is_in_load already handles this)
-     //
-     // The old rule "!isInCurrentPeriod => disable" is removed. isInCurrentPeriod
-     // is now only used for lock-badge display, not as an edit gate — the gate is
-     // entirely is_in_load. This prevents confirmed cross-year subjects from being
-     // locked out after promotion.
-     let shouldDisable = isPrereqLocked || isFinalizedLocked || isCredited || !isInLoad;
+     //      is_in_load is the single authoritative gate:
+     //      • For the current period it is always true (set in renderProspectus).
+     //      • For past periods it reflects the server-persisted enrollment list —
+     //        subjects that were never officially loaded remain false and stay locked
+     //        even after a page refresh or re-open.
+     let shouldDisable = (window.evaluationLocked === true) || isPrereqLocked || isFinalizedLocked || isCredited || !isInLoad;
      // Manual per-row unlock via password bypasses all locks except credited
      if (isManuallyUnlocked && !isCredited) shouldDisable = false;
 
@@ -2927,7 +3460,9 @@ const sigHtml = `<div class="pro-sig-block">
         badgeStyle = 'display:none;';
         badgeIcon = 'fa-check-circle';
       } else if(!isInLoad) {
-        // For non-IBM, applyRestrictions will add its own badge; hide ours to avoid duplication
+        // Subject not in the student's confirmed enrollment list.
+        // For non-IBM, applyRestrictions will add its own badge; hide ours to avoid duplication.
+        // For regular and transfer students, show a clear "Not in student load" badge.
         if (currentStudentType === 'non_ibm') {
           lockDesc = '';
           badgeStyle = 'display:none;';
@@ -2950,7 +3485,9 @@ const sigHtml = `<div class="pro-sig-block">
        set.major_id == currentStudent?.major_id && parseInt(set.target_subject_id) === parseInt(sub.id)
      );
      let rowClass = '';
-     if (isFinalized) {
+     if (isFinalizedLocked) {
+       // Only apply finalized styling when the lock actually applies —
+       // cross-year additionally-loaded subjects are exempt (isFinalizedLocked is false for them).
        rowClass = 'row-finalized';
      } else if (shouldDisable) {
        rowClass = isCredited ? 'row-credited' : 'row-locked';
@@ -3200,6 +3737,13 @@ function refreshLockStates() {
     const _curTok = _std.sem === 1 ? '1st' : '2nd';
     const _subInCurrentPeriod = (sub.year_level||'').trim() === _curY &&
                                 (sub.semester||'').toLowerCase().includes(_curTok);
+
+    // Cross-year additional subjects: their native semester table may be finalized,
+    // but because they were explicitly loaded into a different period's enrollment
+    // list they must remain editable.  Detect the same way as buildGradeTable:
+    // finalized native key + is_in_load true + not in its native current period.
+    const isCrossYearAdditional = isFinalized && !!sub.is_in_load && !_subInCurrentPeriod && !sub.is_credited;
+    const effectivelyFinalized  = isFinalized && !isCrossYearAdditional;
     const isNonIBMRestricted = currentStudentType === 'non_ibm' &&
                                typeof NonIBMEvaluation !== 'undefined' &&
                                !NonIBMEvaluation.isSubjectAllowed(sub.id) &&
@@ -3226,17 +3770,18 @@ function refreshLockStates() {
       row.classList.add('row-locked');
       if(inp) { inp.disabled = true; inp.title = 'Not in subject load — Non-IBM restriction'; }
       if(sbtn) sbtn.disabled = true;
-    } else if(pi.unlocked && !isFinalized && sub.is_in_load &&
+    } else if(pi.unlocked && !effectivelyFinalized && sub.is_in_load &&
               (_subInCurrentPeriod || !_subInCurrentPeriod)) {
       // Unlock any row where:
       //  - Prerequisites are met (pi.unlocked)
-      //  - The semester is not finalized
+      //  - The semester is not effectively finalized (cross-year additional subjects
+      //    are exempt — their native semester may be finalized but they were
+      //    re-loaded into a newer period, so editing must remain open)
       //  - The subject is in the student's confirmed load (is_in_load = true)
-      // This covers both the current-period subjects and any cross-year subjects
-      // the instructor explicitly selected in the enrollment modal.
-      // is_in_load is the single source of truth; it is set by renderProspectus
-      // using the confirmedEnrollmentSubjectIds list after promotion, or by the
-      // per-student-type rules on a normal open.
+      // is_in_load is the single source of truth. For the current period it is
+      // always true. For past periods it reflects the server-persisted enrollment
+      // list — subjects that were never officially loaded stay false (locked) even
+      // after a page refresh or re-open.
       row.classList.remove('row-locked');
       if(inp) { inp.disabled = false; inp.title = '1.00 to 5.00 · Enter to save'; }
       if(sbtn) sbtn.disabled = false;
@@ -3856,11 +4401,18 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
 </div>
   </div>
 
-  <!-- Floating Evaluate Button - Always visible on main page -->
-  <button class="fab-eval-btn" id="fabEvaluateMain" title="Quick Evaluate Current Student" onclick="quickEvaluate()"><i class="fas fa-bolt"></i></button>
+  <!-- Floating Evaluation Button - Premium Gold Design -->
+  <button class="fab-eval-btn" id="fabEvaluateMain" title="Quick Evaluate Current Student" onclick="quickEvaluate()">
+    <i class="fas fa-clipboard-check"></i>
+    <span class="fab-eval-label">Evaluation</span>
+  </button>
 
   <script>
   function quickEvaluate() {
+    if (window.evaluationLocked) {
+      toast('This student has graduated. Evaluation is locked.', 'error', 4500);
+      return;
+    }
     const overlay = document.getElementById('evalOverlay');
     if (overlay && overlay.classList.contains('open')) {
       autoDetectAndEvaluate();

@@ -28,6 +28,7 @@ function jsonError($message, $code = 400) {
 
 require_once __DIR__ . '/session_security.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/graduation_support.php';
 
 if (!$pdo) {
     jsonError('Database connection failed');
@@ -364,7 +365,7 @@ if ($action === 'get_mentees') {
             SELECT DISTINCT
                 s.id, s.first_name, s.middle_name, s.last_name, s.suffix,
                 s.email, s.student_id AS student_number, s.year_level,
-                s.student_type,
+                s.student_type, s.status,
                 s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
                 m.display_name AS major_name, m.id AS major_id,
                 (
@@ -381,19 +382,6 @@ if ($action === 'get_mentees') {
             JOIN students s   ON me.student_id = s.id
             LEFT JOIN majors m ON s.major_id   = m.id
             WHERE me.mentor_id = :iid
-              AND (
-                  s.student_type IS NULL
-                  OR s.student_type = ''
-                  OR (
-                      SELECT COUNT(*) 
-                      FROM student_grades sg2
-                      WHERE sg2.student_id = s.id AND sg2.graded_by = :iid
-                  ) < (
-                      SELECT COUNT(*) 
-                      FROM major_subjects ms2 
-                      WHERE ms2.major_id = s.major_id
-                  )
-              )
             ORDER BY s.last_name, s.first_name
         ");
         $stmt->execute([':iid' => $instructor_id]);
@@ -470,6 +458,11 @@ if ($action === 'get_student_evaluation') {
         if (!$student) { echo json_encode(['success' => false, 'message' => 'Student not found']); exit; }
 
         $major_id = intval($student['major_id']);
+
+        ensure_graduation_schema($pdo);
+        $curriculum = student_curriculum_completion($pdo, $student_id, $major_id);
+        $graduationRecord = graduation_fetch_record($pdo, $student_id);
+        $evaluationLocked = student_graduation_locked($pdo, $student_id);
 
         // ── Prospectus template (EXACT sort_order from department page) ──
         $stmt2 = $pdo->prepare("
@@ -621,6 +614,9 @@ if ($action === 'get_student_evaluation') {
             'finalized_sessions' => $finalizedSessions,
             'advisor_name'     => $advisorName,
             'program_head_name' => $programHeadName,
+            'curriculum'       => $curriculum,
+            'graduation_record' => $graduationRecord,
+            'evaluation_locked' => $evaluationLocked,
         ]);
 
     } catch (PDOException $e) {
@@ -643,6 +639,11 @@ if ($action === 'get_student_evaluation') {
       
       if (!$student_id || !$major_id || !is_array($subject_ids)) {
           echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+          exit;
+      }
+
+      if (student_graduation_locked($pdo, $student_id)) {
+          echo json_encode(['success' => false, 'message' => 'This student has graduated. Subject load cannot be changed.']);
           exit;
       }
       
@@ -688,7 +689,12 @@ if ($action === 'save_grade') {
     $academic_year = $_POST['academic_year']      ?? '2025-2026';
     $raw_grade     = $_POST['grade']              ?? 0;
     $remarks       = trim($_POST['remarks']       ?? '');
-    
+
+    if (student_graduation_locked($pdo, $student_id)) {
+        echo json_encode(['success' => false, 'message' => 'This student has graduated. Grades are locked.']);
+        exit;
+    }
+
     $raw = floatval($raw_grade);
     if ($raw < 1.00 || $raw > 5.00) {
         echo json_encode(['success' => false, 'message' => 'Grade must be between 1.00 and 5.00']);
@@ -984,6 +990,10 @@ if ($action === 'finalize_session') {
     $notes         = trim($_POST['notes']           ?? '');
 
     try {
+        if (student_graduation_locked($pdo, $student_id)) {
+            echo json_encode(['success' => false, 'message' => 'Graduated students cannot finalize new sessions.']);
+            exit;
+        }
         // Compute GWA from grades for this specific year_level and semester
         $stmt = $pdo->prepare("
             SELECT sg.grade_rounded, s.units
@@ -1081,9 +1091,12 @@ if ($action === 'finalize_session') {
 // ═══════════════════════════════════════════════════════════════════════════
 
 if ($action === 'promote_student') {
-    $student_id    = intval($_POST['student_id']    ?? 0);
-    $to_year     = trim($_POST['to_year']     ?? '');
-    $to_sem     = trim($_POST['to_sem']     ?? '');
+    $student_id = intval($_POST['student_id'] ?? 0);
+    $to_year = trim($_POST['to_year'] ?? '');
+    $to_sem = trim($_POST['to_sem'] ?? '');
+    $from_year = trim($_POST['from_year'] ?? '');
+    $from_sem = trim($_POST['from_sem'] ?? '');
+    $academic_year = trim($_POST['academic_year'] ?? '');
 
     if (!$student_id || !$to_year || !$to_sem) {
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
@@ -1091,19 +1104,95 @@ if ($action === 'promote_student') {
     }
 
     try {
-        // Update student's year_level in the database
+        if (student_graduation_locked($pdo, $student_id)) {
+            echo json_encode(['success' => false, 'message' => 'This student has graduated and cannot be promoted.']);
+            exit;
+        }
+
+        $fromFourthSecond = stripos($from_year, '4th') !== false && stripos($from_sem, '2nd') !== false;
+        if ($fromFourthSecond && $academic_year !== '') {
+            $st = $pdo->prepare('
+                SELECT s.major_id
+                FROM students s
+                INNER JOIN mentees me ON me.student_id = s.id AND me.mentor_id = ?
+                WHERE s.id = ?
+                LIMIT 1
+            ');
+            $st->execute([$instructor_id, $student_id]);
+            $menteeRow = $st->fetch(PDO::FETCH_ASSOC);
+            $major_id_for_grad = (int) ($menteeRow['major_id'] ?? 0);
+            if ($major_id_for_grad > 0) {
+                $curriculum = student_curriculum_completion($pdo, $student_id, $major_id_for_grad);
+                if (!empty($curriculum['complete'])) {
+                    $gradRes = graduation_complete_workflow(
+                        $pdo,
+                        $instructor_id,
+                        $student_id,
+                        $major_id_for_grad,
+                        $academic_year,
+                        $from_year,
+                        $from_sem
+                    );
+                    if (!empty($gradRes['success'])) {
+                        echo json_encode(array_merge($gradRes, [
+                            'graduated' => true,
+                            'year_level' => '4th Year - 2nd Semester',
+                        ]));
+                    } else {
+                        echo json_encode($gradRes);
+                    }
+                    exit;
+                }
+            }
+        }
+
         $new_year_level = "{$to_year} - {$to_sem}";
-        $stmt = $pdo->prepare("UPDATE students SET year_level = ?, updated_at = NOW() WHERE id = ?");
+        $stmt = $pdo->prepare('UPDATE students SET year_level = ?, updated_at = NOW() WHERE id = ?');
         $stmt->execute([$new_year_level, $student_id]);
 
         echo json_encode([
-            'success'     => true,
-            'message'     => 'Student promoted to ' . htmlspecialchars($new_year_level),
-            'year_level'   => $new_year_level,
+            'success' => true,
+            'message' => 'Student promoted to ' . htmlspecialchars($new_year_level),
+            'year_level' => $new_year_level,
         ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
+    exit;
+}
+
+// ACTION: confirm_graduation — delegates to graduation_complete_workflow (PDF + DB)
+if ($action === 'confirm_graduation') {
+    $student_id = intval($_POST['student_id'] ?? 0);
+    $major_id_post = intval($_POST['major_id'] ?? 0);
+    $academic_year = trim((string) ($_POST['academic_year'] ?? '2025-2026'));
+    $year_level = trim((string) ($_POST['year_level'] ?? ''));
+    $semester = trim((string) ($_POST['semester'] ?? ''));
+
+    if (!$student_id || !$major_id_post || !$year_level || !$semester) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+
+    if (stripos($year_level, '4th') === false || stripos($semester, '2nd') === false) {
+        echo json_encode(['success' => false, 'message' => 'Graduation can only be confirmed from 4th Year — 2nd Semester standing.']);
+        exit;
+    }
+
+    $result = graduation_complete_workflow(
+        $pdo,
+        $instructor_id,
+        $student_id,
+        $major_id_post,
+        $academic_year,
+        $year_level,
+        $semester
+    );
+    if (!empty($result['success'])) {
+        $result['message'] = 'Graduation confirmed successfully.';
+        $result['graduated'] = true;
+    }
+    echo json_encode($result);
     exit;
 }
 
