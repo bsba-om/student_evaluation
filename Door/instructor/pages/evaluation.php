@@ -273,7 +273,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
     <a href="../dashboard.php" class="sidebar-nav-item"><i class="fas fa-chart-pie"></i><span>Overview</span></a>
     <a href="students.php" class="sidebar-nav-item"><i class="fas fa-user-graduate"></i><span>Students mentees</span></a>
     <a href="evaluation.php" class="sidebar-nav-item active"><i class="fas fa-comment-dots"></i><span>Evaluation</span></a>
-    <a href="../../../setup_graduate.php" class="sidebar-nav-item"><i class="fas fa-award"></i><span>Graduates</span></a>
+    <a href="setup_graduate.php" class="sidebar-nav-item"><i class="fas fa-award"></i><span>Graduates</span></a>
     <a href="reports.php" class="sidebar-nav-item"><i class="fas fa-file-alt"></i><span>Reports</span></a>
     <a href="profile.php" class="sidebar-nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
   </nav>
@@ -2195,14 +2195,9 @@ function confirmGraduation(yearLabel, semLabel) {
                 <i class="fas fa-file-pdf" style="color:#dc2626;margin-right:5px;"></i> Prospectus PDF saved to <strong>C:\\graduate\\batch ${esc(currentAY)}\\</strong>
               </div>
               <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <button onclick="window.open('${data.pdf_url||'setup_graduate.php'}', '_blank')"
-                  style="padding:12px 22px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;border-radius:50px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(22,163,74,.35);transition:all .25s;">
-                  <i class="fas fa-download"></i> Download Prospectus PDF
-                </button>
-                <button onclick="window.location.href='../../../setup_graduate.php'"
-                  style="padding:12px 22px;background:linear-gradient(135deg,#d4a017,#9a6f00);color:#fff;border:none;border-radius:50px;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;box-shadow:0 4px 14px rgba(212,160,23,.35);transition:all .25s;">
-                  <i class="fas fa-award"></i> View Graduate Records
-                </button>
+                <div style="padding:12px 24px;background:rgba(22,163,74,.12);border:1.5px solid #10b981;border-radius:50px;font-size:13px;font-weight:700;color:#166534;display:inline-flex;align-items:center;gap:9px;">
+                  <i class="fas fa-spinner fa-spin"></i> Opening Graduate Records…
+                </div>
               </div>
             </div>`;
         }
@@ -2213,16 +2208,16 @@ function confirmGraduation(yearLabel, semLabel) {
         if(proceedBtn) { proceedBtn.disabled = true; proceedBtn.style.opacity = '0.5'; proceedBtn.style.cursor = 'not-allowed'; }
         if(stayBtn) { stayBtn.disabled = true; stayBtn.style.opacity = '0.5'; stayBtn.style.cursor = 'not-allowed'; }
 
-        // Add graduated badge to student info
+        // Redirect to setup_graduate.php — pass student data so the list shows this graduate immediately
+        const _sid   = encodeURIComponent(currentStudent ? currentStudent.id : '');
+        const _batch = encodeURIComponent(currentAY || '');
+        const _pdfUrl = encodeURIComponent(data.pdf_url || '');
         setTimeout(() => {
-          closeResultModal();
-          if(currentStudent) {
-            const studentCopy = {...currentStudent, status: 'graduated'};
-            closeEval();
-            setTimeout(() => openEval(studentCopy), 200);
-          }
-          loadMentees();
-        }, 1500);
+          window.location.href =
+            'setup_graduate.php?from_eval=1&student_id=' + _sid +
+            '&batch=' + _batch +
+            '&pdf_url=' + _pdfUrl;
+        }, 1600);
       } else {
         toast(data.message || 'Failed to confirm graduation', 'error');
         if(btn) {

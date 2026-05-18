@@ -98,7 +98,7 @@ function is_account_approved($user_id, $role) {
  * Get the current user's profile data
  * Useful for displaying user info in the UI
  */
-function get_current_user() {
+function get_current_user_info() {
     if (isset($_SESSION['user_id'])) {
         require_once __DIR__ . '/config.php';
         $stmt = $pdo->prepare("SELECT first_name, last_name, email FROM instructors WHERE id = ?");
