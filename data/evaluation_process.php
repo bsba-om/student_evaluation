@@ -420,7 +420,18 @@ if ($action === 'get_mentees') {
             ORDER BY s.last_name, s.first_name
         ");
         $stmt->execute([':iid' => $instructor_id]);
-        echo json_encode(['success' => true, 'mentees' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+        $allMentees = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Split mentees into graduated and non-graduated
+        $graduatedMentees = array_filter($allMentees, fn($m) => $m['status'] === 'graduated');
+        $nonGraduatedMentees = array_filter($allMentees, fn($m) => $m['status'] !== 'graduated');
+        
+        echo json_encode([
+            'success' => true, 
+            'mentees' => $allMentees, // Keep for backward compatibility
+            'graduated_mentees' => $graduatedMentees,
+            'non_graduated_mentees' => $nonGraduatedMentees
+        ]);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }
@@ -566,6 +577,9 @@ if ($action === 'get_student_evaluation') {
             $subj['is_in_load']    = isset($loadSubjects[$subj['id']]);
             $subj['load_year']     = $loadSubjects[$subj['id']]['year_level'] ?? null;
             $subj['load_semester'] = $loadSubjects[$subj['id']]['semester'] ?? null;
+            // Check if this grade is from previous school (credited transfer subject)
+            $subj['is_credited']   = ($g && ($g['year_level'] === 'Previous School' || 
+                                       strpos($g['remarks'] ?? '', 'Credited from previous institution') !== false));
             $merged[] = $subj;
         }
 
@@ -1120,8 +1134,75 @@ if ($action === 'finalize_session') {
      exit;
  }
 
- // ═══════════════════════════════════════════════════════════════════════════
- //  ACTION: promote_student
+// ═══════════════════════════════════════════════════════════════════════════
+  //  ACTION: save_transfer_evaluation
+  //  Saves transfer student's previous subjects and current load to database
+  // ═══════════════════════════════════════════════════════════════════════════
+
+if ($action === 'save_transfer_evaluation') {
+    $student_id = intval($_POST['student_id'] ?? 0);
+    $major_id = intval($_POST['major_id'] ?? 0);
+    $academic_year = $_POST['academic_year'] ?? '2025-2026';
+    $previous_subjects = json_decode($_POST['previous_subjects'] ?? '{}', true);
+    $current_load = json_decode($_POST['current_load'] ?? '{}', true);
+
+    if (!$student_id || !$major_id) {
+        echo json_encode(['success' => false, 'message' => 'Missing required fields']);
+        exit;
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        // Save previous subjects as credited grades (grade_rounded for subjects passed at previous school)
+        $stmt = $pdo->prepare("
+            INSERT INTO student_grades
+                (student_id, subject_id, major_id, grade, grade_rounded, status,
+                 semester, year_level, academic_year, graded_by, graded_at, remarks)
+            VALUES (?,?,?,?,?,?,?,?,?,?,NOW(),?)
+            ON DUPLICATE KEY UPDATE
+                grade = VALUES(grade),
+                grade_rounded = VALUES(grade_rounded),
+                status = VALUES(status),
+                graded_at = NOW()
+        ");
+
+        foreach ($previous_subjects as $sid => $ps) {
+            if (!isset($ps['grade']) || !isset($ps['validated'])) continue;
+            $grade = floatval($ps['grade']);
+            if ($grade > 3.00) continue; // Only credit passing grades
+            $rounded = round_grade($grade);
+            $status = grade_status($rounded);
+            $stmt->execute([
+                $student_id, $sid, $major_id, $grade, $rounded, $status,
+                'Previous School', 'Previous School', $academic_year, $instructor_id,
+                'Credited from previous institution'
+            ]);
+        }
+
+        // Save current load to student_subject_load
+        $stmtLoad = $pdo->prepare("
+            INSERT INTO student_subject_load (student_id, major_id, subject_id, academic_year)
+            VALUES (?,?,?,?)
+            ON DUPLICATE KEY UPDATE subject_id = VALUES(subject_id)
+        ");
+        foreach ($current_load as $sid => $val) {
+            if ($val) {
+                $stmtLoad->execute([$student_id, $major_id, $sid, $academic_year]);
+            }
+        }
+
+        $pdo->commit();
+        echo json_encode(['success' => true, 'message' => 'Transfer evaluation saved']);
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+  //  ACTION: promote_student
 //  Updates the student's year_level when promoted to next year/semester
 // ═══════════════════════════════════════════════════════════════════════════
 

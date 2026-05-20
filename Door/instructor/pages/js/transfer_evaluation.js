@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════
-   TRANSFER EVALUATION MODULE
-   Handles the Transfer Student workflow:
-   1. Ask for previously completed subjects from previous school
-   2. Validate against the prospectus template
-   3. Ask for current subject load
-   4. Use both previous + current records for evaluation
-═══════════════════════════════════════════════════════════ */
+    TRANSFER EVALUATION MODULE
+    Handles the Transfer Student workflow:
+    1. Ask for previously completed subjects from previous school
+    2. Validate against the prospectus template
+    3. Ask for current subject load
+    4. Use both previous + current records for evaluation
+    ═══════════════════════════════════════════════════════════ */
 
 /*  Pre-declare a writable global so inline oninput/onkeydown/onchange
     attribute strings (which are always evaluated in the global scope) can
@@ -655,14 +655,34 @@ const TransferEvaluation = (() => {
     });
   }
 
-  /* ── Complete ── */
-  function complete() {
-    _save();
-    _removeModal();
-    if (typeof _onComplete === 'function') {
-      _onComplete(_previousSubjects, _currentLoad);
-    }
-  }
+/* ── Complete ── */
+   async function complete() {
+     _save();
+
+     // Save to server first, then continue
+     try {
+       const fd = new FormData();
+       fd.append('action', 'save_transfer_evaluation');
+       fd.append('student_id', _student.id);
+       fd.append('major_id', _student.major_id || 0);
+       fd.append('academic_year', window.currentAY || '2025-2026');
+       fd.append('previous_subjects', JSON.stringify(_previousSubjects));
+       fd.append('current_load', JSON.stringify(_currentLoad));
+
+       const response = await fetch(EVAL_PROC, { method: 'POST', body: fd });
+       const data = await response.json();
+       if (!data.success) {
+         console.warn('Failed to save transfer evaluation:', data.message);
+       }
+     } catch (err) {
+       console.warn('Error saving transfer evaluation:', err);
+     }
+
+     _removeModal();
+     if (typeof _onComplete === 'function') {
+       _onComplete(_previousSubjects, _currentLoad);
+     }
+   }
 
   /* ── Close ── */
   function close() {

@@ -615,6 +615,9 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
   <span id="toastMsg"></span>
 </div>
 
+<script>
+const EVAL_PROC = new URL('../../../data/evaluation_process.php', location.href).href;
+</script>
 <script src="../../../function/dashboard.js"></script>
 <script src="js/student_type_handler.js"></script>
 <script src="js/evaluation_common.js"></script>
@@ -623,8 +626,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 <script>
 /* ═══════════════════════════════════════════════════════════
    CONSTANTS
-═══════════════════════════════════════════════════════════ */
-const EVAL_PROC = new URL('../../../data/evaluation_process.php', location.href).href;
+══════════════════════════════════════════════════════════ */
 const VALID_GRADES = [1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,4.00,5.00];
 const GRADE_LABELS = {
   1.00:'Excellent',1.25:'Very Good',1.50:'Very Good',1.75:'Good',
@@ -4820,32 +4822,14 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
       updateGraduationProgress(10, 1, 'Checking graduation records…');
 
       setTimeout(() => {
+        // Jump straight to regenerating the PDF — the file may have been deleted from
+        // disk by the instructor. download_graduation_pdf.php would return 404; skip the
+        // redundant HEAD check and go straight to rebuild so the browser console shows
+        // no spurious ERR_ABORTED 404 error.
         updateGraduationProgress(35, 2, 'Locating saved prospectus…');
-
-        if (pdfUrl) {
-          fetch(pdfUrl, { method: 'HEAD', redirect: 'follow' })
-            .then(resp => {
-              setTimeout(() => {
-                if (resp.ok && resp.status === 200) {
-                  updateGraduationProgress(68, 3, 'Re-opening existing PDF…');
-                  setTimeout(() => {
-                    updateGraduationProgress(88, 4, 'PDF ready — opening in new tab…');
-                    setTimeout(() => {
-                      hideGraduationProgressModal();
-                      window.open(pdfUrl, '_blank');
-                    }, 900);
-                  }, 700);
-                } else {
-                  _graduateRegenerateFlow(studentId);
-                }
-              }, 0);
-            })
-            .catch(() => {
-              setTimeout(() => { _graduateRegenerateFlow(studentId); }, 0);
-            });
-        } else {
-          setTimeout(() => { _graduateRegenerateFlow(studentId); }, 200);
-        }
+        updateGraduationProgress(55, 3, 'Record not found or file was deleted — regenerating prospectus…');
+        updateGraduationProgress(75, 4, 'Re-building official document and saving to disk…');
+        _graduateRegenerateFlow(studentId);
       }, 800);
 
       return;
@@ -4872,9 +4856,25 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
       fetch(EVAL_PROC, {method:'POST', body:fd2, credentials:'same-origin', headers:{'Accept':'application/json'}})
         .then(async r => {
           const text2 = await r.text();
-          if (!r.ok) throw new Error('Server HTTP ' + r.status + ': ' + text2);
+          // Try JSON first; only treat non-2xx as error after parsing so callers
+          // can distinguish "server fatal" (500 with JSON error detail) from
+          // "expected JSON failure" (e.g. 404 not-found with structured message).
+          let parsed = null;
+          try { parsed = JSON.parse(text2); } catch (_) { parsed = null; }
+
+          if (parsed !== null) {
+            // The server returned JSON on all non-2xx statuses (graceful shutdown handler).
+            // Re-throw so the caller sees it as a rejection — the error message carries
+            // the structured explanation already built into the string.
+            if (!r.ok) throw new Error('Server HTTP ' + r.status + ': ' + (parsed.message || text2));
+            if (parsed.success === false) throw new Error(parsed.message || 'Server reported failure');
+            return parsed;
+          }
+
+          // Not JSON — could be HTML (PHP start-up error) or something unexpected.
+          if (!r.ok) throw new Error('Server HTTP ' + r.status + ': ' + text2.slice(0, 300));
           if (/^\s*</.test(text2)) throw new Error('Server returned HTML (check PHP errors): ' + text2.slice(0, 300));
-          try { return JSON.parse(text2); } catch (e) { throw new Error('Invalid JSON: ' + text2.slice(0, 300)); }
+          throw new Error('Invalid response from server: ' + text2.slice(0, 300));
         })
         .then(data => {
           // restore label
