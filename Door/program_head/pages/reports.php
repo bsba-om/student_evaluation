@@ -170,6 +170,65 @@ if (!$show_role_modal) {
             $rating_dist = [0, 0, 0, 0, 0];
         }
     }
+
+    // Monthly evaluation changes (current month vs previous month)
+    $current_month = date('Y-m');
+    $last_month = date('Y-m', strtotime('-1 month'));
+    $current_month_evals = 0;
+    $last_month_evals = 0;
+    $current_month_avg_rating = 0;
+    $last_month_avg_rating = 0;
+    $evaluation_month_change = 0;
+    $rating_month_change = 0.0;
+    if ($has_evaluations) {
+        try {
+            $stmt = $pdo->prepare("SELECT DATE_FORMAT(evaluation_date, '%Y-%m') AS month_key, COUNT(*) AS cnt, COALESCE(AVG(rating),0) AS avg_rating FROM evaluations WHERE DATE_FORMAT(evaluation_date, '%Y-%m') IN (:current_month, :last_month) GROUP BY month_key");
+            $stmt->execute([':current_month' => $current_month, ':last_month' => $last_month]);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                if ($row['month_key'] === $current_month) {
+                    $current_month_evals = intval($row['cnt']);
+                    $current_month_avg_rating = round(floatval($row['avg_rating']), 1);
+                } elseif ($row['month_key'] === $last_month) {
+                    $last_month_evals = intval($row['cnt']);
+                    $last_month_avg_rating = round(floatval($row['avg_rating']), 1);
+                }
+            }
+            $evaluation_month_change = $current_month_evals - $last_month_evals;
+            $rating_month_change = round($current_month_avg_rating - $last_month_avg_rating, 1);
+        } catch (PDOException $e) {
+            $current_month_evals = $last_month_evals = 0;
+            $current_month_avg_rating = $last_month_avg_rating = 0;
+            $evaluation_month_change = 0;
+            $rating_month_change = 0.0;
+        }
+    }
+
+    // Student progress summary from active courses
+    $student_completion_avg = 0;
+    if ($has_courses) {
+        try {
+            $stmt = $pdo->query("SELECT AVG(CASE WHEN student_count > 0 THEN (evaluated_count / student_count) * 100 ELSE 0 END) AS avg_completion FROM courses WHERE status = 'active'");
+            $result = $stmt->fetch();
+            $student_completion_avg = round($result['avg_completion'] ?? 0);
+        } catch (PDOException $e) {
+            $student_completion_avg = 0;
+        }
+    }
+
+    // Upcoming calendar events count
+    $upcoming_event_count = 0;
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'calendar_events'");
+        if ($stmt->rowCount() > 0) {
+            $today = date('Y-m-d');
+            $stmt = $pdo->prepare("SELECT COUNT(DISTINCT id) AS cnt FROM calendar_events WHERE event_date >= :today");
+            $stmt->execute([':today' => $today]);
+            $result = $stmt->fetch();
+            $upcoming_event_count = intval($result['cnt'] ?? 0);
+        }
+    } catch (PDOException $e) {
+        $upcoming_event_count = 0;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -183,7 +242,6 @@ if (!$show_role_modal) {
     <link rel="stylesheet" href="../style/dashboard.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --gold: #B8860B; --gold-light: #D4A843; --gold-dark: #8B6914; --cream: #f7f5ef; --cream-light: #f0ebe3; --white: #ffffff; --dark-text: #1f1f1f; --dark-text-2: #4a5568; --light-text: #666666; --border-light: #d4cfc5; --border-soft: #e8e4da; --success: #059669; --success-light: #c6f6d5; --danger: #dc2626; --danger-light: #fee2e2; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -239,6 +297,88 @@ if (!$show_role_modal) {
         .rank-badge.default { background: var(--border-light); color: var(--light-text); }
         .btn-view { background: var(--cream-light); color: var(--gold-dark); padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .btn-view:hover { background: var(--gold); color: white; }
+        .report-actions { display: grid; gap: 16px; }
+        .report-actions .action-item { display: flex; justify-content: space-between; gap: 10px; padding: 18px 20px; border-radius: 16px; background: rgba(247, 245, 239, 0.9); border: 1px solid var(--border-soft); color: var(--dark-text-2); transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+        .report-actions .action-item:hover { transform: translateY(-2px); border-color: rgba(184, 134, 11, 0.25); box-shadow: 0 12px 26px rgba(184, 134, 11, 0.12); }
+        .report-actions .action-item strong { font-size: 1.2rem; color: var(--dark-text); }
+        .report-actions .trend-positive { color: #059669; font-weight: 700; }
+        .report-actions .trend-negative { color: #dc2626; font-weight: 700; }
+        .event-highlights { padding: 18px 10px 10px; color: var(--dark-text-2); }
+        .event-summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .event-summary-card { background: #fbf7ef; border: 1px solid var(--border-light); border-radius: 18px; padding: 18px; min-height: 210px; display: flex; flex-direction: column; gap: 14px; }
+        .event-summary-title { font-size: 15px; font-weight: 700; color: var(--dark-text); }
+        .event-summary-count { font-size: 40px; font-weight: 800; color: var(--gold-dark); }
+        .event-list { list-style: none; padding-left: 0; margin: 0; display: grid; gap: 10px; }
+        .event-list li { background: white; border: 1px solid var(--border-soft); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--dark-text-2); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05); }
+        .event-list li strong { display: block; margin-bottom: 6px; color: var(--dark-text); }
+        .event-summary-card .small-text { font-size: 13px; color: var(--light-text); margin-top: 8px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 22px; padding-bottom: 0; }
+        .card { padding: 28px; }
+        .chart-card, .card { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+        .chart-card:hover, .card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08); }
+        .data-table { background: white; border-radius: 14px; overflow: hidden; }
+        .data-table th { padding: 16px 18px; }
+        .data-table td { padding: 16px 18px; }
+        .data-table tbody tr { border-bottom: 1px solid var(--border-light); }
+        .data-table tbody tr:last-child { border-bottom: none; }
+        .btn-generate, .btn-export, .btn-view { min-width: 140px; }
+        .btn-generate { box-shadow: 0 10px 30px rgba(184, 134, 11, 0.18); }
+        .btn-export { border-color: rgba(212, 207, 197, 0.9); }
+        .btn-export:hover { background: var(--gold-light); color: var(--dark-text); }
+        .table-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
+        .main-content { position: relative; padding-top: 80px; }
+        @media (max-width: 1080px) {
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .event-summary-grid { grid-template-columns: 1fr; }
+            .card-header { align-items: flex-start; }
+        }
+        @media (max-width: 720px) {
+            .page-container { padding: 20px 18px; }
+            .welcome-banner { padding: 28px 24px; }
+            .stat-card { padding: 20px; }
+            .card { padding: 22px; }
+            .filter-group { width: 100%; }
+            .card-header { flex-direction: column; align-items: stretch; }
+            .btn-generate, .btn-export, .btn-view { width: 100%; justify-content: center; }
+        }
+        .dashboard-content { padding-top: 24px; }
+        .report-section { margin-bottom: 36px; }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
+        .section-title { font-size: 20px; font-weight: 700; color: var(--dark-text); }
+        .section-description { font-size: 14px; color: var(--light-text); max-width: 760px; line-height: 1.65; }
+        .section-header + .charts-grid { margin-top: 10px; }
+        .table-responsive { overflow-x: auto; }
+        .data-table th, .data-table td { white-space: nowrap; }
+        .data-table th:last-child, .data-table td:last-child { width: 160px; }
+        .card { padding: 28px; }
+        .card:hover { transform: translateY(-3px); }
+        .section-card { background: #ffffff; border: 1px solid var(--border-soft); border-radius: 18px; padding: 22px; }
+        .section-card + .section-card { margin-top: 24px; }
+        .topbar { backdrop-filter: blur(12px); background: rgba(255,255,255,0.95); border-bottom: 1px solid rgba(212,207,197,0.65); }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-title { font-size: 18px; font-weight: 700; color: var(--dark-text); }
+        .topbar-subtitle { font-size: 13px; color: var(--light-text); margin-top: 4px; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .topbar-date { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dark-text-2); }
+        .topbar-logout { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: white; text-decoration: none; padding: 10px 14px; border-radius: 12px; border: 1px solid #dc2626; background: #dc2626; transition: all 0.2s ease; }
+        .topbar-logout:hover { background: #b22b2b; border-color: #b22b2b; color: white; }
+        .card-header .card-title { font-size: 17px; }
+        .form-input, .form-textarea, .form-select { width: 100%; padding: 12px 14px; border: 1px solid var(--border-light); border-radius: 12px; background: white; color: var(--dark-text); font-family: 'Poppins', sans-serif; font-size: 14px; }
+        .form-textarea { min-height: 120px; resize: vertical; }
+        .form-select { min-height: 120px; }
+        .form-actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+        .table-actions button { margin-right: 8px; }
+        .text-center { text-align: center; }
+        .empty-message { color: var(--dark-text-2); padding: 24px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.45); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .modal-card { width: 100%; max-width: 640px; background: white; border-radius: 22px; box-shadow: 0 26px 80px rgba(15, 23, 42, 0.18); padding: 28px; position: relative; }
+        .modal-card h3 { margin: 0 0 14px; font-size: 22px; }
+        .modal-close { position: absolute; top: 18px; right: 18px; width: 38px; height: 38px; border: none; border-radius: 50%; background: var(--border-light); color: var(--dark-text); font-size: 16px; cursor: pointer; }
+        .report-toast { position: fixed; bottom: 24px; right: 24px; background: rgba(15, 23, 42, 0.95); color: white; padding: 14px 18px; border-radius: 14px; box-shadow: 0 16px 40px rgba(0,0,0,0.18); z-index: 10000; font-size: 13px; opacity: 0; animation: toastIn 0.25s ease forwards; }
+        .report-toast.success { background: #059669; }
+        .report-toast.error { background: #dc2626; }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .progress-cell { width: 200px; }
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .stat-card, .chart-card, .card { animation: fadeInUp 0.5s ease forwards; }
@@ -284,221 +424,411 @@ if (!$show_role_modal) {
         <main class="dashboard-content">
             <div class="page-container">
                 <div class="welcome-banner">
-                    <h1>Analytics & Reports</h1>
-                    <p>Comprehensive insights and analytics for faculty performance, evaluations, and department metrics.</p>
+                    <h1>Program Head Report Center</h1>
+                    <p>Manage instructor appointments, keep important reminders visible, and review evaluation performance from one dashboard.</p>
                 </div>
-
-                <div class="report-filters">
-                    <div class="filter-group">
-                        <label><i class="fas fa-calendar"></i> Period:</label>
-                        <select>
-                            <option>Last 7 Days</option>
-                            <option>Last 30 Days</option>
-                            <option>This Semester</option>
-                            <option>This Year</option>
-                            <option>All Time</option>
-                        </select>
+                <div class="stats-row">
+                    <div class="stat-card gold">
+                        <div class="stat-card-value"><?php echo number_format($total_evaluations); ?></div>
+                        <div class="stat-card-label">Total Evaluations</div>
                     </div>
-                    <div class="filter-group">
-                        <label><i class="fas fa-building"></i> Department:</label>
-                        <select>
-                            <option>All Departments</option>
-                            <option>Operational Management</option>
-                            <option>Financial Management</option>
-                            <option>Marketing Management</option>
-                        </select>
+                    <div class="stat-card green">
+                        <div class="stat-card-value"><?php echo number_format($avg_rating, 1); ?></div>
+                        <div class="stat-card-label">Average Rating</div>
                     </div>
-                    <button class="btn-generate"><i class="fas fa-sync-alt"></i> Generate Report</button>
-                    <button class="btn-export"><i class="fas fa-download"></i> Export PDF</button>
-                 </div>
-
-                 <?php if ($has_evaluations || $has_courses): ?>
-                 <div class="stats-row">
-                     <div class="stat-card gold">
-                         <div class="stat-card-value"><?php echo $total_evaluations; ?></div>
-                         <div class="stat-card-label">Total Evaluations</div>
-                     </div>
-                     <div class="stat-card green">
-                         <div class="stat-card-value"><?php echo $avg_rating; ?></div>
-                         <div class="stat-card-label">Avg. Rating</div>
-                     </div>
-                     <div class="stat-card blue">
-                         <div class="stat-card-value"><?php echo $active_instructors; ?></div>
-                         <div class="stat-card-label">Active Instructors</div>
-                     </div>
-                     <div class="stat-card purple">
-                         <div class="stat-card-value"><?php echo $has_courses ? $completion_rate . '%' : 'N/A'; ?></div>
-                         <div class="stat-card-label">Completion Rate</div>
-                     </div>
-                 </div>
-                 <?php else: ?>
-                 <div class="card" style="margin-bottom: 24px;">
-                     <div class="card-body" style="text-align: center; padding: 40px;">
-                         <i class="fas fa-database" style="font-size: 48px; color: var(--light-text); opacity: 0.3; margin-bottom: 16px;"></i>
-                         <h3 style="color: var(--dark-text); margin-bottom: 8px;">No Evaluation Data Available</h3>
-                         <p style="color: var(--light-text); max-width: 600px; margin: 0 auto;">
-                             The evaluations and courses tables are not yet set up in the database. Please set up the evaluation system to view analytics, trends, and performance reports.
-                         </p>
-                     </div>
-                 </div>
-                 <?php endif; ?>
-
-                 <?php if ($has_evaluations && !empty($dept_distribution) && count($dept_distribution) > 0): ?>
-                 <div class="charts-grid">
-                     <div class="chart-card">
-                         <div class="chart-header"><h3 class="chart-title"><i class="fas fa-chart-line"></i> Evaluation Trends</h3></div>
-                         <div class="chart-container"><canvas id="evaluationTrendChart"></canvas></div>
-                     </div>
-                     <div class="chart-card">
-                         <div class="chart-header"><h3 class="chart-title"><i class="fas fa-chart-pie"></i> Department Distribution</h3></div>
-                         <div class="chart-container"><canvas id="departmentChart"></canvas></div>
-                     </div>
-                     <div class="chart-card full-width-chart">
-                         <div class="chart-header"><h3 class="chart-title"><i class="fas fa-star"></i> Rating Distribution</h3></div>
-                         <div class="chart-container"><canvas id="ratingChart"></canvas></div>
-                     </div>
-                 </div>
-                 <?php endif; ?>
-
-                 <?php if ($has_evaluations && !empty($top_performers)): ?>
-                 <div class="card">
-                     <div class="card-header"><h3 class="card-title"><i class="fas fa-trophy"></i> Top Performing Instructors</h3></div>
-                     <table class="data-table">
-                         <thead><tr><th>Rank</th><th>Instructor</th><th>Department</th><th>Total Evaluations</th><th>Avg. Rating</th><th>Progress</th><th>Actions</th></tr></thead>
-                         <tbody>
-                             <?php foreach ($top_performers as $idx => $perf):
-                                 $rank_class = $idx == 0 ? 'gold' : ($idx == 1 ? 'silver' : ($idx == 2 ? 'bronze' : 'default'));
-                                 $progress_color = $idx < 3 ? ['gold', 'green', 'blue'][$idx] : 'purple';
-                                 $rating = round($perf['avg_rating'], 1);
-                                 $rating_color = $rating >= 4.5 ? '#059669' : '#d97706';
-                             ?>
-                             <tr>
-                                 <td><span class="rank-badge <?php echo $rank_class; ?>"><?php echo $idx + 1; ?></span></td>
-                                 <td><strong><?php echo htmlspecialchars($perf['instructor_name']); ?></strong></td>
-                                 <td><?php echo htmlspecialchars($perf['department']); ?></td>
-                                 <td><?php echo $perf['total_evals']; ?></td>
-                                 <td><strong style="color: <?php echo $rating_color; ?>;"><?php echo $rating; ?></strong></td>
-                                 <td class="progress-cell"><div class="progress-bar"><div class="progress <?php echo $progress_color; ?>" style="width: <?php echo round($rating * 20); ?>%;"></div></div></td>
-                                 <td><button class="btn-view">View Details</button></td>
-                             </tr>
-                             <?php endforeach; ?>
-                         </tbody>
-                     </table>
-                 </div>
-                 <?php endif; ?>
-
-                <div class="card">
-                    <div class="card-header"><h3 class="card-title"><i class="fas fa-book"></i> Course Performance Report</h3></div>
-                    <table class="data-table">
-                        <thead><tr><th>Course Code</th><th>Course Name</th><th>Instructor</th><th>Enrolled</th><th>Evaluated</th><th>Completion</th><th>Avg. Rating</th></tr></thead>
-                        <tbody>
-                            <?php foreach ($course_performance as $cp):
-                                $comp_rate = $cp['student_count'] > 0 ? round(($cp['evaluated_count'] / $cp['student_count']) * 100) : 0;
-                                $progress_class = $comp_rate >= 90 ? 'green' : ($comp_rate >= 85 ? 'gold' : 'blue');
-                            ?>
-                            <tr>
-                                <td><span style="color: var(--gold-dark); font-weight: 700;"><?php echo htmlspecialchars($cp['course_code']); ?></span></td>
-                                <td><?php echo htmlspecialchars($cp['course_name']); ?></td>
-                                <td><?php echo htmlspecialchars($cp['instructor_name']); ?></td>
-                                <td><?php echo $cp['student_count']; ?></td>
-                                <td><?php echo $cp['evaluated_count']; ?></td>
-                                <td><div class="progress-bar" style="width: 100px;"><div class="progress <?php echo $progress_class; ?>" style="width: <?php echo $comp_rate; ?>%;"></div></div></td>
-                                <td><strong><?php echo round($cp['avg_rating'], 1); ?></strong></td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
+                    <div class="stat-card blue">
+                        <div class="stat-card-value"><?php echo number_format($active_instructors); ?></div>
+                        <div class="stat-card-label">Active Instructors</div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-card-value"><?php echo number_format($completion_rate); ?>%</div>
+                        <div class="stat-card-label">Evaluation Completion</div>
+                    </div>
                 </div>
-             </div>
-         </main>
+                <section class="report-section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Appointment dashboard</div>
+                            <div class="section-description">Quick access to appointment metrics, upcoming schedules, and calendar event controls.</div>
+                        </div>
+                    </div>
+                    <div class="charts-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title"><i class="fas fa-bell"></i> Action Items</div>
+                            </div>
+                        <div class="report-actions">
+                            <div class="action-item">
+                                <span>Upcoming appointments</span>
+                                <strong><?php echo number_format($upcoming_event_count); ?></strong>
+                            </div>
+                            <div class="action-item">
+                                <span>Evaluations this month</span>
+                                <strong><?php echo number_format($current_month_evals); ?> <span class="<?php echo $evaluation_month_change >= 0 ? 'trend-positive' : 'trend-negative'; ?>"><?php echo $evaluation_month_change >= 0 ? '+' : ''; echo $evaluation_month_change; ?></span></strong>
+                            </div>
+                            <div class="action-item">
+                                <span>Rating change vs last month</span>
+                                <strong class="<?php echo $rating_month_change >= 0 ? 'trend-positive' : 'trend-negative'; ?>"><?php echo $rating_month_change >= 0 ? '+' : ''; echo $rating_month_change; ?> stars</strong>
+                            </div>
+                            <div class="action-item">
+                                <span>Student completion average</span>
+                                <strong><?php echo number_format($student_completion_avg); ?>%</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fas fa-calendar-alt"></i> Appointment Events</div>
+                            <button class="btn-generate" type="button" id="newEventBtn"><i class="fas fa-plus"></i> New Appointment</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Event</th>
+                                        <th>Date</th>
+                                        <th>Instructor(s)</th>
+                                        <th>Description</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eventsTableBody">
+                                    <tr><td colspan="5" class="text-center empty-message">Loading appointment events...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </section>
+                <section class="report-section">
+                    <div class="section-header">
+                        <div>
+                            <div class="section-title">Instructor & Event summary</div>
+                            <div class="section-description">If there are no instructor ratings yet, you can still manage events and track which calendar appointments are upcoming or finished.</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title"><i class="fas fa-trophy"></i> Instructor Highlights</div>
+                        </div>
+                    <?php if (!empty($top_performers)): ?>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Instructor</th>
+                                    <th>Department</th>
+                                    <th>Evaluations</th>
+                                    <th>Avg Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($top_performers as $index => $teacher): ?>
+                                    <tr>
+                                        <td><span class="rank-badge <?php echo $index === 0 ? 'gold' : ($index === 1 ? 'silver' : ($index === 2 ? 'bronze' : 'default')); ?>"><?php echo $index + 1; ?></span></td>
+                                        <td><?php echo htmlspecialchars($teacher['instructor_name']); ?></td>
+                                        <td><?php echo htmlspecialchars($teacher['department']); ?></td>
+                                        <td><?php echo number_format($teacher['total_evals']); ?></td>
+                                        <td><?php echo number_format($teacher['avg_rating'], 1); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                        <div id="eventHighlightsFallback" class="event-highlights">
+                            <div class="event-summary-grid">
+                                <div class="event-summary-card">
+                                    <div class="event-summary-title">Upcoming calendar events</div>
+                                    <div class="event-summary-count" id="upcomingEventsCount">0</div>
+                                    <ul id="upcomingEventsList" class="event-list"><li>Loading events…</li></ul>
+                                </div>
+                                <div class="event-summary-card">
+                                    <div class="event-summary-title">Finished calendar events</div>
+                                    <div class="event-summary-count" id="completedEventsCount">0</div>
+                                    <ul id="completedEventsList" class="event-list"><li>Loading events…</li></ul>
+                                </div>
+                            </div>
+                            <div class="small-text">Manage appointment events using the table above to add, edit, or delete calendar entries.</div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-overlay" id="eventModal">
+                    <div class="modal-card">
+                        <button type="button" class="modal-close" id="eventModalClose"><i class="fas fa-times"></i></button>
+                        <h3 id="eventModalTitle"><i class="fas fa-calendar-plus"></i> Add Appointment</h3>
+                        <form id="eventForm">
+                            <input type="hidden" id="eventId" name="event_id" value="">
+                            <div class="form-group">
+                                <label for="eventTitle">Title</label>
+                                <input type="text" id="eventTitle" name="title" class="form-input" placeholder="e.g. Instructor appointment" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventDate">Date</label>
+                                <input type="date" id="eventDate" name="event_date" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventInstructors">Assign Instructor(s)</label>
+                                <select id="eventInstructors" name="instructor_ids[]" class="form-select" multiple size="5"></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="eventDescription">Description</label>
+                                <textarea id="eventDescription" name="description" class="form-textarea" placeholder="Add details or instructions for the appointment"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-generate" id="eventSaveBtn"><i class="fas fa-save"></i> Save Appointment</button>
+                                <button type="button" class="btn-export" id="eventCancelBtn">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
      </div>
      
      <script src="../../../function/dashboard.js"></script>
-     
-     <?php if ($has_evaluations): ?>
      <script>
-     // PHP data to JavaScript
-     const monthLabels = <?php echo json_encode(array_column($monthly_evals, 'month_label')); ?>;
-     const monthData = <?php echo json_encode(array_map('intval', array_column($monthly_evals, 'cnt'))); ?>;
-     const deptLabels = <?php echo json_encode(array_column($dept_distribution, 'department')); ?>;
-     const deptData = <?php echo json_encode(array_map('intval', array_column($dept_distribution, 'cnt'))); ?>;
-     const ratingData = <?php echo json_encode($rating_dist); ?>;
-     
-     document.addEventListener('DOMContentLoaded', function() {
-         // Evaluation Trend Chart
-         const trendCtx = document.getElementById('evaluationTrendChart');
-         if (trendCtx && typeof Chart !== 'undefined') {
-             new Chart(trendCtx, {
-                 type: 'line',
-                 data: {
-                     labels: monthLabels.length > 0 ? monthLabels : ['No Data'],
-                     datasets: [{
-                         label: 'Evaluations',
-                         data: monthData.length > 0 ? monthData : [0],
-                         borderColor: '#B8860B',
-                         backgroundColor: 'rgba(184, 134, 11, 0.1)',
-                         fill: true,
-                         tension: 0.4,
-                         pointBackgroundColor: '#B8860B',
-                         pointRadius: 6,
-                         pointHoverRadius: 8
-                     }]
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: { legend: { display: false } },
-                     scales: { y: { beginAtZero: true } }
+         const reportHandler = '../calendar_events_handler.php';
+         let instructorMap = {};
+         let reportEvents = [];
+
+         document.addEventListener('DOMContentLoaded', function() {
+             loadInstructors();
+             loadEvents();
+             document.getElementById('newEventBtn').addEventListener('click', function() { openEventModal(); });
+             document.getElementById('eventCancelBtn').addEventListener('click', closeEventModal);
+             document.getElementById('eventModalClose').addEventListener('click', closeEventModal);
+             document.getElementById('eventForm').addEventListener('submit', saveEvent);
+         });
+
+         function loadInstructors() {
+             fetch(reportHandler + '?action=get_instructors')
+                 .then(res => res.json())
+                 .then(data => {
+                     const select = document.getElementById('eventInstructors');
+                     if (!select) return;
+                     select.innerHTML = '';
+                     if (data.success && Array.isArray(data.instructors)) {
+                         data.instructors.forEach(inst => {
+                             instructorMap[inst.id] = inst.first_name + ' ' + inst.last_name;
+                             const option = document.createElement('option');
+                             option.value = inst.id;
+                             option.textContent = inst.first_name + ' ' + inst.last_name + (inst.status ? ' (' + inst.status + ')' : '');
+                             select.appendChild(option);
+                         });
+                     }
+                 })
+                 .catch(() => {});
+         }
+
+         function loadEvents() {
+             const today = new Date();
+             const month = today.getMonth() + 1;
+             const year = today.getFullYear();
+             fetch(reportHandler + '?action=get_events&month=' + month + '&year=' + year)
+                 .then(res => res.json())
+                 .then(data => {
+                     if (data.success && Array.isArray(data.events)) {
+                         const grouped = {};
+                         data.events.forEach(ev => {
+                             if (!grouped[ev.id]) {
+                                 grouped[ev.id] = {
+                                     id: ev.id,
+                                     title: ev.title,
+                                     description: ev.description,
+                                     instructor_ids: ev.instructor_ids || [],
+                                     dates: []
+                                 };
+                             }
+                             if (ev.event_date && grouped[ev.id].dates.indexOf(ev.event_date) === -1) {
+                                 grouped[ev.id].dates.push(ev.event_date);
+                             }
+                         });
+                         reportEvents = Object.values(grouped).map(ev => ({ ...ev, dates: ev.dates.sort() }));
+                         renderEventTable(reportEvents);
+                         renderEventHighlights(reportEvents);
+                     } else {
+                         renderEventTable([]);
+                         renderEventHighlights([]);
+                     }
+                 })
+                 .catch(() => renderEventTable([]));
+         }
+
+         function renderEventTable(events) {
+             const tbody = document.getElementById('eventsTableBody');
+             if (!tbody) return;
+             if (!events.length) {
+                 tbody.innerHTML = '<tr><td colspan="5" class="text-center empty-message">No appointment events found for this month.</td></tr>';
+                 return;
+             }
+             let html = '';
+             events.forEach(event => {
+                 const dateLabel = event.dates.length > 1 ? event.dates.join(', ') : (event.dates[0] || 'TBD');
+                 const instructors = (event.instructor_ids || []).map(id => instructorMap[id] || 'Instructor ' + id).join(', ');
+                 html += '<tr>';
+                 html += '<td>' + escapeHtml(event.title) + '</td>';
+                 html += '<td>' + escapeHtml(dateLabel) + '</td>';
+                 html += '<td>' + (instructors || '<span style="opacity:.7;">Not assigned</span>') + '</td>';
+                 html += '<td>' + escapeHtml(event.description || '') + '</td>';
+                 html += '<td class="table-actions">';
+                 html += '<button type="button" class="btn-view" onclick="openEventModal(' + event.id + ')"><i class="fas fa-edit"></i> Edit</button>';
+                 html += '<button type="button" class="btn-export" onclick="deleteEvent(' + event.id + ')"><i class="fas fa-trash"></i> Delete</button>';
+                 html += '</td>';
+                 html += '</tr>';
+             });
+             tbody.innerHTML = html;
+         }
+
+         function renderEventHighlights(events) {
+             const upcomingList = document.getElementById('upcomingEventsList');
+             const completedList = document.getElementById('completedEventsList');
+             const upcomingCount = document.getElementById('upcomingEventsCount');
+             const completedCount = document.getElementById('completedEventsCount');
+             if (!upcomingList || !completedList || !upcomingCount || !completedCount) return;
+
+             const today = new Date();
+             today.setHours(0, 0, 0, 0);
+             const upcomingEvents = [];
+             const completedEvents = [];
+
+             events.forEach(event => {
+                 if (!event.dates || !event.dates.length) return;
+                 const sortedDates = event.dates.slice().sort();
+                 const lastDateString = sortedDates[sortedDates.length - 1];
+                 const lastDate = new Date(lastDateString + 'T00:00:00');
+                 if (Number.isNaN(lastDate.getTime())) return;
+
+                 const eventRow = {
+                     title: event.title,
+                     date: event.dates.join(', '),
+                     instructors: (event.instructor_ids || []).map(id => instructorMap[id] || 'Instructor ' + id).join(', ')
+                 };
+
+                 if (lastDate < today) {
+                     completedEvents.push(eventRow);
+                 } else {
+                     upcomingEvents.push(eventRow);
                  }
              });
-         }
-         
-         // Department Distribution Chart
-         const deptCtx = document.getElementById('departmentChart');
-         if (deptCtx && typeof Chart !== 'undefined') {
-             new Chart(deptCtx, {
-                 type: 'doughnut',
-                 data: {
-                     labels: deptLabels.length > 0 ? deptLabels : ['No Data'],
-                     datasets: [{
-                         data: deptData.length > 0 ? deptData : [1],
-                         backgroundColor: ['#B8860B', '#0284c7', '#7c3aed', '#059669', '#d97706'],
-                         borderWidth: 0
-                     }]
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: { legend: { position: 'bottom' } }
+
+             upcomingCount.textContent = upcomingEvents.length;
+             completedCount.textContent = completedEvents.length;
+
+             const buildList = (items, container) => {
+                 if (!items.length) {
+                     container.innerHTML = '<li><span style="opacity:.8;">No events found.</span></li>';
+                     return;
                  }
-             });
+                 container.innerHTML = items.slice(0, 5).map(item =>
+                     '<li><strong>' + escapeHtml(item.title) + '</strong> &mdash; ' + escapeHtml(item.date) + '<br><span style="opacity:.8;">' + escapeHtml(item.instructors || 'Unassigned') + '</span></li>'
+                 ).join('');
+             };
+
+             buildList(upcomingEvents, upcomingList);
+             buildList(completedEvents, completedList);
          }
-         
-         // Rating Distribution Chart
-         const ratingCtx = document.getElementById('ratingChart');
-         if (ratingCtx && typeof Chart !== 'undefined') {
-             new Chart(ratingCtx, {
-                 type: 'bar',
-                 data: {
-                     labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
-                     datasets: [{
-                         label: 'Number of Ratings',
-                         data: ratingData,
-                         backgroundColor: ['#059669', '#0284c7', '#B8860B', '#d97706', '#dc2626'],
-                         borderRadius: 8
-                     }]
-                 },
-                 options: {
-                     responsive: true,
-                     maintainAspectRatio: false,
-                     plugins: { legend: { display: false } },
-                     scales: { y: { beginAtZero: true } }
-                 }
-             });
+
+         function openEventModal(eventId) {
+             const modal = document.getElementById('eventModal');
+             const title = document.getElementById('eventModalTitle');
+             const form = document.getElementById('eventForm');
+             form.reset();
+             document.getElementById('eventId').value = '';
+             if (eventId) {
+                 title.innerHTML = '<i class="fas fa-edit"></i> Edit Appointment';
+                 fetch(reportHandler + '?action=get_event&id=' + eventId)
+                     .then(res => res.json())
+                     .then(data => {
+                         if (data.success && data.event) {
+                             document.getElementById('eventId').value = data.event.id;
+                             document.getElementById('eventTitle').value = data.event.title || '';
+                             document.getElementById('eventDescription').value = data.event.description || '';
+                             document.getElementById('eventDate').value = (data.event.event_dates && data.event.event_dates.length) ? data.event.event_dates[0] : data.event.event_date || '';
+                             const instructorSelect = document.getElementById('eventInstructors');
+                             if (instructorSelect) {
+                                 Array.from(instructorSelect.options).forEach(option => {
+                                     option.selected = data.event.instructor_ids && data.event.instructor_ids.indexOf(parseInt(option.value, 10)) !== -1;
+                                 });
+                             }
+                         }
+                     })
+                     .catch(() => {});
+             } else {
+                 title.innerHTML = '<i class="fas fa-calendar-plus"></i> Add Appointment';
+             }
+             if (modal) modal.style.display = 'flex';
          }
-     });
+
+         function closeEventModal() {
+             const modal = document.getElementById('eventModal');
+             if (modal) modal.style.display = 'none';
+         }
+
+         function saveEvent(event) {
+             event.preventDefault();
+             const eventId = document.getElementById('eventId').value;
+             const title = document.getElementById('eventTitle').value.trim();
+             const dateValue = document.getElementById('eventDate').value;
+             const description = document.getElementById('eventDescription').value.trim();
+             if (!title || !dateValue) {
+                 showToast('Please enter a title and date for the appointment.', 'error');
+                 return;
+             }
+             const selectedInstructors = Array.from(document.querySelectorAll('#eventInstructors option:checked')).map(opt => opt.value);
+             const formData = new FormData();
+             formData.append('action', eventId ? 'update_event' : 'create_event');
+             if (eventId) formData.append('id', eventId);
+             formData.append('title', title);
+             formData.append('description', description);
+             formData.append('event_date', dateValue);
+             selectedInstructors.forEach(id => formData.append('instructor_ids[]', id));
+             fetch(reportHandler, { method: 'POST', body: formData })
+                 .then(res => res.json())
+                 .then(data => {
+                     if (data.success) {
+                         showToast(data.message || 'Appointment saved.', 'success');
+                         closeEventModal();
+                         loadEvents();
+                     } else {
+                         showToast(data.message || 'Unable to save appointment.', 'error');
+                     }
+                 })
+                 .catch(() => showToast('Failed to save appointment. Check your connection.', 'error'));
+         }
+
+         function deleteEvent(eventId) {
+             if (!confirm('Delete this appointment? This cannot be undone.')) return;
+             const formData = new FormData();
+             formData.append('action', 'delete_event');
+             formData.append('id', eventId);
+             fetch(reportHandler, { method: 'POST', body: formData })
+                 .then(res => res.json())
+                 .then(data => {
+                     if (data.success) {
+                         showToast(data.message || 'Appointment deleted.', 'success');
+                         loadEvents();
+                     } else {
+                         showToast(data.message || 'Unable to delete appointment.', 'error');
+                     }
+                 })
+                 .catch(() => showToast('Failed to delete appointment.', 'error'));
+         }
+
+         function showToast(message, type = 'info') {
+             const toast = document.createElement('div');
+             toast.className = 'report-toast ' + (type === 'error' ? 'error' : 'success');
+             toast.textContent = message;
+             document.body.appendChild(toast);
+             setTimeout(() => toast.remove(), 3200);
+         }
+
+         function escapeHtml(text) {
+             if (!text) return '';
+             return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+         }
      </script>
-     <?php endif; ?>
      
      <?php if ($show_role_modal): ?>
      <div class="modal-overlay" id="roleMismatchModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">

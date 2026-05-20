@@ -32,7 +32,27 @@ if ($action == 'get_settings') {
     }
 } elseif ($action == 'save_settings') {
     $settings_key = 'program_head_settings';
-    $settings_value = json_encode($_POST);
+    $settings_data = $_POST;
+    unset($settings_data['action']);
+
+    if (isset($settings_data['schoolName'])) {
+        $settings_data['school_name'] = $settings_data['schoolName'];
+        unset($settings_data['schoolName']);
+    }
+    if (isset($settings_data['schoolAddress'])) {
+        $settings_data['school_address'] = $settings_data['schoolAddress'];
+        unset($settings_data['schoolAddress']);
+    }
+    if (isset($settings_data['instituteName'])) {
+        $settings_data['institute_name'] = $settings_data['instituteName'];
+        unset($settings_data['instituteName']);
+    }
+    if (isset($settings_data['degreeName'])) {
+        $settings_data['degree_name'] = $settings_data['degreeName'];
+        unset($settings_data['degreeName']);
+    }
+
+    $settings_value = json_encode($settings_data);
     
     try {
         // Try to update, if not exists then insert

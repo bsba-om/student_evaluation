@@ -2670,7 +2670,7 @@ if (!$show_role_modal) {
         }
 
         // Close modal when clicking outside
-        document.getElementById('studentInfoCard')?.addEventListener('click', function(e) {
+        document.getElementById('studentInfoCard') && document.getElementById('studentInfoCard').addEventListener('click', function(e) {
             if (e.target === this) {
                 toggleStudentInfo();
             }
@@ -2740,19 +2740,19 @@ if (!$show_role_modal) {
             });
         });
 
-        closeFormatBtn?.addEventListener('click', () => {
+        closeFormatBtn && closeFormatBtn.addEventListener('click', () => {
             importCards.forEach(c => c.classList.remove('selected'));
             importDetails.style.display = 'none';
             fileInput.value = '';
         });
 
-        cancelImportBtn?.addEventListener('click', () => {
+        cancelImportBtn && cancelImportBtn.addEventListener('click', () => {
             importCards.forEach(c => c.classList.remove('selected'));
             importDetails.style.display = 'none';
             fileInput.value = '';
         });
 
-        fileInput?.addEventListener('change', function() {
+        fileInput && fileInput.addEventListener('change', function() {
             if (this.files.length > 0) {
                 const fileName = this.files[0].name;
                 uploadArea.innerHTML = `
@@ -2814,7 +2814,7 @@ if (!$show_role_modal) {
         const deleteStudentBtn = document.getElementById('deleteStudentBtn');
         let currentEditStudentId = null;
 
-        editSearchInput?.addEventListener('input', function() {
+        editSearchInput && editSearchInput.addEventListener('input', function() {
             clearTimeout(this.searchTimeout);
             this.searchTimeout = setTimeout(searchStudentsForEdit, 300);
         });
@@ -2898,14 +2898,14 @@ if (!$show_role_modal) {
             }
         }
 
-        closeEditFormBtn?.addEventListener('click', () => {
+        closeEditFormBtn && closeEditFormBtn.addEventListener('click', () => {
             editFormSection.style.display = 'none';
             editSearchResults.classList.remove('show');
             editSearchInput.value = '';
             currentEditStudentId = null;
         });
 
-        deleteStudentBtn?.addEventListener('click', () => {
+        deleteStudentBtn && deleteStudentBtn.addEventListener('click', () => {
             if (currentEditStudentId && confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
                 deleteStudent(currentEditStudentId);
             }
@@ -2954,7 +2954,7 @@ if (!$show_role_modal) {
         let searchHistory = JSON.parse(localStorage.getItem('studentSearchHistory') || '[]');
 
         // Input event
-        globalSearchInput?.addEventListener('input', function() {
+        globalSearchInput && globalSearchInput.addEventListener('input', function() {
             clearTimeout(searchTimeout);
             const val = this.value.trim();
             
@@ -2987,7 +2987,7 @@ if (!$show_role_modal) {
         });
 
         // Focus event
-        globalSearchInput?.addEventListener('focus', function() {
+        globalSearchInput && globalSearchInput.addEventListener('focus', function() {
             const val = this.value.trim();
             if (val.length >= 2) {
                 performTypeaheadSearch(val);
@@ -2997,7 +2997,7 @@ if (!$show_role_modal) {
         });
 
         // Keyboard navigation
-        globalSearchInput?.addEventListener('keydown', function(e) {
+        globalSearchInput && globalSearchInput.addEventListener('keydown', function(e) {
             const items = typeaheadList.querySelectorAll('.typeahead-item, .typeahead-history-item');
             
             if (e.key === 'ArrowDown') {
@@ -3186,7 +3186,7 @@ if (!$show_role_modal) {
         }
 
         // Clear search button
-        clearSearchBtn?.addEventListener('click', function(e) {
+        clearSearchBtn && clearSearchBtn.addEventListener('click', function(e) {
             e.preventDefault();
             globalSearchInput.value = '';
             clearSearchBtn.classList.remove('visible');
@@ -3259,7 +3259,7 @@ if (!$show_role_modal) {
         }
 
         // Close modal on outside click
-        document.getElementById('studentViewModal')?.addEventListener('click', function(e) {
+        document.getElementById('studentViewModal') && document.getElementById('studentViewModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeStudentViewModal();
             }

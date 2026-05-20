@@ -44,6 +44,12 @@ $mock_data = [
 ];
 
 // Process data if access is allowed
+$evaluation_data = [];
+$graduate_data = [];
+$best_performers = [];
+$eval_stats = ['total_evaluated' => 0, 'in_progress' => 0, 'not_started' => 0, 'completed' => 0];
+$grad_stats = ['total_graduates' => 0, 'pending' => 0, 'confirmed' => 0];
+
 if (!$show_role_modal) {
     try {
         // Get report statistics from reports table
@@ -64,7 +70,7 @@ if (!$show_role_modal) {
         $stmt = $pdo->query("SELECT * FROM reports ORDER BY created_at DESC");
         $all_reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
-        // Get recent activity (sample - would need activity log table in production)
+        // Get recent activity
         $stmt = $pdo->query("SELECT report_name, download_count, created_at FROM reports ORDER BY created_at DESC LIMIT 5");
         $stats['recent_downloads'] = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
@@ -102,6 +108,154 @@ if (!$show_role_modal) {
         $assigned_mentees = [];
         $mentee_count = 0;
     }
+
+    // ─── EVALUATION SUMMARY DATA ───
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                   s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                   maj.display_name as major_name, maj.gradient_from as major_gradient_from, maj.gradient_to as major_gradient_to,
+                   COUNT(DISTINCT sub.id) as total_subjects,
+                   COUNT(DISTINCT CASE WHEN sg.id IS NOT NULL THEN sub.id END) as graded_count
+            FROM mentees me
+            JOIN students s ON me.student_id = s.id
+            LEFT JOIN majors maj ON s.major_id = maj.id
+            LEFT JOIN major_subjects ms ON ms.major_id = s.major_id
+            LEFT JOIN subjects sub ON sub.id = ms.subject_id
+            LEFT JOIN student_grades sg ON sg.student_id = s.id AND sg.subject_id = sub.id AND sg.grade IS NOT NULL
+            WHERE me.mentor_id = ?
+            GROUP BY s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                     s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                     maj.display_name, maj.gradient_from, maj.gradient_to
+            ORDER BY s.last_name, s.first_name
+        ");
+        $stmt->execute([$instructor_id]);
+        $evaluation_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($evaluation_data as $ev) {
+            if ($ev['graded_count'] > 0 && $ev['graded_count'] >= $ev['total_subjects']) {
+                $eval_stats['completed']++;
+            } elseif ($ev['graded_count'] > 0) {
+                $eval_stats['in_progress']++;
+            } else {
+                $eval_stats['not_started']++;
+            }
+            $eval_stats['total_evaluated']++;
+        }
+    } catch (PDOException $e) {
+        $evaluation_data = [];
+    }
+
+    // ─── GRADUATE REPORT DATA ───
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                   s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                   maj.display_name as major_name, maj.gradient_from as major_gradient_from, maj.gradient_to as major_gradient_to,
+                   gr.academic_year as batch_year, gr.graduation_date as graduated_at
+            FROM mentees me
+            JOIN students s ON me.student_id = s.id
+            LEFT JOIN majors maj ON s.major_id = maj.id
+            LEFT JOIN graduation_records gr ON gr.student_id = s.id
+            WHERE me.mentor_id = ? AND gr.id IS NOT NULL
+            ORDER BY gr.graduation_date DESC
+        ");
+        $stmt->execute([$instructor_id]);
+        $graduate_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $grad_stats['total_graduates'] = count($graduate_data);
+        foreach ($graduate_data as $g) {
+            $grad_stats['confirmed']++;
+        }
+    } catch (PDOException $e) {
+        $graduate_data = [];
+    }
+
+    // ─── BEST PERFORMERS (Top students by average grade) ───
+    try {
+        $stmt = $pdo->prepare("
+            SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                   s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                   maj.display_name as major_name, maj.gradient_from as major_gradient_from, maj.gradient_to as major_gradient_to,
+                   AVG(sg.grade) as avg_grade,
+                   COUNT(sg.id) as subjects_graded,
+                   MIN(sg.grade) as best_grade,
+                   MAX(sg.grade) as worst_grade
+            FROM mentees me
+            JOIN students s ON me.student_id = s.id
+            LEFT JOIN majors maj ON s.major_id = maj.id
+            JOIN student_grades sg ON sg.student_id = s.id
+            WHERE me.mentor_id = ? AND sg.grade IS NOT NULL
+            GROUP BY s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
+                     s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
+                     maj.display_name, maj.gradient_from, maj.gradient_to
+            HAVING COUNT(sg.id) > 0
+            ORDER BY AVG(sg.grade) ASC
+            LIMIT 10
+        ");
+        $stmt->execute([$instructor_id]);
+        $best_performers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $best_performers = [];
+    }
+}
+
+// Helper functions
+function getStudentFullName($s) {
+    $n = trim(($s['first_name'] ?? '') . ' ' . ($s['middle_name'] ?? '') . ' ' . ($s['last_name'] ?? ''));
+    return trim($n . ' ' . ($s['suffix'] ?? ''));
+}
+
+function getStudentInitials($s) {
+    $i = '';
+    if (!empty($s['first_name'])) $i .= strtoupper($s['first_name'][0]);
+    if (!empty($s['last_name'])) $i .= strtoupper($s['last_name'][0]);
+    return $i ?: '??';
+}
+
+function getStudentGradient($s) {
+    if (!empty($s['avatar_gradient_from']) && !empty($s['avatar_gradient_to'])) {
+        return "linear-gradient(135deg, {$s['avatar_gradient_from']}, {$s['avatar_gradient_to']})";
+    }
+    if (!empty($s['major_gradient_from']) && !empty($s['major_gradient_to'])) {
+        return "linear-gradient(135deg, {$s['major_gradient_from']}, {$s['major_gradient_to']})";
+    }
+    return "linear-gradient(135deg, #d4a843, #b8922f)";
+}
+
+function getGradeStatus($grade) {
+    if ($grade === null) return 'N/A';
+    $g = floatval($grade);
+    if ($g <= 1.50) return 'Excellent';
+    if ($g <= 2.00) return 'Very Good';
+    if ($g <= 2.50) return 'Good';
+    if ($g <= 3.00) return 'Passed';
+    return 'Failed';
+}
+
+function getGradeColor($grade) {
+    if ($grade === null) return '#6b7280';
+    $g = floatval($grade);
+    if ($g <= 1.50) return '#059669';
+    if ($g <= 2.00) return '#10b981';
+    if ($g <= 2.50) return '#3b82f6';
+    if ($g <= 3.00) return '#f59e0b';
+    return '#dc2626';
+}
+
+function yearLevelLabel($level) {
+    $labels = [1 => '1st Year', 2 => '2nd Year', 3 => '3rd Year', 4 => '4th Year'];
+    // Handle string year levels like "1st Year - 2nd Semester"
+    if (is_string($level)) {
+        // Extract just the year part before the dash
+        $parts = explode(' - ', $level);
+        $level = trim($parts[0] ?? $level);
+        // Convert string like "1st Year" to number
+        if (preg_match('/^(\d+)/', $level, $matches)) {
+            $level = (int)$matches[1];
+        }
+    }
+    return $labels[$level] ?? ($level ? $level . ' Year' : '—');
 }
 ?>
 <!DOCTYPE html>
@@ -790,313 +944,348 @@ if (!$show_role_modal) {
         </header>
 
         <main class="dashboard-content">
+            <!-- Page Header -->
             <div class="page-header">
                 <div class="page-title-area">
-                    <h1>Reports & Analytics</h1>
-                    <p>Generate, download, and manage your reports</p>
+                    <h1><i class="fas fa-chart-bar" style="color: var(--gold); margin-right: 10px;"></i>Student Reports</h1>
+                    <p>Comprehensive report on student evaluations, best performers, and graduation status</p>
                 </div>
             </div>
 
             <!-- Section Tabs -->
             <div class="section-tabs">
-                <button class="section-tab active" onclick="switchSection('reports')">
-                    <i class="fas fa-file-alt"></i> Available Reports
+                <button class="section-tab active" onclick="switchTab('evaluation')">
+                    <i class="fas fa-clipboard-check"></i> Evaluation Summary
                 </button>
-                <button class="section-tab" onclick="switchSection('mentees')">
-                    <i class="fas fa-history"></i> Assignment History
-                    <?php if ($mentee_count > 0): ?>
-                    <span style="background: var(--gold); color: white; padding: 2px 8px; border-radius: 10px; font-size: 10px;">
-                        <?php echo $mentee_count; ?>
-                    </span>
-                    <?php endif; ?>
+                <button class="section-tab" onclick="switchTab('performers')">
+                    <i class="fas fa-trophy"></i> Best Performers
                 </button>
-                <button class="section-tab" onclick="switchSection('generate')">
-                    <i class="fas fa-magic"></i> Generate
-                </button>
-                <button class="section-tab" onclick="switchSection('analytics')">
-                    <i class="fas fa-chart-bar"></i> Analytics
+                <button class="section-tab" onclick="switchTab('graduates')">
+                    <i class="fas fa-user-graduate"></i> Graduate Report
                 </button>
             </div>
 
-            <!-- Reports Section -->
-            <div class="section-content active" id="reportsSection">
+            <!-- ═══════════════════════════════════════════════════════════
+                 SECTION 1: EVALUATION SUMMARY
+            ═══════════════════════════════════════════════════════════ -->
+            <div class="section-content active" id="section-evaluation">
+                <!-- Evaluation Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                        </div>
+                        <div class="stat-type">Total Students</div>
+                        <div class="stat-value"><?php echo $eval_stats['total_evaluated']; ?></div>
+                        <div class="stat-label">Assigned mentees</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                        </div>
+                        <div class="stat-type">Completed</div>
+                        <div class="stat-value"><?php echo $eval_stats['completed']; ?></div>
+                        <div class="stat-label">All subjects graded</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon orange"><i class="fas fa-spinner"></i></div>
+                        </div>
+                        <div class="stat-type">In Progress</div>
+                        <div class="stat-value"><?php echo $eval_stats['in_progress']; ?></div>
+                        <div class="stat-label">Partially evaluated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon purple"><i class="fas fa-clock"></i></div>
+                        </div>
+                        <div class="stat-type">Not Started</div>
+                        <div class="stat-value"><?php echo $eval_stats['not_started']; ?></div>
+                        <div class="stat-label">Awaiting evaluation</div>
+                    </div>
+                </div>
 
-            <!-- Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-type">Total Reports</div>
-                            <div class="stat-value"><?php echo number_format($stats['total_reports']); ?></div>
-                        </div>
-                        <div class="stat-icon blue"><i class="fas fa-file-alt"></i></div>
+                <!-- Evaluation Table -->
+                <div class="generator-section">
+                    <div class="generator-header">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h2>Student Evaluation Progress</h2>
                     </div>
-                    <div class="stat-label">Available reports</div>
-                    <div class="stat-change positive"><i class="fas fa-check"></i> Ready to use</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-type">PDF Reports</div>
-                            <div class="stat-value"><?php echo $stats['pdf_count']; ?></div>
-                        </div>
-                        <div class="stat-icon orange"><i class="fas fa-file-pdf"></i></div>
+                    
+                    <div class="search-bar">
+                        <input type="text" class="search-input" id="evalSearch" placeholder="Search student name or ID..." onkeyup="filterEvalTable()">
+                        <select class="filter-select" id="evalFilter" onchange="filterEvalTable()">
+                            <option value="all">All Status</option>
+                            <option value="completed">Completed</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="not_started">Not Started</option>
+                        </select>
                     </div>
-                    <div class="stat-label">Document format</div>
-                    <div class="stat-change positive"><i class="fas fa-arrow-up"></i> Printable</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-type">Excel Reports</div>
-                            <div class="stat-value"><?php echo $stats['excel_count']; ?></div>
-                        </div>
-                        <div class="stat-icon green"><i class="fas fa-file-excel"></i></div>
+
+                    <?php if (!empty($evaluation_data)): ?>
+                    <div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-light);">
+                        <table style="width: 100%; border-collapse: collapse;" id="evalTable">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #1a1209, #2d1f07);">
+                                    <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Student</th>
+                                    <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Major</th>
+                                    <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Year</th>
+                                    <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Progress</th>
+                                    <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($evaluation_data as $ev): 
+                                    $fullName = getStudentFullName($ev);
+                                    $initials = getStudentInitials($ev);
+                                    $gradient = getStudentGradient($ev);
+                                    $total = intval($ev['total_subjects']);
+                                    $graded = intval($ev['graded_count']);
+                                    $pct = $total > 0 ? round(($graded / $total) * 100) : 0;
+                                    
+                                    if ($graded > 0 && $graded >= $total) {
+                                        $status = 'completed';
+                                        $statusLabel = 'Completed';
+                                        $statusColor = '#059669';
+                                        $statusBg = '#d1fae5';
+                                    } elseif ($graded > 0) {
+                                        $status = 'in_progress';
+                                        $statusLabel = 'In Progress';
+                                        $statusColor = '#d97706';
+                                        $statusBg = '#fef3c7';
+                                    } else {
+                                        $status = 'not_started';
+                                        $statusLabel = 'Not Started';
+                                        $statusColor = '#6b7280';
+                                        $statusBg = '#f3f4f6';
+                                    }
+                                ?>
+                                <tr data-status="<?php echo $status; ?>" style="border-bottom: 1px solid #f3f4f6; transition: background 0.15s;">
+                                    <td style="padding: 14px 16px;">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 38px; height: 38px; border-radius: 10px; background: <?php echo $gradient; ?>; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0;">
+                                                <?php echo htmlspecialchars($initials); ?>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;"><?php echo htmlspecialchars($fullName); ?></div>
+                                                <div style="font-size: 11px; color: #9ca3af;"><?php echo htmlspecialchars($ev['student_id'] ?? ''); ?></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 14px 16px; font-size: 13px; color: #4b5563;"><?php echo htmlspecialchars($ev['major_name'] ?? '—'); ?></td>
+                                    <td style="padding: 14px 16px; text-align: center; font-size: 13px; color: #4b5563;"><?php echo yearLevelLabel($ev['year_level']); ?></td>
+                                    <td style="padding: 14px 16px; text-align: center;">
+                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+                                            <div style="width: 100%; max-width: 120px; height: 8px; background: #f3f4f6; border-radius: 4px; overflow: hidden;">
+                                                <div style="height: 100%; width: <?php echo $pct; ?>%; background: linear-gradient(90deg, var(--gold), #b8922f); border-radius: 4px; transition: width 0.5s;"></div>
+                                            </div>
+                                            <span style="font-size: 11px; color: #6b7280; font-weight: 500;"><?php echo $graded; ?>/<?php echo $total; ?> (<?php echo $pct; ?>%)</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 14px 16px; text-align: center;">
+                                        <span style="padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; background: <?php echo $statusBg; ?>; color: <?php echo $statusColor; ?>;">
+                                            <?php echo $statusLabel; ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="stat-label">Spreadsheet format</div>
-                    <div class="stat-change positive"><i class="fas fa-arrow-up"></i> Editable</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div>
-                            <div class="stat-type">Total Downloads</div>
-                            <div class="stat-value"><?php echo number_format($stats['total_downloads']); ?></div>
-                        </div>
-                        <div class="stat-icon purple"><i class="fas fa-download"></i></div>
+                    <?php else: ?>
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list"></i>
+                        <h3>No Evaluation Data</h3>
+                        <p>No student evaluation records found. Start evaluating your mentees from the Evaluation page.</p>
                     </div>
-                    <div class="stat-label">All-time downloads</div>
-                    <div class="stat-change positive"><i class="fas fa-chart-line"></i> Active usage</div>
+                    <?php endif; ?>
                 </div>
-             </div>
- 
-             <!-- Mentees Section -->
-             <div class="section-content" id="menteesSection">
-                 <?php if (!empty($new_mentees)): ?>
-                 <div class="new-mentee-notification" style="background: linear-gradient(135deg, #059669, #34d399); border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 16px; color: white; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);">
-                     <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                         <i class="fas fa-user-plus" style="font-size: 20px;"></i>
-                     </div>
-                     <div style="flex: 1;">
-                         <div style="font-size: 16px; font-weight: 700; margin-bottom: 4px;">
-                             New Mentees Assigned!
-                         </div>
-                         <div style="font-size: 14px; opacity: 0.95;">
-                             <?php echo count($new_mentees); ?> students have been assigned to you: 
-                             <?php 
-                             $names = [];
-                             foreach ($new_mentees as $nm) {
-                                 $names[] = htmlspecialchars(trim($nm['first_name'] . ' ' . $nm['last_name']));
-                             }
-                             echo implode(', ', $names);
-                             ?>
-                         </div>
-                     </div>
-                     <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                         <i class="fas fa-times"></i>
-                     </button>
-                 </div>
-                 <?php endif; ?>
-                 <?php if ($mentee_count > 0): ?>
-                 <div style="margin-bottom: 24px;">
-                     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
-                         <i class="fas fa-bell" style="font-size: 24px; color: var(--gold);"></i>
-                         <h2 style="margin: 0; font-size: 20px; color: var(--dark-text);">Assignment Notifications</h2>
-                     </div>
-                     <p style="margin: 0; font-size: 14px; color: var(--light-text);">Recent student assignments from your Program Head</p>
-                 </div>
-                <div style="display: flex; flex-direction: column; gap: 16px;">
-                    <?php foreach ($assigned_mentees as $mentee): 
-                        $fullName = htmlspecialchars(trim(($mentee['first_name'] ?? '') . ' ' . ($mentee['last_name'] ?? '')));
-                        $initials = strtoupper(substr($mentee['first_name'] ?? '', 0, 1) . substr($mentee['last_name'] ?? '', 0, 1));
-                        $assignedDate = !empty($mentee['created_at']) ? date('M j, Y', strtotime($mentee['created_at'])) : '-';
-                        $assignedBy = !empty($mentee['assigned_by_name']) ? htmlspecialchars($mentee['assigned_by_name']) : 'Program Head';
-                        
-                        $transactionMessage = "On " . $assignedDate . ", " . $assignedBy . " has assigned <strong>" . $fullName . "</strong> (" . htmlspecialchars($mentee['email'] ?? '-') . ") to you as a mentee.";
-                        if (!empty($mentee['assignment_notes'])) {
-                            $transactionMessage .= " <em>Note: " . htmlspecialchars($mentee['assignment_notes']) . "</em>";
-                        }
-                    ?>
-                    <div style="background: white; border-radius: 16px; padding: 20px; border: 1px solid var(--border-light);">
-                        <div style="display: flex; align-items: flex-start; gap: 16px;">
-                            <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; flex-shrink: 0;">
-                                <?php echo $initials; ?>
+            </div>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 SECTION 2: BEST PERFORMERS
+            ═══════════════════════════════════════════════════════════ -->
+            <div class="section-content" id="section-performers">
+                <!-- Top Performers Header -->
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                    <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="stat-header">
+                            <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fas fa-trophy"></i></div>
+                        </div>
+                        <div class="stat-type">Top Performers</div>
+                        <div class="stat-value"><?php echo count($best_performers); ?></div>
+                        <div class="stat-label">Students ranked by GPA</div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #059669;">
+                        <div class="stat-header">
+                            <div class="stat-icon green"><i class="fas fa-medal"></i></div>
+                        </div>
+                        <div class="stat-type">Best Average</div>
+                        <div class="stat-value"><?php echo !empty($best_performers) ? number_format(floatval($best_performers[0]['avg_grade']), 2) : '—'; ?></div>
+                        <div class="stat-label"><?php echo !empty($best_performers) ? getGradeStatus($best_performers[0]['avg_grade']) : 'No data'; ?></div>
+                    </div>
+                </div>
+
+                <div class="generator-section">
+                    <div class="generator-header">
+                        <i class="fas fa-award"></i>
+                        <h2>Best Performing Students</h2>
+                    </div>
+                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">
+                        Students ranked by their average grade (lower grade value = better performance in the Philippine grading system: 1.00 = Excellent, 5.00 = Failed)
+                    </p>
+
+                    <?php if (!empty($best_performers)): ?>
+                    <div class="reports-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));">
+                        <?php foreach ($best_performers as $rank => $perf): 
+                            $fullName = getStudentFullName($perf);
+                            $initials = getStudentInitials($perf);
+                            $gradient = getStudentGradient($perf);
+                            $avgGrade = floatval($perf['avg_grade']);
+                            $gradeColor = getGradeColor($perf['avg_grade']);
+                            $gradeStatusText = getGradeStatus($perf['avg_grade']);
+                            $rankNum = $rank + 1;
+                            
+                            // Medal colors for top 3
+                            $medalColor = '';
+                            $medalIcon = 'fas fa-star';
+                            if ($rankNum === 1) { $medalColor = '#f59e0b'; $medalIcon = 'fas fa-crown'; }
+                            elseif ($rankNum === 2) { $medalColor = '#9ca3af'; $medalIcon = 'fas fa-medal'; }
+                            elseif ($rankNum === 3) { $medalColor = '#b45309'; $medalIcon = 'fas fa-medal'; }
+                            else { $medalColor = '#d4a843'; }
+                        ?>
+                        <div class="report-card">
+                            <div class="report-card-header" style="position: relative;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: <?php echo $gradient; ?>; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700;">
+                                        <?php echo htmlspecialchars($initials); ?>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 15px; color: #1a1a1a;"><?php echo htmlspecialchars($fullName); ?></div>
+                                        <div style="font-size: 12px; color: #6b7280;"><?php echo htmlspecialchars($perf['major_name'] ?? '—'); ?> · <?php echo yearLevelLabel($perf['year_level']); ?></div>
+                                    </div>
+                                </div>
+                                <div style="position: absolute; top: 12px; right: 16px; width: 32px; height: 32px; border-radius: 50%; background: <?php echo $medalColor; ?>; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                                    <i class="<?php echo $medalIcon; ?>"></i>
+                                </div>
                             </div>
-                            <div style="flex: 1;">
-                                <p style="margin: 0; font-size: 14px; color: var(--dark-text); line-height: 1.6;">
-                                    <?php echo $transactionMessage; ?>
-                                </p>
-                                <div style="margin-top: 12px; display: flex; gap: 8px; align-items: center;">
-                                    <span style="padding: 4px 10px; background: rgba(212, 168, 67, 0.15); color: #9a7b0a; border-radius: 20px; font-size: 11px; font-weight: 600;">
-                                        <?php echo htmlspecialchars($mentee['year_level'] ?? '-'); ?>
+                            <div class="report-card-body">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Rank</div>
+                                        <div style="font-size: 28px; font-weight: 800; color: <?php echo $medalColor; ?>;">#<?php echo $rankNum; ?></div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;">Average Grade</div>
+                                        <div style="font-size: 28px; font-weight: 800; color: <?php echo $gradeColor; ?>;"><?php echo number_format($avgGrade, 2); ?></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: <?php echo $gradeColor; ?>20; color: <?php echo $gradeColor; ?>;">
+                                        <?php echo $gradeStatusText; ?>
                                     </span>
-                                    <?php if (!empty($mentee['major_name'])): ?>
-                                    <span style="padding: 4px 10px; background: rgba(139, 92, 246, 0.15); color: #6d28d9; border-radius: 20px; font-size: 11px; font-weight: 600;">
-                                        <?php echo htmlspecialchars($mentee['major_name']); ?>
+                                    <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #ede9fe; color: #5b21b6;">
+                                        <i class="fas fa-book" style="margin-right: 3px;"></i><?php echo intval($perf['subjects_graded']); ?> subjects
+                                    </span>
+                                    <?php if ($perf['best_grade'] !== null): ?>
+                                    <span style="padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; background: #d1fae5; color: #059669;">
+                                        Best: <?php echo number_format(floatval($perf['best_grade']), 2); ?>
                                     </span>
                                     <?php endif; ?>
                                 </div>
                             </div>
                         </div>
+                        <?php endforeach; ?>
                     </div>
-                    <?php endforeach; ?>
-                </div>
-                <div style="margin-top: 20px; text-align: right;">
-                    <button class="btn btn-primary" onclick="downloadMenteeReport()">
-                        <i class="fas fa-download"></i> Export All Mentees
-                    </button>
-                </div>
-                <?php else: ?>
-                <div style="text-align: center; padding: 60px; background: white; border-radius: 16px; border: 1px solid var(--border-light);">
-                    <i class="fas fa-user-slash" style="font-size: 56px; color: var(--gold-light); opacity: 0.5;"></i>
-                    <h3 style="margin: 16px 0 8px 0; font-size: 18px; color: var(--dark-text);">No Mentees Assigned</h3>
-                    <p style="font-size: 14px; color: var(--light-text);">Contact the Program Head for mentee assignments.</p>
-                </div>
-                <?php endif; ?>
-            </div>
-
-            <!-- Generate Section -->
-            <div class="section-content" id="generateSection">
-                <div style="background: white; border-radius: 16px; padding: 24px; border: 1px solid var(--border-light); margin-bottom: 24px;">
-                    <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="fas fa-magic" style="color: var(--gold);"></i> Generate Custom Report
-                    </h3>
-                    <form id="reportForm">
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="reportName">Report Name</label>
-                                <input type="text" class="form-control" id="reportName" placeholder="e.g., Student Performance Report" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="reportType">Report Type</label>
-                                <select class="form-control" id="reportType" required>
-                                    <option value="">Select type...</option>
-                                    <option value="pdf">PDF Document</option>
-                                    <option value="excel">Excel Spreadsheet</option>
-                                    <option value="csv">CSV File</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="dateFrom">Date From</label>
-                                <input type="date" class="form-control" id="dateFrom">
-                            </div>
-                            <div class="form-group">
-                                <label for="dateTo">Date To</label>
-                                <input type="date" class="form-control" id="dateTo">
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-file-download"></i> Generate Report
-                            </button>
-                        </div>
-                    </form>
+                    <?php else: ?>
+                    <div class="empty-state">
+                        <i class="fas fa-trophy"></i>
+                        <h3>No Performance Data</h3>
+                        <p>No graded students found yet. Once evaluations are completed, top performers will appear here.</p>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
-            <!-- Analytics Section -->
-            <div class="section-content" id="analyticsSection">
-                <div class="stats-grid">
-                    <div class="stat-card">
+            <!-- ═══════════════════════════════════════════════════════════
+                 SECTION 3: GRADUATE REPORT
+            ═══════════════════════════════════════════════════════════ -->
+            <div class="section-content" id="section-graduates">
+                <!-- Graduate Stats -->
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+                    <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
                         <div class="stat-header">
-                            <div>
-                                <div class="stat-type">Reports Generated</div>
-                                <div class="stat-value"><?php echo $stats['total_reports']; ?></div>
-                            </div>
-                            <div class="stat-icon blue"><i class="fas fa-file-alt"></i></div>
+                            <div class="stat-icon purple"><i class="fas fa-user-graduate"></i></div>
                         </div>
-                        <div class="stat-label">All time reports</div>
+                        <div class="stat-type">Total Graduates</div>
+                        <div class="stat-value"><?php echo $grad_stats['total_graduates']; ?></div>
+                        <div class="stat-label">From your mentees</div>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" style="border-left: 4px solid #059669;">
                         <div class="stat-header">
-                            <div>
-                                <div class="stat-type">Total Downloads</div>
-                                <div class="stat-value"><?php echo $stats['total_downloads']; ?></div>
-                            </div>
-                            <div class="stat-icon purple"><i class="fas fa-download"></i></div>
+                            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
                         </div>
-                        <div class="stat-label">Downloads this period</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-header">
-                            <div>
-                                <div class="stat-type">Mentees</div>
-                                <div class="stat-value"><?php echo $mentee_count; ?></div>
-                            </div>
-                            <div class="stat-icon green"><i class="fas fa-users"></i></div>
-                        </div>
-                        <div class="stat-label">Assigned students</div>
-                    </div>
-                </div>
-            </div>
+                        <div class="stat-type">Confirmed</div>
+                        <div class="stat-value"><?php echo $grad_stats['confirmed']; ?></div>
+<div class="stat-label">Graduation confirmed</div>
+                     </div>
+                 </div>
 
-             <!-- Search and Filter Bar -->
-            <div class="search-bar" id="searchBar">
-                <input type="text" class="search-input" id="reportSearch" placeholder="Search reports by name..." oninput="filterReports()">
-                <select class="filter-select" id="reportTypeFilter" onchange="filterReports()">
-                    <option value="">All Types</option>
-                    <option value="pdf">PDF</option>
-                    <option value="excel">Excel</option>
-                    <option value="csv">CSV</option>
-                    <option value="json">JSON</option>
-                </select>
-            </div>
-
-             <!-- Reports Grid -->
-            <div class="reports-grid" id="reportsGrid">
-                <?php if (empty($all_reports)): ?>
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <i class="fas fa-file-excel"></i>
-                    <h3>No Reports Available</h3>
-                    <p>No pre-generated reports found. Generate your first report to see it here.</p>
-                    <button class="btn btn-primary" onclick="showGenerator()" style="margin-top: 16px;">
-                        <i class="fas fa-plus"></i> Create Report
-                    </button>
-                </div>
-                <?php else: ?>
-                    <?php foreach ($all_reports as $report): 
-                        $icon_class = !empty($report['icon_class']) ? $report['icon_class'] : 'fas fa-file-alt';
-                        $gradient = $report['report_type'] == 'pdf' 
-                            ? 'linear-gradient(135deg, #dc2626, #ef4444)' 
-                            : 'linear-gradient(135deg, #059669, #34d399)';
-                        $description = !empty($report['report_description']) ? $report['report_description'] : 'Report generated by the system';
-                        $downloads = $report['download_count'] ?? 0;
-                        $created = $report['created_at'] ? date('M j, Y', strtotime($report['created_at'])) : 'N/A';
-                    ?>
-                    <div class="report-card">
-                        <div class="report-card-header">
-                            <div class="report-icon" style="background: <?php echo $gradient; ?>">
-                                <i class="<?php echo htmlspecialchars($icon_class); ?>"></i>
-                            </div>
-                            <span class="report-badge <?php echo $report['report_type']; ?>">
-                                <?php echo strtoupper($report['report_type']); ?>
-                            </span>
-                        </div>
-                        <div class="report-card-body">
-                            <h3 class="report-title"><?php echo htmlspecialchars($report['report_name']); ?></h3>
-                            <p class="report-description"><?php echo htmlspecialchars($description); ?></p>
-                        </div>
-                        <div class="report-card-footer">
-                            <div class="download-stats">
-                                <i class="fas fa-download"></i> <?php echo number_format($downloads); ?> downloads
-                            </div>
-                            <div class="generated-date">
-                                <?php echo $created; ?>
-                            </div>
-                        </div>
-                         <div class="card-actions">
-                            <button class="btn btn-primary" onclick="downloadReport('<?php echo $report['id']; ?>', '<?php echo addslashes($report['report_name']); ?>', '<?php echo $report['report_type']; ?>')">
-                                <i class="fas fa-download"></i> Download
-                            </button>
-                            <button class="btn btn-secondary" onclick="showToast('Preview coming soon!', 'info')">
-                                <i class="fas fa-eye"></i> Preview
-                            </button>
-                        </div>
+                <div class="generator-section">
+                    <div class="generator-header">
+                        <i class="fas fa-graduation-cap"></i>
+                        <h2>Graduate Records</h2>
                     </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+
+                    <?php if (!empty($graduate_data)): ?>
+                    <div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-light);">
+<table style="width: 100%; border-collapse: collapse;">
+                             <thead>
+                                 <tr style="background: linear-gradient(135deg, #1a1209, #2d1f07);">
+                                     <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Student</th>
+                                     <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Major</th>
+                                     <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Batch Year</th>
+                                     <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Graduated</th>
+                                 </tr>
+                             </thead>
+<tbody>
+                                 <?php foreach ($graduate_data as $grad): 
+                                     $fullName = getStudentFullName($grad);
+                                     $initials = getStudentInitials($grad);
+                                     $gradient = getStudentGradient($grad);
+                                 ?>
+                                <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.15s;">
+                                    <td style="padding: 14px 16px;">
+                                        <div style="display: flex; align-items: center; gap: 12px;">
+                                            <div style="width: 38px; height: 38px; border-radius: 10px; background: <?php echo $gradient; ?>; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0;">
+                                                <?php echo htmlspecialchars($initials); ?>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;"><?php echo htmlspecialchars($fullName); ?></div>
+                                                <div style="font-size: 11px; color: #9ca3af;"><?php echo htmlspecialchars($grad['student_id'] ?? ''); ?></div>
+                                            </div>
+                                        </div>
+</td>
+                                     <td style="padding: 14px 16px; font-size: 13px; color: #4b5563;"><?php echo htmlspecialchars($grad['major_name'] ?? '—'); ?></td>
+                                     <td style="padding: 14px 16px; text-align: center; font-size: 13px; font-weight: 600; color: #4b5563;">
+                                         <?php echo htmlspecialchars($grad['batch_year'] ?? '—'); ?>
+                                     </td>
+                                     <td style="padding: 14px 16px; text-align: center; font-size: 12px; color: #6b7280;">
+                                         <?php echo $grad['graduated_at'] ? date('M j, Y', strtotime($grad['graduated_at'])) : '—'; ?>
+                                     </td>
+                                 </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                    <?php else: ?>
+                    <div class="empty-state">
+                        <i class="fas fa-user-graduate"></i>
+                        <h3>No Graduate Records</h3>
+                        <p>No graduates found among your mentees. Students will appear here once they complete their evaluation and are confirmed for graduation.</p>
+                    </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </div>
@@ -1105,194 +1294,70 @@ if (!$show_role_modal) {
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
-        function switchSection(section) {
-            document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
-            event.target.closest('.section-tab').classList.add('active');
-            document.getElementById(section + 'Section').classList.add('active');
-        }
+    // ═══════════════════════════════════════════════════════════
+    //   TAB SWITCHING
+    // ═══════════════════════════════════════════════════════════
+    function switchTab(tabName) {
+        // Remove active from all tabs
+        document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.section-content').forEach(c => c.classList.remove('active'));
+
+        // Activate selected
+        document.getElementById('section-' + tabName).classList.add('active');
         
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            const icon = type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle';
-            toast.innerHTML = `
-                <i class="fas fa-${icon}"></i>
-                <span>${message}</span>
-                <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
-            `;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.4s ease reverse';
-                setTimeout(() => toast.remove(), 400);
-            }, 4000);
+        // Find and activate the clicked tab button
+        const tabs = document.querySelectorAll('.section-tab');
+        const tabMap = { 'evaluation': 0, 'performers': 1, 'graduates': 2 };
+        if (tabMap[tabName] !== undefined) {
+            tabs[tabMap[tabName]].classList.add('active');
         }
+    }
 
-        function refreshData() {
-            location.reload();
-        }
+    // ═══════════════════════════════════════════════════════════
+    //   EVALUATION TABLE FILTER
+    // ═══════════════════════════════════════════════════════════
+    function filterEvalTable() {
+        const search = document.getElementById('evalSearch').value.toLowerCase();
+        const filter = document.getElementById('evalFilter').value;
+        const rows = document.querySelectorAll('#evalTable tbody tr');
 
-        function downloadReport(reportId, name, type) {
-            fetch('../../../data/download_report.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'report_id=' + encodeURIComponent(reportId)
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
-                }
-                throw new Error('Download failed');
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.${type}`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                showToast('Report downloaded successfully!', 'success');
-            })
-            .catch(err => {
-                showToast('Failed to download report: ' + err.message, 'error');
-            });
-        }
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            const status = row.getAttribute('data-status');
+            
+            const matchSearch = text.includes(search);
+            const matchFilter = filter === 'all' || status === filter;
 
-         function showGenerator() {
-             switchSection('generate');
-         }
-
-         document.getElementById('reportForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const reportName = document.getElementById('reportName').value.trim();
-            const reportType = document.getElementById('reportType').value;
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            
-            if (!reportName) {
-                showToast('Please enter a report name', 'error');
-                return;
-            }
-            
-            if (!reportType) {
-                showToast('Please select a report type', 'error');
-                return;
-            }
-            
-            if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
-                showToast('Start date cannot be after end date', 'error');
-                return;
-            }
-            
-            const formData = new FormData();
-            formData.append('report_name', reportName);
-            formData.append('report_type', reportType);
-            formData.append('date_from', dateFrom);
-            formData.append('date_to', dateTo);
-            formData.append('instructor_id', <?php echo $instructor_id; ?>);
-            
-            fetch('../../../data/generate_report.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast('Report generated successfully!', 'success');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    showToast(data.message || 'Failed to generate report', 'error');
-                }
-            })
-            .catch(err => {
-                showToast('Error: ' + err.message, 'error');
-            });
+            row.style.display = (matchSearch && matchFilter) ? '' : 'none';
         });
+    }
 
-        // Close modals on outside click
-        document.querySelectorAll('.modal-overlay').forEach(modal => {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.style.display = 'none';
-                }
-            });
-        });
+    // ═══════════════════════════════════════════════════════════
+    //   TOAST NOTIFICATION
+    // ═══════════════════════════════════════════════════════════
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+                          <span>${message}</span>
+                          <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4000);
+    }
 
-        <?php if ($show_role_modal): ?>
-        window.addEventListener('DOMContentLoaded', function() {
-            showToast('Access restricted. Redirecting...', 'error');
-            setTimeout(() => window.location.href = '../../../Door/login.php', 2000);
-        });
-        <?php endif; ?>
+    // ═══════════════════════════════════════════════════════════
+    //   SIDEBAR TOGGLE
+    // ═══════════════════════════════════════════════════════════
+    document.getElementById('menuToggle')?.addEventListener('click', function() {
+        document.getElementById('sidebar')?.classList.toggle('collapsed');
+    });
 
-        function toggleLike(reportId) {
-            fetch('../../../data/toggle_like.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'report_id=' + reportId
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.liked ? 'Added to favorites' : 'Removed from favorites', 'success');
-                }
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('../../../data/update_mentee_view.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-        });
-
-         function downloadMenteeReport() {
-            fetch('../../../data/download_mentee_report.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'instructor_id=' + encodeURIComponent(<?php echo $instructor_id; ?>)
-            })
-            .then(response => {
-                if (response.ok) {
-                    return response.blob();
-                }
-                throw new Error('Download failed');
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                const date = new Date().toISOString().split('T')[0];
-                a.download = `mentee_report_${date}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-                showToast('Mentee report downloaded successfully!', 'success');
-            })
-            .catch(err => {
-                showToast('Failed to download report: ' + err.message, 'error');
-            });
-        }
-        
-        function filterReports() {
-            const searchTerm = document.getElementById('reportSearch').value.toLowerCase();
-            const typeFilter = document.getElementById('reportTypeFilter').value;
-            const reports = document.querySelectorAll('.report-card');
-            
-            reports.forEach(card => {
-                const title = card.querySelector('.report-title').textContent.toLowerCase();
-                const type = card.querySelector('.report-badge').textContent.trim().toLowerCase();
-                
-                const matchesSearch = title.includes(searchTerm);
-                const matchesType = !typeFilter || type === typeFilter;
-                
-                card.style.display = matchesSearch && matchesType ? 'block' : 'none';
-            });
-        }
+    // Add hover effect to table rows
+    document.querySelectorAll('#evalTable tbody tr').forEach(row => {
+        row.addEventListener('mouseenter', () => row.style.background = '#fffbeb');
+        row.addEventListener('mouseleave', () => row.style.background = '');
+    });
     </script>
 </body>
 </html>

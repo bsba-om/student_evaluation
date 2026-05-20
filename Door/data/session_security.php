@@ -95,6 +95,50 @@ function is_account_approved($user_id, $role) {
 }
 
 /**
+ * Check if user has the correct role for the current page
+ * Returns an array with access status and information
+ * @param string $required_role - The role required to access the page
+ * @return array - ['allowed' => boolean, 'current_role' => string, 'required_role' => string, 'message' => string]
+ */
+function check_role_access($required_role) {
+    if (!isset($_SESSION['user_role'])) {
+        return [
+            'allowed'   => false,
+            'current_role' => 'guest',
+            'required_role' => $required_role,
+            'message'   => 'You need to login to access this page.',
+            'action'    => 'login'
+        ];
+    }
+
+    if ($_SESSION['user_role'] !== $required_role) {
+        $role_names = [
+            'admin'          => 'Administrator',
+            'program_head'   => 'Program Head',
+            'instructor'     => 'Instructor'
+        ];
+        $current_role_name  = $role_names[$_SESSION['user_role']] ?? $_SESSION['user_role'];
+        $required_role_name = $role_names[$required_role] ?? $required_role;
+
+        return [
+            'allowed'       => false,
+            'current_role'  => $_SESSION['user_role'],
+            'required_role' => $required_role,
+            'message'       => "You are currently logged in as $current_role_name. Please logout and login as $required_role_name.",
+            'action'        => 'role_mismatch'
+        ];
+    }
+
+    return [
+        'allowed'       => true,
+        'current_role'  => $_SESSION['user_role'],
+        'required_role' => $required_role,
+        'message'       => '',
+        'action'        => 'access_granted'
+    ];
+}
+
+/**
  * Get the current user's profile data
  * Useful for displaying user info in the UI
  */

@@ -12,8 +12,28 @@
 //  5. Semester Sequencing  — no future-year subjects if current year has pending
 // ════════════════════════════════════════════════════════════════════════════
 
-error_reporting(0);
-ini_set('display_errors', 0);
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+ini_set('html_errors', '0');
+
+header('Content-Type: application/json; charset=utf-8');
+
+ob_start();
+register_shutdown_function(function () {
+    $error = error_get_last();
+    if ($error && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR], true)) {
+        while (ob_get_level()) { ob_end_clean(); }
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => false,
+            'message' => 'Server error: ' . ($error['message'] ?? 'Unknown fatal error'),
+            'file' => $error['file'] ?? null,
+            'line' => $error['line'] ?? null,
+        ]);
+        exit;
+    }
+});
 
 function jsonResponse($data) {
     while (ob_get_level()) { ob_end_clean(); }
@@ -350,7 +370,22 @@ function load_ph_settings(PDO $pdo): array {
         $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
         $stmt->execute();
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && $row['setting_value']) return json_decode($row['setting_value'], true) ?: [];
+        if ($row && $row['setting_value']) {
+            $settings = json_decode($row['setting_value'], true) ?: [];
+            if (isset($settings['schoolName'])) {
+                $settings['school_name'] = $settings['school_name'] ?? $settings['schoolName'];
+            }
+            if (isset($settings['schoolAddress'])) {
+                $settings['school_address'] = $settings['school_address'] ?? $settings['schoolAddress'];
+            }
+            if (isset($settings['instituteName'])) {
+                $settings['institute_name'] = $settings['institute_name'] ?? $settings['instituteName'];
+            }
+            if (isset($settings['degreeName'])) {
+                $settings['degree_name'] = $settings['degree_name'] ?? $settings['degreeName'];
+            }
+            return $settings;
+        }
     } catch (PDOException $e) {}
     return [];
 }
@@ -1169,7 +1204,7 @@ if ($action === 'confirm_graduation') {
     $year_level = trim((string) ($_POST['year_level'] ?? ''));
     $semester = trim((string) ($_POST['semester'] ?? ''));
 
-    if (!$student_id || !$major_id_post || !$year_level || !$semester) {
+    if (!$student_id || !$year_level || !$semester) {
         echo json_encode(['success' => false, 'message' => 'Missing required fields']);
         exit;
     }
@@ -1272,6 +1307,31 @@ if ($action === 'reset_student') {
 
 // ═══════════════════════════════════════════════════════════════════
 //  FALLBACK
+// ═══════════════════════════════════════════════════════════════════
+//  ACTION: regenerate_graduation_pdf
+//  Re-generates the prospectus PDF for an already-graduated student
+//  whose previous file was lost from disk.  Skips the student_graduation_locked()
+//  check and does NOT touch students.status — only updates graduation_records.pdf_path.
+// ═══════════════════════════════════════════════════════════════════
+
+if ($action === 'regenerate_graduation_pdf') {
+    $student_id    = intval($_POST['student_id'] ?? 0);
+    $academic_year = trim((string) ($_POST['academic_year'] ?? '2025-2026'));
+    $year_level    = trim((string) ($_POST['year_level'] ?? ''));
+    $semester      = trim((string) ($_POST['semester'] ?? ''));
+
+    if (!$student_id) {
+        jsonError('student_id is required');
+    }
+
+    $result = graduation_regenerate_pdf_only(
+        $pdo, $instructor_id, $student_id,
+        $academic_year, $year_level, $semester
+    );
+    echo json_encode($result);
+    exit;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 
 echo json_encode(['success' => false, 'message' => 'Unknown action: ' . htmlspecialchars($action)]);

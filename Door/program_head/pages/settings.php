@@ -193,10 +193,8 @@ if (!$show_role_modal) {
 
                 <!-- Tabs -->
                 <div class="tab-nav">
-                    <button class="tab-btn active" onclick="switchTab('profile')"><i class="fas fa-user"></i> Profile</button>
-                    <button class="tab-btn" onclick="switchTab('department')"><i class="fas fa-building"></i> Department</button>
-                    <button class="tab-btn" onclick="switchTab('evaluation')"><i class="fas fa-clipboard-check"></i> Evaluation</button>
-                    <button class="tab-btn" onclick="switchTab('notifications')"><i class="fas fa-bell"></i> Notifications</button>
+                    <button class="tab-btn active" onclick="switchTab('profile', this)"><i class="fas fa-user"></i> Profile</button>
+                    <button class="tab-btn" onclick="switchTab('department', this)"><i class="fas fa-building"></i> Department</button>
                 </div>
 
                 <!-- Profile Tab -->
@@ -228,11 +226,6 @@ if (!$show_role_modal) {
 
                 <!-- Department Tab -->
                 <div class="tab-content" id="departmentTab">
-                    <div class="info-box">
-                        <div class="info-box-title"><i class="fas fa-info-circle"></i> Department Overview</div>
-                        <div class="info-box-text">Manage your department settings, assigned instructors, and program configuration.</div>
-                    </div>
-                    
                     <div class="card">
                         <div class="section-header">
                             <div class="section-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);"><i class="fas fa-cogs"></i></div>
@@ -241,67 +234,34 @@ if (!$show_role_modal) {
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>Department Name</label>
-                                <input type="text" id="deptName" value="Business Management" placeholder="Enter department name">
+                                <input type="text" id="deptName" name="deptName" value="Business Management" placeholder="Enter department name">
                             </div>
                             <div class="form-group">
                                 <label>Academic Year</label>
-                                <select id="academicYear">
+                                <select id="academicYear" onchange="onAcademicYearChange()">
                                     <option>2025-2026</option>
-                                    <option>2024-2025</option>
-                                    <option>2023-2024</option>
+                                    <option>2026-2027</option>
+                                    <option>2027-2028</option>
+                                    <option>2028-2029</option>
+                                    <option>2029-2030</option>
+                                    <option>2030-2031</option>
+                                    <option>2031-2032</option>
+                                    <option>2032-2033</option>
+                                    <option>2033-2034</option>
+                                    <option>2034-2035</option>
+                                    <option>2035-2036</option>
+                                    <option>2036-2037</option>
+                                    <option>2037-2038</option>
+                                    <option>2038-2039</option>
+                                    <option>2039-2040</option>
+                                    <option>2040-2041</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Department Description</label>
-                            <textarea id="deptDesc" placeholder="Brief description of your department"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 24px;">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #059669, #34d399);"><i class="fas fa-calendar"></i></div>
-                            <h3 class="section-title">Academic Calendar</h3>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Current Semester</label>
-                                <select id="currentSemester">
-                                    <option>1st Semester</option>
-                                    <option>2nd Semester</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Enrollment Period</label>
-                                <select id="enrollmentStatus">
-                                    <option>Open</option>
-                                    <option>Closed</option>
-                                    <option>Upcoming</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 24px;">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #0284c7, #38bdf8);"><i class="fas fa-sliders-h"></i></div>
-                            <h3 class="section-title">Department Preferences</h3>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Auto-assign Mentees</span><span>Automatically assign new students to mentors</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="autoAssign"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Require Course Approval</span><span>Instructors must approve course assignments</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="requireApproval" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Public Evaluations</span><span>Allow students to view evaluation results</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="publicEval"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Email Notifications</span><span>Send email notifications to instructors</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="emailNotif" checked><span class="toggle-slider"></span></label>
+                        <div style="grid-column: 1 / -1; margin-top: -8px; margin-bottom: 4px;">
+                            <span id="ayAutoHint" style="display:none; font-size: 11px; color: var(--gold-dark); background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 6px 12px;">
+                                <i class="fas fa-sync-alt"></i> Academic Year set to <strong><span id="ayAutoLabel"></span></strong> — <em>Current Semester</em> and <em>Enrollment Period</em> adjusted below.
+                            </span>
                         </div>
                     </div>
                     
@@ -313,154 +273,19 @@ if (!$show_role_modal) {
                         <div class="form-grid">
                             <div class="form-group">
                                 <label>School Name</label>
-                                <input type="text" id="schoolName" value="Northern Bukidnon State College" placeholder="Northern Bukidnon State College">
+                                <input type="text" id="schoolName" name="school_name" value="Northern Bukidnon State College" placeholder="Northern Bukidnon State College">
                             </div>
                             <div class="form-group">
                                 <label>School Address</label>
-                                <input type="text" id="schoolAddress" value="Manolo Fortich, Bukidnon" placeholder="Manolo Fortich, Bukidnon">
+                                <input type="text" id="schoolAddress" name="school_address" value="Manolo Fortich, Bukidnon" placeholder="Manolo Fortich, Bukidnon">
                             </div>
                             <div class="form-group">
                                 <label>Institute/College Name</label>
-                                <input type="text" id="instituteName" value="Institute for Business Management" placeholder="Institute for Business Management">
+                                <input type="text" id="instituteName" name="institute_name" value="Institute for Business Management" placeholder="Institute for Business Management">
                             </div>
                             <div class="form-group">
                                 <label>Degree Name</label>
-                                <input type="text" id="degreeName" value="Bachelor of Science in Business Administration" placeholder="Bachelor of Science in Business Administration">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Evaluation Tab -->
-                <div class="tab-content" id="evaluationTab">
-                    <div class="card">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #059669, #34d399);"><i class="fas fa-star"></i></div>
-                            <h3 class="section-title">Rating Configuration</h3>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Rating Scale</label>
-                                <select id="ratingScale">
-                                    <option>1-5 Stars</option>
-                                    <option>1-10 Scale</option>
-                                    <option>ABCDF Grade</option>
-                                    <option>Pass/Fail</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Minimum Rating</label>
-                                <input type="number" id="minRating" value="1" min="1" max="10">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Rating Labels (comma separated)</label>
-                            <input type="text" id="ratingLabels" value="Poor, Fair, Good, Very Good, Excellent" placeholder="Label1, Label2, ...">
-                        </div>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 24px;">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #dc2626, #f87171);"><i class="fas fa-exclamation-triangle"></i></div>
-                            <h3 class="section-title">Evaluation Rules</h3>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Min. Response Rate (%)</label>
-                                <input type="number" id="minResponse" value="75" min="0" max="100">
-                            </div>
-                            <div class="form-group">
-                                <label>Evaluation Deadline (days)</label>
-                                <input type="number" id="evalDeadline" value="14" min="1" max="90">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Allow Late Submissions</label>
-                            <select id="allowLate">
-                                <option value="no">No</option>
-                                <option value="1">1 Day</option>
-                                <option value="3">3 Days</option>
-                                <option value="7">7 Days</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 24px;">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #7c3aed, #a78bfa);"><i class="fas fa-file-alt"></i></div>
-                            <h3 class="section-title">Report Settings</h3>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Include Comments</span><span>Show instructor comments in reports</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="includeComments" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Show Rankings</span><span>Display instructor rankings</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="showRankings"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Export PDF</span><span>Allow PDF export of reports</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="exportPdf" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Export Excel</span><span>Allow Excel export of reports</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="exportExcel" checked><span class="toggle-slider"></span></label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Notifications Tab -->
-                <div class="tab-content" id="notificationsTab">
-                    <div class="card">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #0284c7, #38bdf8);"><i class="fas fa-envelope"></i></div>
-                            <h3 class="section-title">Email Notifications</h3>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>New Evaluations</span><span>When students submit new evaluations</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="notifNewEval" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Evaluation Reminders</span><span>Remind about pending evaluations</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="notifReminders" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Weekly Summary</span><span>Weekly performance summary</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="notifWeekly"><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Instructor Updates</span><span>When instructors update profiles</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="notifInstructor" checked><span class="toggle-slider"></span></label>
-                        </div>
-                        <div class="toggle-group">
-                            <div class="toggle-label"><span>Student Enrollment</span><span>When new students enroll</span></div>
-                            <label class="toggle-switch"><input type="checkbox" id="notifEnrollment"><span class="toggle-slider"></span></label>
-                        </div>
-                    </div>
-                    
-                    <div class="card" style="margin-top: 24px;">
-                        <div class="section-header">
-                            <div class="section-icon" style="background: linear-gradient(135deg, #f59e0b, #fbbf24);"><i class="fas fa-bell"></i></div>
-                            <h3 class="section-title">Reminder Schedule</h3>
-                        </div>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label>Reminder Frequency</label>
-                                <select id="reminderFreq">
-                                    <option>Daily</option>
-                                    <option>Weekly</option>
-                                    <option>Bi-weekly</option>
-                                    <option>Monthly</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Reminder Time</label>
-                                <select id="reminderTime">
-                                    <option>8:00 AM</option>
-                                    <option>9:00 AM</option>
-                                    <option>12:00 PM</option>
-                                    <option>5:00 PM</option>
-                                </select>
+                                <input type="text" id="degreeName" name="degree_name" value="Bachelor of Science in Business Administration" placeholder="Bachelor of Science in Business Administration">
                             </div>
                         </div>
                     </div>
@@ -469,122 +294,222 @@ if (!$show_role_modal) {
                 <div id="alertContainer" style="position: fixed; top: 80px; right: 20px; z-index: 10000; max-width: 350px;"></div>
     <script src="../../../function/dashboard.js"></script>
     <script>
+        // ── tiny helpers below avoid deprecated optional-chaining ('?.') ────────
+        // Some older browsers throw "Unexpected token '.'" on '?.'.  We replace
+        // every    el?.value       → (el||{}).value
+        //             el?.checked   → (el||{}).checked
+        //
+        // $(id,type) returns element.value / element.checked / empty-fallback
+        function _f(id,attr){var e=document.getElementById(id);return e?e[attr]:null;}
+
         let saveTimeout;
         
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tab + 'Tab').classList.add('active');
-        }
-        
-        function showAlert(type, message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert ' + (type === 'success' ? 'alert-success' : 'alert-error');
-            alertDiv.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + message;
-            document.getElementById('alertContainer').appendChild(alertDiv);
-            setTimeout(() => alertDiv.remove(), 3000);
-        }
-        
-        function autoSave() {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
+function switchTab(tab, btn) {
+             document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+             document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+             if (btn && btn.classList) btn.classList.add('active');
+             var target = document.getElementById(tab + 'Tab');
+             if (target) target.classList.add('active');
+         }
+         
+         function showAlert(type, message) {
+             const alertDiv = document.createElement('div');
+             alertDiv.className = 'alert ' + (type === 'success' ? 'alert-success' : 'alert-error');
+             alertDiv.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' + message;
+             document.getElementById('alertContainer').appendChild(alertDiv);
+             setTimeout(function() { alertDiv.remove(); }, 3000);
+         }
+         
+         function autoSave() {
+             clearTimeout(saveTimeout);
+             saveTimeout = setTimeout(function() {
                 const formData = new FormData();
                 formData.append('action', 'save_settings');
                 
                 // Collect all settings
-                formData.append('deptName', document.getElementById('deptName')?.value || '');
-                formData.append('academicYear', document.getElementById('academicYear')?.value || '');
-                formData.append('deptDesc', document.getElementById('deptDesc')?.value || '');
-                formData.append('currentSemester', document.getElementById('currentSemester')?.value || '');
-                formData.append('enrollmentStatus', document.getElementById('enrollmentStatus')?.value || '');
-                formData.append('autoAssign', document.getElementById('autoAssign')?.checked || false);
-                formData.append('requireApproval', document.getElementById('requireApproval')?.checked || false);
-                formData.append('publicEval', document.getElementById('publicEval')?.checked || false);
-                formData.append('emailNotif', document.getElementById('emailNotif')?.checked || false);
-                formData.append('ratingScale', document.getElementById('ratingScale')?.value || '');
-                formData.append('minRating', document.getElementById('minRating')?.value || '');
-                formData.append('ratingLabels', document.getElementById('ratingLabels')?.value || '');
-                formData.append('minResponse', document.getElementById('minResponse')?.value || '');
-                formData.append('evalDeadline', document.getElementById('evalDeadline')?.value || '');
-                formData.append('allowLate', document.getElementById('allowLate')?.value || '');
-                formData.append('includeComments', document.getElementById('includeComments')?.checked || false);
-                formData.append('showRankings', document.getElementById('showRankings')?.checked || false);
-                formData.append('exportPdf', document.getElementById('exportPdf')?.checked || false);
-                formData.append('exportExcel', document.getElementById('exportExcel')?.checked || false);
-                formData.append('notifNewEval', document.getElementById('notifNewEval')?.checked || false);
-                formData.append('notifReminders', document.getElementById('notifReminders')?.checked || false);
-                formData.append('notifWeekly', document.getElementById('notifWeekly')?.checked || false);
-                formData.append('notifInstructor', document.getElementById('notifInstructor')?.checked || false);
-                formData.append('notifEnrollment', document.getElementById('notifEnrollment')?.checked || false);
-                formData.append('reminderFreq', document.getElementById('reminderFreq')?.value || '');
-                formData.append('reminderTime', document.getElementById('reminderTime')?.value || '');
-                formData.append('schoolName', document.getElementById('schoolName')?.value || '');
-                formData.append('schoolAddress', document.getElementById('schoolAddress')?.value || '');
-                formData.append('instituteName', document.getElementById('instituteName')?.value || '');
-                formData.append('degreeName', document.getElementById('degreeName')?.value || '');
+                formData.append('deptName',        (document.getElementById('deptName')        || {}).value        || '');
+                formData.append('academicYear',    (document.getElementById('academicYear')    || {}).value        || '');
+                formData.append('deptDesc',        (document.getElementById('deptDesc')        || {}).value        || '');
+                formData.append('currentSemester', (document.getElementById('currentSemester') || {}).value        || '');
+                formData.append('enrollmentStatus',(document.getElementById('enrollmentStatus')|| {}).value       || '');
+                formData.append('autoAssign',      !!(document.getElementById('autoAssign')      || {}).checked      || false);
+                formData.append('requireApproval', !!(document.getElementById('requireApproval') || {}).checked      || false);
+                formData.append('publicEval',      !!(document.getElementById('publicEval')      || {}).checked      || false);
+                formData.append('emailNotif',      !!(document.getElementById('emailNotif')      || {}).checked      || false);
+                formData.append('ratingScale',     (document.getElementById('ratingScale')     || {}).value        || '');
+                formData.append('minRating',       (document.getElementById('minRating')       || {}).value        || '');
+                formData.append('ratingLabels',    (document.getElementById('ratingLabels')    || {}).value        || '');
+                formData.append('minResponse',     (document.getElementById('minResponse')     || {}).value        || '');
+                formData.append('evalDeadline',    (document.getElementById('evalDeadline')    || {}).value        || '');
+                formData.append('allowLate',       (document.getElementById('allowLate')       || {}).value        || '');
+                formData.append('includeComments', !!(document.getElementById('includeComments') || {}).checked      || false);
+                formData.append('showRankings',    !!(document.getElementById('showRankings')    || {}).checked      || false);
+                formData.append('exportPdf',       !!(document.getElementById('exportPdf')       || {}).checked      || false);
+                formData.append('exportExcel',     !!(document.getElementById('exportExcel')     || {}).checked      || false);
+                formData.append('notifNewEval',    !!(document.getElementById('notifNewEval')    || {}).checked      || false);
+                formData.append('notifReminders',  !!(document.getElementById('notifReminders')  || {}).checked      || false);
+                formData.append('notifWeekly',     !!(document.getElementById('notifWeekly')     || {}).checked      || false);
+                formData.append('notifInstructor', !!(document.getElementById('notifInstructor') || {}).checked      || false);
+                formData.append('notifEnrollment', !!(document.getElementById('notifEnrollment') || {}).checked      || false);
+                formData.append('reminderFreq',    (document.getElementById('reminderFreq')    || {}).value        || '');
+                formData.append('reminderTime',    (document.getElementById('reminderTime')    || {}).value        || '');
+                formData.append('school_name',      (document.getElementById('schoolName')      || {}).value        || '');
+                formData.append('school_address',   (document.getElementById('schoolAddress')   || {}).value        || '');
+                formData.append('institute_name',   (document.getElementById('instituteName')   || {}).value        || '');
+                formData.append('degree_name',      (document.getElementById('degreeName')      || {}).value        || '');
                 
                 fetch('../../../data/settings_process.php', {
                     method: 'POST',
                     body: formData
                 })
-                .then(r => r.json())
-                .then(data => {
+.then(function(r) { return r.json(); })
+                .then(function(data) {
                     if (data.success) showAlert('success', 'Settings auto-saved');
                 });
             }, 500);
         }
+
+        // ── Academic Year → auto-set Current Semester + Enrollment Period ──────
+
+        function autoSetAcademicCalendar(showHint) {
+            var sel = document.getElementById('academicYear');
+            if (!sel) return;
+            var value  = sel.value;              // e.g. "2025-2026"
+            var parts  = value.split('-');
+            var endYear = parseInt(parts[1]) || (parseInt(parts[0]) + 1);
+            // End-year is even → 2nd Semester | odd → 1st Semester
+            var computedSem = (endYear % 2 === 0) ? '2nd Semester' : '1st Semester';
+            var computedEnroll = 'Open';         // Default; set manually if needed
+
+            var semEl    = document.getElementById('currentSemester');
+            var enrollEl = document.getElementById('enrollmentStatus');
+
+            // Only fill when the field is empty — preserves any value saved in DB
+            // or typed by the program head.
+            if (semEl && !semEl.value)    semEl.value    = computedSem;
+            if (enrollEl && !enrollEl.value) enrollEl.value = computedEnroll;
+
+            if (showHint) {
+                document.getElementById('ayAutoLabel').textContent = value;
+                var hintEl = document.getElementById('ayAutoHint');
+                if (hintEl) {
+                    hintEl.style.display = 'inline-block';
+                    setTimeout(function () { hintEl.style.display = 'none'; }, 4000);
+                }
+            }
+        }
+
+        function onAcademicYearChange() {
+            autoSetAcademicCalendar(true);
+            autoSave();
+        }
         
         // Attach auto-save to all inputs
         document.addEventListener('DOMContentLoaded', function() {
-            loadSettings();
+            // Snapshot the HTML-default values so we can detect what was loaded from DB.
+            // If a field ends up *different* from its HTML default, DB populated it.
+            var _htmlDefaults = {
+                academicYear    : (document.getElementById('academicYear')     || {}).value || '',
+                currentSemester : (document.getElementById('currentSemester')  || {}).value || '',
+                enrollmentStatus: (document.getElementById('enrollmentStatus') || {}).value || ''
+            };
+
+            var loadPromise = loadSettings();
+            loadPromise &&
+            loadPromise.then(function () {
+                // Runs AFTER loadSettings has set values from the DB (if any).
+                // If a field still matches its HTML default, DB had nothing for it → auto-set.
+                var semEl = document.getElementById('currentSemester');
+                var enrollEl = document.getElementById('enrollmentStatus');
+                if (semEl    && semEl.value    === _htmlDefaults.currentSemester)    semEl.value    = '';
+                if (enrollEl && enrollEl.value === _htmlDefaults.enrollmentStatus)   enrollEl.value = '';
+                autoSetAcademicCalendar(false);
+            });
             const inputs = document.querySelectorAll('input, select, textarea');
-            inputs.forEach(input => {
+            inputs.forEach(function (input) {
                 input.addEventListener('change', autoSave);
                 input.addEventListener('keyup', autoSave);
             });
         });
         
         function loadSettings() {
-            fetch('../../../data/settings_process.php', {
+            var formData = new FormData();
+            formData.append('action', 'get_settings');
+            return fetch('../../../data/settings_process.php', {
                 method: 'POST',
-                body: new FormData().append('action', 'get_settings')
+                body: formData
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 if (data.success && data.settings) {
                     const s = data.settings;
-                    if (s.deptName) document.getElementById('deptName').value = s.deptName;
-                    if (s.academicYear) document.getElementById('academicYear').value = s.academicYear;
-                    if (s.deptDesc) document.getElementById('deptDesc').value = s.deptDesc;
-                    if (s.currentSemester) document.getElementById('currentSemester').value = s.currentSemester;
-                    if (s.enrollmentStatus) document.getElementById('enrollmentStatus').value = s.enrollmentStatus;
-                    if (s.autoAssign !== undefined) document.getElementById('autoAssign').checked = s.autoAssign;
-                    if (s.requireApproval !== undefined) document.getElementById('requireApproval').checked = s.requireApproval;
-                    if (s.publicEval !== undefined) document.getElementById('publicEval').checked = s.publicEval;
-                    if (s.emailNotif !== undefined) document.getElementById('emailNotif').checked = s.emailNotif;
-                    if (s.ratingScale) document.getElementById('ratingScale').value = s.ratingScale;
-                    if (s.minRating) document.getElementById('minRating').value = s.minRating;
-                    if (s.ratingLabels) document.getElementById('ratingLabels').value = s.ratingLabels;
-                    if (s.minResponse) document.getElementById('minResponse').value = s.minResponse;
-                    if (s.evalDeadline) document.getElementById('evalDeadline').value = s.evalDeadline;
-                    if (s.allowLate) document.getElementById('allowLate').value = s.allowLate;
-                    if (s.includeComments !== undefined) document.getElementById('includeComments').checked = s.includeComments;
-                    if (s.showRankings !== undefined) document.getElementById('showRankings').checked = s.showRankings;
-                    if (s.exportPdf !== undefined) document.getElementById('exportPdf').checked = s.exportPdf;
-                    if (s.exportExcel !== undefined) document.getElementById('exportExcel').checked = s.exportExcel;
-                    if (s.notifNewEval !== undefined) document.getElementById('notifNewEval').checked = s.notifNewEval;
-                    if (s.notifReminders !== undefined) document.getElementById('notifReminders').checked = s.notifReminders;
-                    if (s.notifWeekly !== undefined) document.getElementById('notifWeekly').checked = s.notifWeekly;
-                    if (s.notifInstructor !== undefined) document.getElementById('notifInstructor').checked = s.notifInstructor;
-                    if (s.notifEnrollment !== undefined) document.getElementById('notifEnrollment').checked = s.notifEnrollment;
-                    if (s.reminderFreq) document.getElementById('reminderFreq').value = s.reminderFreq;
-                    if (s.reminderTime) document.getElementById('reminderTime').value = s.reminderTime;
-                    if (s.schoolName) document.getElementById('schoolName').value = s.schoolName;
-                    if (s.schoolAddress) document.getElementById('schoolAddress').value = s.schoolAddress;
-                    if (s.instituteName) document.getElementById('instituteName').value = s.instituteName;
-                    if (s.degreeName) document.getElementById('degreeName').value = s.degreeName;
+                    const deptNameEl = document.getElementById('deptName');
+                    const academicYearEl = document.getElementById('academicYear');
+                    const deptDescEl = document.getElementById('deptDesc');
+                    const currentSemesterEl = document.getElementById('currentSemester');
+                    const enrollmentStatusEl = document.getElementById('enrollmentStatus');
+                    const autoAssignEl = document.getElementById('autoAssign');
+                    const requireApprovalEl = document.getElementById('requireApproval');
+                    const publicEvalEl = document.getElementById('publicEval');
+                    const emailNotifEl = document.getElementById('emailNotif');
+                    const ratingScaleEl = document.getElementById('ratingScale');
+                    const minRatingEl = document.getElementById('minRating');
+                    const ratingLabelsEl = document.getElementById('ratingLabels');
+                    const minResponseEl = document.getElementById('minResponse');
+                    const evalDeadlineEl = document.getElementById('evalDeadline');
+                    const allowLateEl = document.getElementById('allowLate');
+                    const includeCommentsEl = document.getElementById('includeComments');
+                    const showRankingsEl = document.getElementById('showRankings');
+                    const exportPdfEl = document.getElementById('exportPdf');
+                    const exportExcelEl = document.getElementById('exportExcel');
+                    const notifNewEvalEl = document.getElementById('notifNewEval');
+                    const notifRemindersEl = document.getElementById('notifReminders');
+                    const notifWeeklyEl = document.getElementById('notifWeekly');
+                    const notifInstructorEl = document.getElementById('notifInstructor');
+                    const notifEnrollmentEl = document.getElementById('notifEnrollment');
+                    const reminderFreqEl = document.getElementById('reminderFreq');
+                    const reminderTimeEl = document.getElementById('reminderTime');
+                    const schoolNameEl = document.getElementById('schoolName');
+                    const schoolAddressEl = document.getElementById('schoolAddress');
+                    const instituteNameEl = document.getElementById('instituteName');
+                    const degreeNameEl = document.getElementById('degreeName');
+
+                    if (Object.prototype.hasOwnProperty.call(s, 'deptName') && deptNameEl) deptNameEl.value = s.deptName || '';
+                    if (Object.prototype.hasOwnProperty.call(s, 'academicYear') && academicYearEl) academicYearEl.value = s.academicYear || '';
+                    if (Object.prototype.hasOwnProperty.call(s, 'deptDesc') && deptDescEl) deptDescEl.value = s.deptDesc || '';
+                    if (s.currentSemester && currentSemesterEl) currentSemesterEl.value = s.currentSemester;
+                    if (s.enrollmentStatus && enrollmentStatusEl) enrollmentStatusEl.value = s.enrollmentStatus;
+                    if (s.autoAssign !== undefined && autoAssignEl) autoAssignEl.checked = s.autoAssign;
+                    if (s.requireApproval !== undefined && requireApprovalEl) requireApprovalEl.checked = s.requireApproval;
+                    if (s.publicEval !== undefined && publicEvalEl) publicEvalEl.checked = s.publicEval;
+                    if (s.emailNotif !== undefined && emailNotifEl) emailNotifEl.checked = s.emailNotif;
+                    if (s.ratingScale && ratingScaleEl) ratingScaleEl.value = s.ratingScale;
+                    if (s.minRating && minRatingEl) minRatingEl.value = s.minRating;
+                    if (s.ratingLabels && ratingLabelsEl) ratingLabelsEl.value = s.ratingLabels;
+                    if (s.minResponse && minResponseEl) minResponseEl.value = s.minResponse;
+                    if (s.evalDeadline && evalDeadlineEl) evalDeadlineEl.value = s.evalDeadline;
+                    if (s.allowLate && allowLateEl) allowLateEl.value = s.allowLate;
+                    if (s.includeComments !== undefined && includeCommentsEl) includeCommentsEl.checked = s.includeComments;
+                    if (s.showRankings !== undefined && showRankingsEl) showRankingsEl.checked = s.showRankings;
+                    if (s.exportPdf !== undefined && exportPdfEl) exportPdfEl.checked = s.exportPdf;
+                    if (s.exportExcel !== undefined && exportExcelEl) exportExcelEl.checked = s.exportExcel;
+                    if (s.notifNewEval !== undefined && notifNewEvalEl) notifNewEvalEl.checked = s.notifNewEval;
+                    if (s.notifReminders !== undefined && notifRemindersEl) notifRemindersEl.checked = s.notifReminders;
+                    if (s.notifWeekly !== undefined && notifWeeklyEl) notifWeeklyEl.checked = s.notifWeekly;
+                    if (s.notifInstructor !== undefined && notifInstructorEl) notifInstructorEl.checked = s.notifInstructor;
+                    if (s.notifEnrollment !== undefined && notifEnrollmentEl) notifEnrollmentEl.checked = s.notifEnrollment;
+                    if (s.reminderFreq && reminderFreqEl) reminderFreqEl.value = s.reminderFreq;
+                    if (s.reminderTime && reminderTimeEl) reminderTimeEl.value = s.reminderTime;
+                    if (s.school_name && schoolNameEl) schoolNameEl.value = s.school_name;
+                    else if (s.schoolName && schoolNameEl) schoolNameEl.value = s.schoolName;
+                    if (s.school_address && schoolAddressEl) schoolAddressEl.value = s.school_address;
+                    else if (s.schoolAddress && schoolAddressEl) schoolAddressEl.value = s.schoolAddress;
+                    if (s.institute_name && instituteNameEl) instituteNameEl.value = s.institute_name;
+                    else if (s.instituteName && instituteNameEl) instituteNameEl.value = s.instituteName;
+                    if (s.degree_name && degreeNameEl) degreeNameEl.value = s.degree_name;
+                    else if (s.degreeName && degreeNameEl) degreeNameEl.value = s.degreeName;
                 }
+                return data;
             });
         }
         
@@ -602,8 +527,8 @@ if (!$show_role_modal) {
                 method: 'POST',
                 body: formData
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 showAlert(data.success ? 'success' : 'error', data.message || 'Profile saved successfully');
             });
         }
@@ -627,8 +552,8 @@ if (!$show_role_modal) {
                 method: 'POST',
                 body: formData
             })
-            .then(r => r.json())
-            .then(data => {
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
                 showAlert(data.success ? 'success' : 'error', data.message);
                 if (data.success) document.getElementById('passwordForm').reset();
             });

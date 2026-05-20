@@ -1,5 +1,5 @@
 <?php
-require_once '../../../data/session_security.php';
+require_once '../../data/session_security.php';
 
 $role_access = check_role_access('instructor');
 $show_role_modal = !$role_access['allowed'];
@@ -10,7 +10,7 @@ $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Jane Teac
 $stats = ['total_students' => 0, 'by_major' => [], 'by_year' => [], 'by_gender' => [], 'total_tasks' => 0];
 
 if (!$show_role_modal) {
-    require_once '../../../data/config.php';
+    require_once '../../data/config.php';
     try {
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM mentees WHERE mentor_id = ?");
         $stmt->execute([$instructor_id]);
@@ -32,7 +32,7 @@ if (!$show_role_modal) {
 
 $students = [];
 if (!$show_role_modal) {
-    require_once '../../../data/config.php';
+    require_once '../../data/config.php';
     try {
         $stmt = $pdo->prepare("SELECT s.id as id, me.id as mentee_id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix, s.email, s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to, m.display_name as major_name, m.gradient_from as major_gradient_from, m.gradient_to as major_gradient_to FROM mentees me JOIN students s ON me.student_id = s.id LEFT JOIN majors m ON s.major_id = m.id WHERE me.mentor_id = ? ORDER BY s.last_name, s.first_name");
         $stmt->execute([$instructor_id]);
@@ -730,6 +730,94 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
 /* Loading spinner */
 .spinner { display: inline-block; width: 20px; height: 20px; border: 2.5px solid rgba(212,168,67,.3); border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════
+   TASK PANEL ACTION BUTTONS
+══════════════════════════════════════════ */
+.task-action-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    background: #fffbf0;
+    border-bottom: 1px solid var(--gold-border);
+    flex-wrap: wrap;
+}
+.task-action-bar label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; color: #92400e;
+    cursor: pointer; white-space: nowrap;
+}
+.task-action-bar input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--gold-dark); cursor: pointer; }
+.task-sel-count {
+    background: #fef08a; border-radius: 20px;
+    padding: 2px 10px; font-size: 11px; font-weight: 700;
+    color: #92400e; display: none;
+}
+.task-sel-count.visible { display: inline-block; }
+.task-action-spacer { flex: 1; }
+.btn-task-action {
+    padding: 7px 13px; border-radius: 9px;
+    font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: var(--transition); border: 1.5px solid;
+    display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.btn-task-del {
+    background: #fef2f2; color: #dc2626; border-color: #fecaca;
+}
+.btn-task-del:hover { background: #dc2626; color: #fff; border-color: #dc2626; box-shadow: 0 4px 10px rgba(220,38,38,.25); }
+.btn-task-del:disabled { opacity: .4; cursor: not-allowed; }
+.btn-task-clear {
+    background: #f3f4f6; color: var(--muted); border-color: var(--border);
+}
+.btn-task-clear:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn-task-reassign {
+    background: #ede9fe; color: #5b21b6; border-color: #c4b5fd;
+}
+.btn-task-reassign:hover { background: #7c3aed; color: #fff; border-color: #7c3aed; box-shadow: 0 4px 10px rgba(124,58,237,.25); }
+.btn-task-reassign:disabled { opacity: .4; cursor: not-allowed; }
+
+/* task card selection state */
+.task-card.tc-selected {
+    border-color: var(--gold) !important;
+    background: var(--gold-pale);
+    box-shadow: 0 0 0 2px rgba(212,168,67,.25);
+}
+.task-card-select-cb {
+    position: absolute; top: 10px; right: 10px;
+    width: 15px; height: 15px; accent-color: var(--gold-dark);
+    cursor: pointer; display: none;
+}
+.task-select-mode .task-card-select-cb { display: block; }
+.task-select-mode .task-card { cursor: pointer; }
+
+/* Reassign modal student list */
+.reassign-student-list {
+    max-height: 240px; overflow-y: auto;
+    border: 1.5px solid var(--border); border-radius: 12px;
+    padding: 4px;
+}
+.reassign-student-list::-webkit-scrollbar { width: 4px; }
+.reassign-student-list::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+.reassign-stu-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 9px;
+    cursor: pointer; transition: background .15s;
+}
+.reassign-stu-item:hover { background: var(--gold-pale); }
+.reassign-stu-item input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--gold-dark); cursor: pointer; flex-shrink: 0; }
+.reassign-stu-avatar {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 12px; flex-shrink: 0;
+}
+.reassign-stu-name { font-size: 13px; font-weight: 600; color: var(--ink); }
+.reassign-stu-sid { font-size: 11px; color: var(--muted); }
+.reassign-info-box {
+    background: var(--gold-pale); border: 1px solid var(--gold-border);
+    border-radius: 10px; padding: 12px 14px;
+    font-size: 12px; color: var(--gold-dark);
+    display: flex; gap: 8px; align-items: flex-start; margin-bottom: 14px;
+}
+.reassign-info-box i { margin-top: 1px; flex-shrink: 0; }
 </style>
 </head>
 <body class="dashboard-page">
@@ -831,8 +919,12 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                     <button class="year-tab active" data-year="all" onclick="filterYear('all')">
                         <i class="fas fa-layer-group"></i> All <span class="tab-count" id="cnt-all">(<?php echo count($students); ?>)</span>
                     </button>
-                    <?php for ($y = 1; $y <= 4; $y++): 
-                        $cnt = count(array_filter($students, fn($s) => isset($s['year_level']) && preg_match('/^'.$y.'(st|nd|rd|th)\s*Year/i', $s['year_level'])));
+                    <?php for ($y = 1; $y <= 4; $y++):
+                        $cnt = count(array_filter($students, function($s) use ($y) {
+                            if (empty($s['year_level'])) return false;
+                            // Match only the exact ordinal year, e.g. "1st Year", not "11st Year"
+                            return preg_match('/^'.preg_quote($y, '/').'(st|nd|rd|th)\b/', $s['year_level']);
+                        }));
                     ?>
                     <button class="year-tab" data-year="<?php echo $y; ?>" onclick="filterYear('<?php echo $y; ?>')">
                         <i class="fas fa-graduation-cap"></i> Year <?php echo $y; ?> <span class="tab-count" id="cnt-<?php echo $y; ?>">(<?php echo $cnt; ?>)</span>
@@ -963,6 +1055,33 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                             <div class="section-title-icon"><i class="fas fa-clipboard-list"></i></div>
                             All Tasks
                         </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <button class="btn-task-action btn-task-clear" id="taskSelectModeBtn" onclick="toggleTaskSelectMode()" title="Select tasks to manage">
+                                <i class="fas fa-check-square"></i> Select
+                            </button>
+                            <button class="btn-task-action btn-task-clear" onclick="confirmClearAllTasks()" title="Clear all tasks">
+                                <i class="fas fa-trash-alt"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Task selection action bar (visible in select mode) -->
+                    <div class="task-action-bar" id="taskActionBar" style="display:none;">
+                        <label for="selectAllTasksCb">
+                            <input type="checkbox" id="selectAllTasksCb" onchange="toggleAllTasks()">
+                            Select All
+                        </label>
+                        <span class="task-sel-count visible" id="taskSelCount">0 selected</span>
+                        <div class="task-action-spacer"></div>
+                        <button class="btn-task-action btn-task-reassign" id="reassignSelBtn" disabled onclick="openReassignModal()">
+                            <i class="fas fa-user-plus"></i> Re-assign
+                        </button>
+                        <button class="btn-task-action btn-task-del" id="deleteSelBtn" disabled onclick="confirmDeleteSelected()">
+                            <i class="fas fa-trash"></i> Delete Selected
+                        </button>
+                        <button class="btn-task-action btn-task-clear" onclick="toggleTaskSelectMode()">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
                     </div>
 
                     <!-- Stats row -->
@@ -1079,6 +1198,86 @@ body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--i
                     <button type="submit" class="btn-submit" id="bulkSubmitBtn"><i class="fas fa-check"></i> Assign Task</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: REASSIGN / ADD ASSIGNEES ══════════════════════════ -->
+<div class="modal-overlay" id="reassignModal">
+    <div class="modal-box">
+        <div class="modal-hero" style="background:linear-gradient(135deg,#2e1065,#5b21b6);">
+            <button class="modal-close-btn" onclick="closeModal('reassignModal')"><i class="fas fa-times"></i></button>
+            <div class="modal-hero-title"><i class="fas fa-user-plus" style="color:#c4b5fd;margin-right:10px;"></i>Re-assign / Add Assignees</div>
+            <div class="modal-hero-sub" id="reassignModalSub">Select students to assign these tasks to</div>
+        </div>
+        <div class="modal-body">
+            <div class="reassign-info-box">
+                <i class="fas fa-info-circle"></i>
+                <span>Choose students below. Existing assignees will be <strong>kept</strong>; selected students will be <strong>added</strong> (or replaced if you toggle "Replace all assignees").</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+                <label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2);cursor:pointer;">
+                    <input type="checkbox" id="replaceAssignees" style="width:15px;height:15px;accent-color:#7c3aed;">
+                    Replace all existing assignees
+                </label>
+                <div style="flex:1;min-width:160px;position:relative;">
+                    <i class="fas fa-search" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:12px;"></i>
+                    <input type="text" id="reassignSearch" placeholder="Search student…"
+                        style="width:100%;padding:8px 10px 8px 30px;border:1.5px solid var(--border);border-radius:10px;font-family:'Poppins',sans-serif;font-size:12px;"
+                        oninput="filterReassignList()">
+                </div>
+            </div>
+            <div class="reassign-student-list" id="reassignStudentList">
+                <!-- populated by JS -->
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-cancel" onclick="closeModal('reassignModal')">Cancel</button>
+                <button type="button" class="btn-submit" id="reassignSubmitBtn" onclick="submitReassign()">
+                    <i class="fas fa-user-plus"></i> Apply Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: CONFIRM CLEAR ALL ══════════════════════════════════ -->
+<div class="modal-overlay" id="confirmClearModal">
+    <div class="modal-box" style="max-width:440px;">
+        <div class="modal-hero" style="background:linear-gradient(135deg,#1f2937,#374151);padding:28px 32px;">
+            <div class="modal-hero-title" style="font-size:20px;"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:10px;"></i>Clear All Tasks?</div>
+            <div class="modal-hero-sub">This action cannot be undone.</div>
+        </div>
+        <div class="modal-body" style="padding:24px 32px;">
+            <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:24px;">
+                All <strong id="clearCount">0</strong> task(s) will be permanently deleted, including their assignments to students.
+            </p>
+            <div class="form-actions" style="margin:0;padding:0;border:none;">
+                <button class="btn-cancel" onclick="closeModal('confirmClearModal')">Cancel</button>
+                <button class="btn-task-action btn-task-del" style="padding:11px 24px;font-size:14px;" onclick="executeDeleteTasks('all')">
+                    <i class="fas fa-trash-alt"></i> Yes, Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ MODAL: CONFIRM DELETE SELECTED ════════════════════════════ -->
+<div class="modal-overlay" id="confirmDeleteSelModal">
+    <div class="modal-box" style="max-width:440px;">
+        <div class="modal-hero" style="background:linear-gradient(135deg,#1f2937,#374151);padding:28px 32px;">
+            <div class="modal-hero-title" style="font-size:20px;"><i class="fas fa-trash" style="color:#ef4444;margin-right:10px;"></i>Delete Selected Tasks?</div>
+            <div class="modal-hero-sub">This action cannot be undone.</div>
+        </div>
+        <div class="modal-body" style="padding:24px 32px;">
+            <p style="font-size:14px;color:var(--ink-2);line-height:1.6;margin-bottom:24px;">
+                <strong id="deleteSelCount">0</strong> selected task(s) will be permanently deleted.
+            </p>
+            <div class="form-actions" style="margin:0;padding:0;border:none;">
+                <button class="btn-cancel" onclick="closeModal('confirmDeleteSelModal')">Cancel</button>
+                <button class="btn-task-action btn-task-del" style="padding:11px 24px;font-size:14px;" onclick="executeDeleteTasks('selected')">
+                    <i class="fas fa-trash"></i> Yes, Delete
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -1223,8 +1422,8 @@ function updateSel() {
     document.getElementById('selCount').textContent = `${cnt} selected`;
     document.getElementById('assignBulkBtn').disabled = cnt === 0;
 
-    const visG = [...gCbs].filter(cb => cb.closest('.s-card')?.style.display !== 'none');
-    const visL = [...lCbs].filter(cb => cb.closest('.stu-row')?.style.display !== 'none');
+const visG = [...gCbs].filter(cb => { const card = cb.closest('.s-card'); return card && card.style.display !== 'none'; });
+     const visL = [...lCbs].filter(cb => { const row = cb.closest('.stu-row'); return row && row.style.display !== 'none'; });
     const visCbs = currentView === 'grid' ? visG : visL;
     const checkedVis = visCbs.filter(cb => cb.checked).length;
     document.getElementById('selectAllCb').checked = visCbs.length > 0 && checkedVis === visCbs.length;
@@ -1254,7 +1453,7 @@ function viewStudent(menteeId) {
     const s = ALL_STUDENTS.find(x => x.mentee_id == menteeId);
     if (!s) return;
     const fullName = [s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' ') + (s.suffix ? ' ' + s.suffix : '');
-    const initials = (s.first_name?.[0]||'') + (s.last_name?.[0]||'') || '??';
+    const initials = ((s.first_name && s.first_name[0]) || '') + ((s.last_name && s.last_name[0]) || '') || '??';
     const grad = s.major_gradient_from ? `linear-gradient(135deg,${s.major_gradient_from},${s.major_gradient_to})` : 'linear-gradient(135deg,#d4a843,#8B6914)';
 
     document.getElementById('studentModalHero').style.background = `linear-gradient(135deg,${s.major_gradient_from||'#1a1209'},${s.major_gradient_to||'#3d2a0a'})`;
@@ -1280,64 +1479,64 @@ function viewStudent(menteeId) {
 }
 
 async function loadStudentTasks(menteeId) {
-    const list = document.getElementById('smTasksList');
-    const cnt = document.getElementById('smTasksCount');
-    list.innerHTML = '<div style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto;"></div></div>';
-    try {
-        const r = await fetch('../../../Door/data/get_mentee_tasks.php?mentee_id=' + menteeId);
-        const d = await r.json();
-        const tasks = d.success ? (d.tasks || []) : [];
-        cnt.textContent = tasks.length;
-        if (!tasks.length) {
-            list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;"><i class="fas fa-clipboard-list" style="font-size:32px;color:var(--gold-light);display:block;margin-bottom:10px;opacity:.6;"></i>No tasks assigned yet.</div>';
-            return;
-        }
-        list.innerHTML = tasks.map(t => {
-            const done = t.assignment_status === 'completed';
-            const due = t.due_date ? new Date(t.due_date).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : 'No due date';
-            const overdue = t.due_date && new Date(t.due_date) < new Date() && !done;
-            return `<div class="modal-task-item ${done?'done':''}">
-                <div class="modal-task-check ${done?'done':''}">${done?'<i class="fas fa-check"></i>':''}</div>
-                <div class="modal-task-info">
-                    <div class="modal-task-name ${done?'done':''}">${esc(t.title)}</div>
-                    <div class="modal-task-sub">
-                        <span class="priority-badge ${t.priority}">${t.priority}</span>
-                        &nbsp;·&nbsp; <i class="fas fa-calendar" style="color:${overdue?'#ef4444':'var(--gold)'};"></i>
-                        <span style="color:${overdue?'#ef4444':'inherit'};">${due}</span>
-                    </div>
-                </div>
-                ${!done ? `<button class="btn-complete" onclick="markDone(${t.task_id},${menteeId})"><i class="fas fa-check"></i> Done</button>` : ''}
-            </div>`;
-        }).join('');
-    } catch(e) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:#ef4444;font-size:13px;">Failed to load tasks.</div>';
-    }
-}
+     const list = document.getElementById('smTasksList');
+     const cnt = document.getElementById('smTasksCount');
+     list.innerHTML = '<div style="text-align:center;padding:24px;"><div class="spinner" style="margin:0 auto;"></div></div>';
+     try {
+         const r = await fetch('../../data/get_mentee_tasks.php?mentee_id=' + menteeId);
+         const d = await r.json();
+         const tasks = d.success ? (d.tasks || []) : [];
+         cnt.textContent = tasks.length;
+         if (!tasks.length) {
+             list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px;"><i class="fas fa-clipboard-list" style="font-size:32px;color:var(--gold-light);display:block;margin-bottom:10px;opacity:.6;"></i>No tasks assigned yet.</div>';
+             return;
+         }
+         list.innerHTML = tasks.map(t => {
+             const done = t.assignment_status === 'completed';
+             const due = t.due_date ? new Date(t.due_date).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : 'No due date';
+             const overdue = t.due_date && new Date(t.due_date) < new Date() && !done;
+             return `<div class="modal-task-item ${done?'done':''}">
+                 <div class="modal-task-check ${done?'done':''}">${done?'<i class="fas fa-check"></i>':''}</div>
+                 <div class="modal-task-info">
+                     <div class="modal-task-name ${done?'done':''}">${esc(t.title)}</div>
+                     <div class="modal-task-sub">
+                         <span class="priority-badge ${t.priority}">${t.priority}</span>
+                         &nbsp;·&nbsp; <i class="fas fa-calendar" style="color:${overdue?'#ef4444':'var(--gold)'};"></i>
+                         <span style="color:${overdue?'#ef4444':'inherit'};">${due}</span>
+                     </div>
+                 </div>
+                 ${!done ? `<button class="btn-complete" onclick="markDone(${t.task_id},${menteeId})"><i class="fas fa-check"></i> Done</button>` : ''}
+             </div>`;
+         }).join('');
+     } catch(e) {
+         list.innerHTML = '<div style="text-align:center;padding:24px;color:#ef4444;font-size:13px;">Failed to load tasks.</div>';
+     }
+ }
 
 async function markDone(taskId, menteeId) {
-    try {
-        const r = await fetch('../../../Door/data/update_task_status.php', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ task_id: taskId, mentee_id: menteeId, status: 'completed' })
-        });
-        const d = await r.json();
-        if (d.success) { toast('Task marked complete!', 'success'); loadStudentTasks(menteeId); loadAllTasks(); }
-        else toast(d.message || 'Failed', 'error');
-    } catch(e) { toast('Network error', 'error'); }
-}
-
- async function removeMentee(menteeId, name) {
-     if (!confirm(`Remove "${name}" from your mentees? All their tasks will be deleted.`)) return;
      try {
-         const r = await fetch('../../../Door/data/remove_mentee.php', {
+         const r = await fetch('../../data/update_task_status.php', {
              method: 'POST', headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ mentee_id: menteeId })
+             body: JSON.stringify({ task_id: taskId, mentee_id: menteeId, status: 'completed' })
          });
          const d = await r.json();
-         if (d.success) { toast('Mentee removed!', 'success'); closeModal('studentModal'); setTimeout(() => location.reload(), 1000); }
+         if (d.success) { toast('Task marked complete!', 'success'); loadStudentTasks(menteeId); loadAllTasks(); }
          else toast(d.message || 'Failed', 'error');
      } catch(e) { toast('Network error', 'error'); }
  }
+
+async function removeMentee(menteeId, name) {
+      if (!confirm(`Remove "${name}" from your mentees? All their tasks will be deleted.`)) return;
+      try {
+          const r = await fetch('../../data/remove_mentee.php', {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ mentee_id: menteeId })
+          });
+          const d = await r.json();
+          if (d.success) { toast('Mentee removed!', 'success'); closeModal('studentModal'); setTimeout(() => location.reload(), 1000); }
+          else toast(d.message || 'Failed', 'error');
+      } catch(e) { toast('Network error', 'error'); }
+  }
  
  // Alias for kick button
  function kickStudent(menteeId, name) {
@@ -1389,52 +1588,52 @@ function openSingleAssign(menteeId, name) {
    SUBMIT TASK
 ══════════════════════════════════ */
 async function submitTask(e, mode) {
-    e.preventDefault();
-    const isBulk = mode === 'bulk';
-    const title = document.getElementById(isBulk ? 'bulkTitle' : 'singleTitle').value.trim();
-    const desc  = document.getElementById(isBulk ? 'bulkDesc' : 'singleDesc').value.trim();
-    const prio  = document.getElementById(isBulk ? 'bulkPriority' : 'singlePriority').value;
-    const due   = document.getElementById(isBulk ? 'bulkDue' : 'singleDue').value || null;
-    const ids   = isBulk ? [...selectedMentees] : [currentSingleMenteeId];
-    const btn   = document.getElementById(isBulk ? 'bulkSubmitBtn' : 'singleSubmitBtn');
+     e.preventDefault();
+     const isBulk = mode === 'bulk';
+     const title = document.getElementById(isBulk ? 'bulkTitle' : 'singleTitle').value.trim();
+     const desc  = document.getElementById(isBulk ? 'bulkDesc' : 'singleDesc').value.trim();
+     const prio  = document.getElementById(isBulk ? 'bulkPriority' : 'singlePriority').value;
+     const due   = document.getElementById(isBulk ? 'bulkDue' : 'singleDue').value || null;
+     const ids   = isBulk ? [...selectedMentees] : [currentSingleMenteeId];
+     const btn   = document.getElementById(isBulk ? 'bulkSubmitBtn' : 'singleSubmitBtn');
 
-    if (!title || ids.length === 0) { toast('Please fill in required fields', 'error'); return; }
-    btn.disabled = true; btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;display:inline-block;"></div> Assigning…';
+     if (!title || ids.length === 0) { toast('Please fill in required fields', 'error'); return; }
+     btn.disabled = true; btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;display:inline-block;"></div> Assigning…';
 
-    try {
-        const r = await fetch('../../../Door/data/assign_task.php', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description: desc, priority: prio, due_date: due, mentee_ids: ids })
-        });
-        const d = await r.json();
-        if (d.success) {
-            toast(d.message || 'Task assigned!', 'success');
-            closeModal(isBulk ? 'bulkModal' : 'singleModal');
-            if (currentDetailMenteeId && !isBulk) loadStudentTasks(currentDetailMenteeId);
-            loadAllTasks();
-            selectedMentees.clear();
-            document.querySelectorAll('.stu-cb, .stu-cb-tbl').forEach(cb => cb.checked = false);
-            updateSel();
-        } else toast(d.message || 'Failed to assign', 'error');
-    } catch(er) { toast('Network error', 'error'); }
-    finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Assign Task'; }
-}
+     try {
+         const r = await fetch('../../data/assign_task.php', {
+             method: 'POST', headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ title, description: desc, priority: prio, due_date: due, mentee_ids: ids })
+         });
+         const d = await r.json();
+         if (d.success) {
+             toast(d.message || 'Task assigned!', 'success');
+             closeModal(isBulk ? 'bulkModal' : 'singleModal');
+             if (currentDetailMenteeId && !isBulk) loadStudentTasks(currentDetailMenteeId);
+             loadAllTasks();
+             selectedMentees.clear();
+             document.querySelectorAll('.stu-cb, .stu-cb-tbl').forEach(cb => cb.checked = false);
+             updateSel();
+         } else toast(d.message || 'Failed to assign', 'error');
+     } catch(er) { toast('Network error', 'error'); }
+     finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Assign Task'; }
+ }
 
 /* ══════════════════════════════════
    TASKS PANEL — LOAD ALL
 ══════════════════════════════════ */
 async function loadAllTasks() {
-    const list = document.getElementById('tasksList');
-    try {
-        const r = await fetch('../../../Door/data/get_instructor_tasks.php');
-        const d = await r.json();
-        allTasksData = d.success ? (d.tasks || []) : [];
-        updateTaskStats();
-        renderTasksList();
-    } catch(e) {
-        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Failed to load tasks.</div>';
-    }
-}
+     const list = document.getElementById('tasksList');
+     try {
+         const r = await fetch('../../data/get_instructor_tasks.php');
+         const d = await r.json();
+         allTasksData = d.success ? (d.tasks || []) : [];
+         updateTaskStats();
+         renderTasksList();
+     } catch(e) {
+         list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px;">Failed to load tasks.</div>';
+     }
+ }
 
 function updateTaskStats() {
     const total = allTasksData.length;
@@ -1478,7 +1677,8 @@ function renderTasksList() {
         const due = t.due_date ? new Date(t.due_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : null;
         const overdue = t.due_date && new Date(t.due_date) < new Date() && !allDone;
 
-        return `<div class="task-card priority-${t.priority} ${allDone?'completed':''}">
+        return `<div class="task-card priority-${t.priority} ${allDone?'completed':''}" data-task-id="${t.task_id}" onclick="handleTaskCardClick(event,'${t.task_id}')">
+            <input type="checkbox" class="task-card-select-cb" data-task-id="${t.task_id}" onclick="event.stopPropagation()" onchange="handleTaskCheckChange()">
             <div class="task-card-top">
                 <div class="task-card-title ${allDone?'done':''}">${esc(t.title)}</div>
                 <div class="task-status-dot ${allDone?'completed':'pending'}"></div>
@@ -1502,7 +1702,233 @@ function renderTasksList() {
             </div>` : ''}
         </div>`;
     }).join('');
+
+    // Restore select mode visual if active
+    if (taskSelectMode) {
+        document.getElementById('tasksList').classList.add('task-select-mode');
+    }
 }
+
+/* ══════════════════════════════════
+   TASK SELECT MODE
+══════════════════════════════════ */
+let taskSelectMode = false;
+let selectedTaskIds = new Set();
+let selectedTaskMenteeMap = {};   // task_id → Set(mentee_id) for already-assigned mentees
+
+function toggleTaskSelectMode() {
+    taskSelectMode = !taskSelectMode;
+    selectedTaskIds.clear();
+    const bar = document.getElementById('taskActionBar');
+    const list = document.getElementById('tasksList');
+    const btn  = document.getElementById('taskSelectModeBtn');
+
+    if (taskSelectMode) {
+        bar.style.display = 'flex';
+        list.classList.add('task-select-mode');
+        btn.style.display = 'none';
+        // Re-render list so checkboxes (hidden by default) are in the DOM
+        renderTasksList();
+    } else {
+        bar.style.display = 'none';
+        list.classList.remove('task-select-mode');
+        btn.style.display = '';
+        document.getElementById('selectAllTasksCb').checked = false;
+        // uncheck all
+        document.querySelectorAll('.task-card-select-cb').forEach(cb => { cb.checked = false; });
+        document.querySelectorAll('.task-card').forEach(c => c.classList.remove('tc-selected'));
+    }
+    updateTaskSelCount();
+}
+
+function handleTaskCardClick(e, taskId) {
+    if (!taskSelectMode) return;
+    const cb = e.currentTarget.querySelector('.task-card-select-cb');
+    cb.checked = !cb.checked;
+    handleTaskCheckChange();
+}
+
+function handleTaskCheckChange() {
+    selectedTaskIds.clear();
+    document.querySelectorAll('.task-card-select-cb:checked').forEach(cb => {
+        selectedTaskIds.add(cb.dataset.taskId);
+        cb.closest('.task-card').classList.add('tc-selected');
+    });
+    document.querySelectorAll('.task-card-select-cb:not(:checked)').forEach(cb => {
+        cb.closest('.task-card').classList.remove('tc-selected');
+    });
+    updateTaskSelCount();
+}
+
+function toggleAllTasks() {
+    const checked = document.getElementById('selectAllTasksCb').checked;
+    document.querySelectorAll('.task-card-select-cb').forEach(cb => {
+        cb.checked = checked;
+        cb.closest('.task-card').classList.toggle('tc-selected', checked);
+    });
+    selectedTaskIds.clear();
+    if (checked) document.querySelectorAll('.task-card-select-cb').forEach(cb => selectedTaskIds.add(cb.dataset.taskId));
+    updateTaskSelCount();
+}
+
+function updateTaskSelCount() {
+    const n = selectedTaskIds.size;
+    document.getElementById('taskSelCount').textContent = `${n} selected`;
+    document.getElementById('deleteSelBtn').disabled = n === 0;
+    document.getElementById('reassignSelBtn').disabled = n === 0;
+}
+
+/* ══════════════════════════════════
+   CLEAR ALL TASKS
+══════════════════════════════════ */
+function confirmClearAllTasks() {
+    if (!allTasksData.length) { toast('No tasks to clear', 'error'); return; }
+    document.getElementById('clearCount').textContent = allTasksData.length;
+    openModal('confirmClearModal');
+}
+
+/* ══════════════════════════════════
+   DELETE SELECTED TASKS
+══════════════════════════════════ */
+function confirmDeleteSelected() {
+    if (selectedTaskIds.size === 0) { toast('No tasks selected', 'error'); return; }
+    document.getElementById('deleteSelCount').textContent = selectedTaskIds.size;
+    openModal('confirmDeleteSelModal');
+}
+
+/* ══════════════════════════════════
+   EXECUTE DELETE (all or selected)
+══════════════════════════════════ */
+async function executeDeleteTasks(mode) {
+      const ids = mode === 'all' ? allTasksData.map(t => t.task_id) : [...selectedTaskIds];
+     if (!ids.length) return;
+
+     const modalId = mode === 'all' ? 'confirmClearModal' : 'confirmDeleteSelModal';
+     closeModal(modalId);
+
+     try {
+         const r = await fetch('../../data/delete_tasks.php', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ task_ids: ids })
+         });
+         const d = await r.json();
+         if (d.success) {
+             toast(d.message || `${ids.length} task(s) deleted`, 'success');
+             selectedTaskIds.clear();
+             if (taskSelectMode) toggleTaskSelectMode();
+             loadAllTasks();
+         } else {
+             toast(d.message || 'Failed to delete tasks', 'error');
+         }
+     } catch(e) {
+         toast('Network error', 'error');
+     }
+ }
+
+/* ══════════════════════════════════
+   REASSIGN / ADD ASSIGNEES
+══════════════════════════════════ */
+function openReassignModal() {
+    if (selectedTaskIds.size === 0) { toast('Select at least one task', 'error'); return; }
+    document.getElementById('reassignModalSub').textContent = `Adding assignees to ${selectedTaskIds.size} task(s)`;
+    document.getElementById('reassignSearch').value = '';
+    document.getElementById('replaceAssignees').checked = false;
+
+    // Build a map of task_id → Set(mentee_id) from existing assignments in allTasksData
+    const menteeIds = [];
+    selectedTaskMenteeMap = {};
+    selectedTaskIds.forEach(tid => {
+        const task = allTasksData.find(t => t.task_id == tid);
+        const set = new Set();
+        (task?.mentees || []).forEach(m => {
+            set.add(String(m.mentee_id));
+            menteeIds.push(String(m.mentee_id));
+        });
+        selectedTaskMenteeMap[tid] = set;
+    });
+    selectedTaskMenteeMap._any = new Set(menteeIds); // union for "assigned to ANY of the selected tasks"
+
+    renderReassignStudentList('');
+    openModal('reassignModal');
+}
+
+function renderReassignStudentList(query) {
+    const container = document.getElementById('reassignStudentList');
+    // Students already assigned to ANY of the selected tasks (hidden before filter)
+    const alreadyAssigned = selectedTaskMenteeMap._any || new Set();
+    const cards = [...document.querySelectorAll('.s-card')];
+    const students = cards.map(c => ({
+        menteeId: c.dataset.mentee,
+        name: c.querySelector('.s-name')?.textContent || '',
+        sid: c.querySelector('.s-sid')?.textContent || '',
+        gradient: c.querySelector('.s-avatar')?.style.background || 'linear-gradient(135deg,#d4a843,#8B6914)',
+        initials: c.querySelector('.s-avatar')?.textContent || '??'
+    })).filter(s => {
+        const matchesQuery = !query || s.name.toLowerCase().includes(query.toLowerCase()) || s.sid.toLowerCase().includes(query.toLowerCase());
+        const notAlreadyAssigned = !alreadyAssigned.has(s.menteeId);
+        return matchesQuery && notAlreadyAssigned;
+    });
+
+    if (!students.length) {
+        container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">No students found.</div>';
+        return;
+    }
+
+    container.innerHTML = students.map(s => `
+        <div class="reassign-stu-item" onclick="toggleReassignStudent('${s.menteeId}')">
+            <input type="checkbox" id="rstu-${s.menteeId}" value="${s.menteeId}" class="reassign-stu-cb" onclick="event.stopPropagation()" onchange="void(0)">
+            <div class="reassign-stu-avatar" style="background:${s.gradient};">${esc(s.initials)}</div>
+            <div>
+                <div class="reassign-stu-name">${esc(s.name)}</div>
+                <div class="reassign-stu-sid">${esc(s.sid)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function toggleReassignStudent(menteeId) {
+    const cb = document.getElementById(`rstu-${menteeId}`);
+    if (cb) cb.checked = !cb.checked;
+}
+
+function filterReassignList() {
+    renderReassignStudentList(document.getElementById('reassignSearch').value);
+}
+
+async function submitReassign() {
+     const checkedCbs = [...document.querySelectorAll('.reassign-stu-cb:checked')];
+     const menteeIds = checkedCbs.map(cb => cb.value);
+     if (!menteeIds.length) { toast('Select at least one student', 'error'); return; }
+
+     const taskIds = [...selectedTaskIds];
+     const replace = document.getElementById('replaceAssignees').checked;
+     const btn = document.getElementById('reassignSubmitBtn');
+     btn.disabled = true;
+     btn.innerHTML = '<div class="spinner" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;display:inline-block;"></div> Applying…';
+
+     try {
+         const r = await fetch('../../data/reassign_tasks.php', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ task_ids: taskIds, mentee_ids: menteeIds, replace })
+         });
+         const d = await r.json();
+         if (d.success) {
+             toast(d.message || 'Assignees updated!', 'success');
+             closeModal('reassignModal');
+             selectedTaskIds.clear();
+             if (taskSelectMode) toggleTaskSelectMode();
+             loadAllTasks();
+         } else {
+             toast(d.message || 'Failed to reassign', 'error');
+         }
+     } catch(e) { toast('Network error', 'error'); }
+     finally {
+         btn.disabled = false;
+         btn.innerHTML = '<i class="fas fa-user-plus"></i> Apply Assignment';
+     }
+ }
 
 /* ══════════════════════════════════
    HELPERS
@@ -1528,4 +1954,4 @@ window.addEventListener('DOMContentLoaded', () => {
 <?php endif; ?>
 </script>
 </body>
-</html>
+</html> 

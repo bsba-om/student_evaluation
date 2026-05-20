@@ -7,6 +7,18 @@
    4. Use both previous + current records for evaluation
 ═══════════════════════════════════════════════════════════ */
 
+/*  Pre-declare a writable global so inline oninput/onkeydown/onchange
+    attribute strings (which are always evaluated in the global scope) can
+    find the object while the IIFE is still executing.  The IIFE body below
+    populates the same object and returns it.                                    */
+window.TransferEvaluation = {
+
+  /** Safe no-op shim — allows inline handlers to fire silently
+   *  before the IIFE body has assigned the real implementation.        */
+  _onInputNotReady(sid, inp) {},
+  _onKeydownNotReady(sid, evt) {},
+};
+
 const TransferEvaluation = (() => {
   'use strict';
 
@@ -626,7 +638,8 @@ const TransferEvaluation = (() => {
 
   /* ── Search Filters ── */
   function filterPrevSubjects() {
-    const q = (document.getElementById('tePrevSearch')?.value || '').toLowerCase();
+    const searchEl = document.getElementById('tePrevSearch');
+    const q = (searchEl && searchEl.value ? searchEl.value : '').toLowerCase();
     document.querySelectorAll('.te-subject-row').forEach(row => {
       const text = row.textContent.toLowerCase();
       row.style.display = text.includes(q) ? '' : 'none';
@@ -634,7 +647,8 @@ const TransferEvaluation = (() => {
   }
 
   function filterLoadSubjects() {
-    const q = (document.getElementById('teLoadSearch')?.value || '').toLowerCase();
+    const searchEl = document.getElementById('teLoadSearch');
+    const q = (searchEl && searchEl.value ? searchEl.value : '').toLowerCase();
     document.querySelectorAll('.te-subject-row').forEach(row => {
       const text = row.textContent.toLowerCase();
       row.style.display = text.includes(q) ? '' : 'none';
@@ -686,13 +700,18 @@ const TransferEvaluation = (() => {
      return _subjects;
    }
 
-  /* ── Public API ── */
-  return {
+  /* ── Public API ──
+       Directly populate window.TransferEvaluation so that inline
+       oninput/onkeydown/onchange attribute strings — which are always
+       evaluated in the global scope — see the latest version of every method.  */
+  const result = {
     init,
     close,
     goToStep,
     skipPrevious,
     togglePrevSubject,
+    formatGradeInput,
+    blockExtraInput,
     updatePrevGrade,
     toggleCurrentLoad,
     filterPrevSubjects,
@@ -705,4 +724,6 @@ const TransferEvaluation = (() => {
     applyCreditsToGradeMap,
     getProspectusSubjects
   };
+  Object.assign(window.TransferEvaluation, result);
+  return result;
 })();

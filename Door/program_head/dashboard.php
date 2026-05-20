@@ -2460,7 +2460,7 @@ try {
             return;
         }
         
-        titleEl.innerHTML = '<i class="fas fa-calendar-check"></i> Events for April 2026';
+        titleEl.innerHTML = '<i class="fas fa-calendar-check"></i> Events for ' + monthNames[currentMonth] + ' ' + currentYear;
         
         if (events.length === 0) {
             listEl.innerHTML = '';
@@ -2959,32 +2959,9 @@ try {
             saveBtn.disabled = false;
             saveBtn.innerHTML = '<i class="fas fa-save"></i> ' + (eventId ? 'Update Event' : 'Save Event');
             if (data.success) {
-                showToast(data.message, 'success');
+                    showToast(data.message, 'success');
                 closeEventModal();
-                console.log('Event saved, loading April 2026 events');
-                currentMonth = 3;
-                currentYear = 2026;
-                
-                fetch('calendar_events_handler.php?action=get_events&month=4&year=2026')
-                    .then(function(res) { return res.json(); })
-                    .then(function(evData) {
-                        console.log('April events fetched:', evData.events.length);
-                        // Update calendarEvents object for the calendar grid
-                        calendarEvents = {};
-                        evData.events.forEach(function(ev) {
-                            const dateKey = ev.event_date;
-                            if (!calendarEvents[dateKey]) {
-                                calendarEvents[dateKey] = [];
-                            }
-                            // Avoid duplicates
-                            const exists = calendarEvents[dateKey].some(function(e) { return e.id === ev.id; });
-                            if (!exists) {
-                                calendarEvents[dateKey].push(ev);
-                            }
-                        });
-                        renderCalendar();
-                        updateEventsContainer(evData.events);
-                    });
+                loadCalendarEvents();
             } else {
                 showToast(data.message, 'error');
             }
@@ -3114,27 +3091,7 @@ try {
             if (data.success) {
                 showToast('Event deleted successfully', 'success');
                 closeEventViewModal();
-                currentMonth = 3;
-                currentYear = 2026;
-                
-                fetch('calendar_events_handler.php?action=get_events&month=4&year=2026')
-                    .then(function(res) { return res.json(); })
-                    .then(function(evData) {
-                        // Update calendarEvents object for the calendar grid
-                        calendarEvents = {};
-                        evData.events.forEach(function(ev) {
-                            const dateKey = ev.event_date;
-                            if (!calendarEvents[dateKey]) {
-                                calendarEvents[dateKey] = [];
-                            }
-                            const exists = calendarEvents[dateKey].some(function(e) { return e.id === ev.id; });
-                            if (!exists) {
-                                calendarEvents[dateKey].push(ev);
-                            }
-                        });
-                        renderCalendar();
-                        updateEventsContainer(evData.events);
-                    });
+                loadCalendarEvents();
             } else {
                 showToast(data.message, 'error');
             }
@@ -3167,8 +3124,9 @@ try {
 
     // Initialize calendar on page load
     document.addEventListener('DOMContentLoaded', function() {
-        currentMonth = 3;
-        currentYear = 2026;
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
         loadCalendarEvents();
     });
 

@@ -19,6 +19,7 @@ header('Content-Type: text/html; charset=utf-8');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="../../../media/LOGO.jpg" type="image/jpeg">
     <title>Graduate Management — Prospectus</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -103,9 +104,18 @@ header('Content-Type: text/html; charset=utf-8');
         .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-top: 6px; }
         .folder-structure { background: #faf8f4; border-radius: 10px; padding: 14px; border: 1px solid var(--border); font-family: Consolas, monospace; font-size: 12px; }
         .folder-item { padding: 6px 0; }
-        #generation-status { margin-top: 14px; padding: 12px; border-radius: 10px; display: none; font-size: 13px; }
         .status-success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
         .status-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        /* ── PDF Preview Modal ────────────────────────────────────────── */
+        #pdfModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 2000; align-items: center; justify-content: center; }
+        #pdfModal.open { display: flex; }
+        .pdf-modal-box { width: min(940px, 96vw); height: 88vh; background: #fff; border-radius: var(--radius); box-shadow: 0 24px 80px rgba(0,0,0,.35); display: flex; flex-direction: column; overflow: hidden; }
+        .pdf-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: linear-gradient(135deg, var(--gold-l), var(--gold-d)); color: #fff; }
+        .pdf-modal-head h3 { margin: 0; font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+        .pdf-modal-close { background: rgba(255,255,255,.25); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: background .2s; }
+        .pdf-modal-close:hover { background: rgba(255,255,255,.4); }
+        .pdf-modal-body { flex: 1; overflow: hidden; background: #525659; }
+        .pdf-modal-body iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
@@ -122,16 +132,13 @@ header('Content-Type: text/html; charset=utf-8');
 
     <div class="tabs" role="tablist">
         <div class="tab active" data-tab="list" role="tab">Graduate list</div>
-        <div class="tab" data-tab="generate" role="tab">Generate PDF</div>
         <div class="tab" data-tab="folders" role="tab">Folder structure</div>
-        <div class="tab" data-tab="reports" role="tab">Reports</div>
     </div>
 
     <div id="tab-list" class="tab-content active">
         <div class="card">
             <div class="card-header">
                 <h2>Graduates</h2>
-                <button type="button" class="btn btn-secondary" data-tab-trigger="generate"><i class="fas fa-file-pdf"></i> Generate PDF</button>
             </div>
             <div class="filter-bar">
                 <select id="filter-batch">
@@ -154,51 +161,11 @@ header('Content-Type: text/html; charset=utf-8');
         </div>
     </div>
 
-    <div id="tab-generate" class="tab-content">
-        <div class="card">
-            <div class="card-header"><h2>Generate prospectus PDF</h2></div>
-            <form id="prospectus-form">
-                <div class="filter-bar">
-                    <select id="gen-student" required style="min-width:220px;">
-                        <option value="">Select student…</option>
-                    </select>
-                    <select id="gen-batch" required>
-                        <option value="">Batch (A.Y.)</option>
-                        <option value="2025-2026">2025-2026</option>
-                        <option value="2026-2027">2026-2027</option>
-                    </select>
-                </div>
-                <div class="filter-bar">
-                    <input type="text" id="gen-major" placeholder="Major" readonly style="flex:1;">
-                    <input type="text" id="gen-year-level" placeholder="Year level" readonly style="flex:1;">
-                </div>
-                <button type="submit" class="btn btn-secondary" id="generate-btn"><i class="fas fa-file-pdf"></i> Generate PDF &amp; record</button>
-                <div id="generation-status"></div>
-            </form>
-        </div>
-    </div>
-
     <div id="tab-folders" class="tab-content">
         <div class="card">
             <div class="card-header"><h2>Local folders</h2></div>
             <p style="font-size:13px;color:var(--muted);margin-top:0;">Example: <code>C:\graduate\batch 2025-2026\om\studentname_om_batch2025-2026.pdf</code></p>
             <div class="folder-structure" id="folder-structure-host"><div class="no-data"><i class="fas fa-folder-open"></i><p>Load tab to refresh.</p></div></div>
-        </div>
-    </div>
-
-    <div id="tab-reports" class="tab-content">
-        <div class="card">
-            <div class="card-header"><h2>Batch reports</h2></div>
-            <div class="stats-grid" id="stats-container"></div>
-            <div class="filter-bar">
-                <select id="report-batch">
-                    <option value="">Select batch…</option>
-                    <option value="2025-2026">2025-2026</option>
-                    <option value="2026-2027">2026-2027</option>
-                </select>
-                <button type="button" class="btn" id="btn-load-report"><i class="fas fa-chart-bar"></i> Load</button>
-            </div>
-            <div id="report-content"></div>
         </div>
     </div>
 </div>
@@ -215,7 +182,6 @@ function showTab(name) {
     const tabBtn = document.querySelector('.tab[data-tab="' + name + '"]');
     if (tabBtn) tabBtn.classList.add('active');
     if (name === 'list') loadGraduates();
-    if (name === 'generate') loadStudentsForGeneration();
     if (name === 'folders') loadFolderStructure();
 }
 
@@ -240,70 +206,16 @@ function loadGraduates() {
 }
 
 document.getElementById('btn-filter').addEventListener('click', loadGraduates);
+document.getElementById('filter-batch').addEventListener('change', loadGraduates);
+document.getElementById('filter-major').addEventListener('change', loadGraduates);
+document.getElementById('search-graduate').addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') { e.preventDefault(); loadGraduates(); }
+});
 document.getElementById('btn-reset').addEventListener('click', () => {
     document.getElementById('filter-batch').value = '';
     document.getElementById('filter-major').value = '';
     document.getElementById('search-graduate').value = '';
     loadGraduates();
-});
-
-function loadStudentsForGeneration() {
-    postForm('action=get_eligible_students')
-        .then(r => r.json())
-        .then(res => {
-            const sel = document.getElementById('gen-student');
-            sel.innerHTML = '<option value="">Select student…</option>';
-            (res.students || []).forEach(st => {
-                const opt = document.createElement('option');
-                opt.value = st.id;
-                opt.textContent = (st.first_name + ' ' + st.last_name + ' (' + (st.student_id || st.student_number || '') + ')').trim();
-                sel.appendChild(opt);
-            });
-        });
-}
-
-document.getElementById('gen-student').addEventListener('change', function () {
-    const id = this.value;
-    if (!id) {
-        document.getElementById('gen-major').value = '';
-        document.getElementById('gen-year-level').value = '';
-        return;
-    }
-    postForm('action=get_student_details&student_id=' + encodeURIComponent(id))
-        .then(r => r.json())
-        .then(res => {
-            if (!res.success || !res.student) return;
-            const s = res.student;
-            document.getElementById('gen-major').value = s.major_name || '';
-            document.getElementById('gen-year-level').value = s.year_level || '';
-        });
-});
-
-document.getElementById('prospectus-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const studentId = document.getElementById('gen-student').value;
-    const batchYear = document.getElementById('gen-batch').value;
-    if (!studentId || !batchYear) { alert('Select student and batch.'); return; }
-    const btn = document.getElementById('generate-btn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Working…';
-    postForm('action=generate_pdf&student_id=' + encodeURIComponent(studentId) + '&batch_year=' + encodeURIComponent(batchYear))
-        .then(r => r.json())
-        .then(res => {
-            const box = document.getElementById('generation-status');
-            box.style.display = 'block';
-            box.className = res.success ? 'status-success' : 'status-error';
-            box.textContent = res.message || (res.success ? 'Done.' : 'Error');
-            if (res.success && res.pdf_url) {
-                setTimeout(() => { window.open(res.pdf_url, '_blank'); }, 400);
-            }
-            loadGraduates();
-        })
-        .catch(() => alert('Request failed'))
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-file-pdf"></i> Generate PDF & record';
-        });
 });
 
 function loadFolderStructure() {
@@ -321,23 +233,11 @@ function loadFolderStructure() {
         });
 }
 
-function loadReports() {
-    const batch = document.getElementById('report-batch').value;
-    if (!batch) { alert('Pick a batch.'); return; }
-    postForm('action=get_reports&batch=' + encodeURIComponent(batch))
-        .then(r => r.text())
-        .then(html => { document.getElementById('report-content').innerHTML = html; });
-    postForm('action=get_stats&batch=' + encodeURIComponent(batch))
-        .then(r => r.text())
-        .then(html => { document.getElementById('stats-container').innerHTML = html; });
-}
-document.getElementById('btn-load-report').addEventListener('click', loadReports);
-
-window.downloadProspectus = function (studentId) {
-    window.open(DL + '?student_id=' + encodeURIComponent(studentId), '_blank');
+window.downloadProspectus = function (filePath) {
+    window.open(DL + '?file_path=' + encodeURIComponent(filePath), '_blank');
 };
-window.viewGraduateDetails = function (studentId) {
-    alert('Student ID: ' + studentId + '\nOpen the instructor Evaluation page for full prospectus history.');
+window.viewGraduateDetails = function (filePath) {
+    openPdfPreview(filePath);
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -406,7 +306,41 @@ document.addEventListener('DOMContentLoaded', () => {
       setTimeout(() => { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 9000);
     }
   }
-});
-</script>
+    });
+  </script>
+
+  <!-- PDF Preview Modal (inline Prospectus view) -->
+  <div id="pdfModal" role="dialog" aria-modal="true" aria-labelledby="pdfModalTitle">
+    <div class="pdf-modal-box">
+      <div class="pdf-modal-head">
+        <h3 id="pdfModalTitle"><i class="fas fa-file-pdf"></i> Official Prospectus</h3>
+        <button class="pdf-modal-close" onclick="closePdfModal()" title="Close">&times;</button>
+      </div>
+      <div class="pdf-modal-body">
+        <iframe id="pdfIframe" src="" title="Prospectus PDF preview"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <script>
+window.openPdfPreview = function (filePath) {
+    const iframe = document.getElementById('pdfIframe');
+    const title  = document.getElementById('pdfModalTitle');
+    title.innerHTML = '<i class="fas fa-file-pdf"></i> Prospectus';
+    iframe.src = '../../../data/download_graduation_pdf.php?file_path=' + encodeURIComponent(filePath) + '&inline=1';
+    document.getElementById('pdfModal').classList.add('open');
+};
+  window.closePdfModal = function () {
+    document.getElementById('pdfModal').classList.remove('open');
+    document.getElementById('pdfIframe').src = '';
+  };
+  // Close on backdrop / Escape
+  document.getElementById('pdfModal') && document.getElementById('pdfModal').addEventListener('click', function (e) {
+    if (e.target === this) closePdfModal();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closePdfModal();
+  });
+  </script>
 </body>
 </html>

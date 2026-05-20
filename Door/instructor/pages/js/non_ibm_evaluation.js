@@ -436,7 +436,8 @@ const NonIBMEvaluation = (() => {
 
   /* ── Search Filter ── */
   function filterSubjects() {
-    const q = (document.getElementById('nimLoadSearch')?.value || '').toLowerCase();
+    const searchEl = document.getElementById('nimLoadSearch');
+    const q = (searchEl && searchEl.value ? searchEl.value : '').toLowerCase();
     document.querySelectorAll('.nim-subject-row').forEach(row => {
       const text = row.textContent.toLowerCase();
       row.style.display = text.includes(q) ? '' : 'none';

@@ -1381,7 +1381,11 @@ if (!$show_role_modal) {
     let currentMajorId = 0;
     let majorsData   = <?php echo json_encode($majors, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
 let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
-    let phSettings = <?php echo json_encode($ph_settings, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?>;
+    let phSettings = <?php echo json_encode($ph_settings, JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP); ?> || {};
+    phSettings.school_name = phSettings.school_name || phSettings.schoolName || '';
+    phSettings.school_address = phSettings.school_address || phSettings.schoolAddress || '';
+    phSettings.institute_name = phSettings.institute_name || phSettings.instituteName || '';
+    phSettings.degree_name = phSettings.degree_name || phSettings.degreeName || '';
 
     /* -- URL PARAMETER HANDLER ----------------------------------------------- */
     document.addEventListener('DOMContentLoaded', function() {
@@ -2086,10 +2090,10 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
 
     /* -- PROSPECTUS RENDERING ------------------------------------- */
     function buildProspectusHeader(majorName) {
-    const schoolName   = phSettings?.school_name    || 'Northern Bukidnon State College';
-    const schoolAddress = phSettings?.school_address || 'Manolo Fortich, Bukidnon';
-    const instituteName = phSettings?.institute_name || 'Institute for Business Management';
-    const degreeName   = phSettings?.degree_name    || 'Bachelor of Science in Business Administration';
+    const schoolName   = phSettings && phSettings.school_name    || 'Northern Bukidnon State College';
+    const schoolAddress = phSettings && phSettings.school_address || 'Manolo Fortich, Bukidnon';
+    const instituteName = phSettings && phSettings.institute_name || 'Institute for Business Management';
+    const degreeName   = phSettings && phSettings.degree_name    || 'Bachelor of Science in Business Administration';
 
     return `
     <div class="pro-header">
@@ -2454,7 +2458,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             if (!data.success || !data.subjects || data.subjects.length === 0) {
                 renderEmptyProspectusWithCRUD(document.getElementById('prospectusMajorSelect').selectedOptions[0]?.text || '');
             } else {
-                const majorName = document.getElementById('prospectusMajorSelect').selectedOptions[0]?.text || '';
+const majorName = document.getElementById('prospectusMajorSelect').selectedOptions[0] && document.getElementById('prospectusMajorSelect').selectedOptions[0].text || '';
                 renderProspectusWithCRUD(data.subjects, majorName);
                 // Initialize drag and drop after rendering
                 setTimeout(initDragAndDrop, 200);

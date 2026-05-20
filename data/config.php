@@ -8,10 +8,15 @@ $db_name = 'checkmate';
 // ========================================
 // MySQLi Connection (for legacy code)
 // ========================================
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+mysqli_report(MYSQLI_REPORT_OFF);
+try {
+    $conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
+} catch (mysqli_sql_exception $e) {
+    $conn = null;
+}
 
 // Check mysqli connection
-if ($conn->connect_error) {
+if ($conn === null || $conn->connect_error) {
     $conn = null;
 } else {
     $conn->set_charset("utf8mb4");

@@ -979,7 +979,7 @@ body{font-family:'Poppins',sans-serif;background:var(--cream);overflow-x:hidden;
   .sip-item { display: flex !important; gap: 2mm !important; }
   .sip-label { font-size: 9pt !important; font-weight: 700 !important; color: #333 !important; }
   .sip-value { font-size: 9pt !important; }
-  .gwa-strip, .student-info-strip, .eval-hdr, .eval-tabs, .eval-focus-bar, .eval-combined-bar { display: none !important; }
+  .gwa-strip, .student-info-strip, .pro-grad-lock-banner, .eval-hdr, .eval-tabs, .eval-focus-bar, .eval-combined-bar { display: none !important; }
   .eval-body::before { display: none !important; }
   .student-info-strip-print { display: flex !important; }
   .pro-body { padding: 1mm 2mm 0 !important; overflow: visible !important; width: 100% !important; }

@@ -441,6 +441,175 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 
  <div id="printTarget" style="display:none;"></div>
 
+<!-- GRADUATION PROGRESS MODAL -->
+<!-- ═══════════════════════════════════════════════════════════════
+     GRADUATION PROGRESS MODAL  (animated step-by-step loading)
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+@keyframes gpSpin   { to { transform: rotate(360deg); } }
+@keyframes gpPulse  { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.65;transform:scale(0.93)} }
+@keyframes gpStepIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+@keyframes gpIconBounce { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-7px)} 70%{transform:translateY(-3px)} }
+@keyframes gpDonePop { 0%{transform:scale(0) rotate(-30deg);opacity:0} 60%{transform:scale(1.2) rotate(5deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+@keyframes gpBarShimmer {
+  0%   { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+#graduationProgressModal {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(10,8,3,0.82);
+  backdrop-filter: blur(4px);
+  display: none;
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+.gpm-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 36px 32px 30px;
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.38), 0 4px 16px rgba(0,0,0,0.12);
+  max-width: 440px; width: 92%;
+  position: relative; overflow: hidden;
+}
+.gpm-card::before {
+  content:'';
+  position:absolute; top:-60px; right:-60px;
+  width:200px; height:200px;
+  background: radial-gradient(circle, rgba(212,160,23,0.13) 0%, transparent 70%);
+  pointer-events:none;
+}
+.gpm-icon-wrap {
+  width: 84px; height: 84px;
+  margin: 0 auto 20px;
+  background: linear-gradient(145deg, #f5c842, #d4a017, #b8860b);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; color: #fff;
+  box-shadow: 0 6px 24px rgba(184,134,11,0.45), 0 0 0 8px rgba(212,160,23,0.12);
+  animation: gpIconBounce 1.8s ease-in-out infinite;
+}
+.gpm-icon-wrap.done {
+  background: linear-gradient(145deg, #4ade80, #16a34a);
+  box-shadow: 0 6px 24px rgba(22,163,74,0.5), 0 0 0 8px rgba(74,222,128,0.15);
+  animation: gpDonePop 0.55s cubic-bezier(.34,1.56,.64,1) both;
+}
+.gpm-title {
+  font-size: 19px; font-weight: 800; color: #1a1a1a;
+  margin: 0 0 6px; font-family: 'Playfair Display', serif;
+}
+.gpm-subtitle {
+  font-size: 12px; color: #888; margin: 0 0 22px; line-height: 1.5;
+  min-height: 18px; transition: color .3s;
+}
+/* progress bar */
+.gpm-bar-wrap {
+  background: #f0f0f0; border-radius: 12px;
+  overflow: hidden; height: 9px; margin-bottom: 8px;
+}
+#graduationProgressBar {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, #f5c842 0%, #d4a017 50%, #b8860b 100%);
+  background-size: 200px 100%;
+  transition: width 0.38s cubic-bezier(.4,0,.2,1);
+  animation: gpBarShimmer 1.4s linear infinite;
+}
+#graduationProgressBar.done-bar {
+  background: linear-gradient(90deg, #4ade80, #16a34a);
+  animation: none;
+}
+.gpm-pct {
+  font-size: 11px; font-weight: 700; color: #b8860b;
+  margin-bottom: 20px; letter-spacing: .3px;
+}
+/* step list */
+.gpm-steps {
+  text-align: left;
+  background: #fafafa;
+  border: 1px solid #f0ebe0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.gpm-step {
+  display: flex; align-items: center; gap: 11px;
+  font-size: 12px; color: #999;
+  transition: color .25s;
+  animation: gpStepIn .3s ease both;
+}
+.gpm-step.active  { color: #92400e; font-weight: 600; }
+.gpm-step.done    { color: #15803d; font-weight: 600; }
+.gpm-step-icon {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  background: #eee; color: #bbb;
+  transition: background .3s, color .3s, box-shadow .3s;
+}
+.gpm-step.active .gpm-step-icon {
+  background: linear-gradient(135deg, #f5c842, #d4a017);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(212,160,23,0.45);
+}
+.gpm-step.done .gpm-step-icon {
+  background: linear-gradient(135deg, #4ade80, #16a34a);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(22,163,74,0.35);
+}
+.gpm-step-spin { animation: gpSpin .7s linear infinite; }
+.gpm-step-label { line-height: 1.3; }
+.gpm-step-sub   { font-size: 10px; color: #aaa; margin-top: 1px; font-weight:400; }
+.gpm-step.active .gpm-step-sub { color: #b8860b; }
+.gpm-step.done  .gpm-step-sub  { color: #16a34a; }
+</style>
+
+<div id="graduationProgressModal" style="display:none;">
+  <div class="gpm-card">
+    <div class="gpm-icon-wrap" id="gpmIconWrap">
+      <i class="fas fa-graduation-cap" id="gpmIcon"></i>
+    </div>
+    <h2 class="gpm-title" id="gpmTitle">Confirming Graduation</h2>
+    <p  class="gpm-subtitle" id="gpmSubtitle">Please wait while we set everything up…</p>
+    <div class="gpm-bar-wrap">
+      <div id="graduationProgressBar"></div>
+    </div>
+    <div class="gpm-pct"><span id="progressPercentage">0%</span></div>
+    <div class="gpm-steps" id="progressSteps">
+      <div class="gpm-step active" id="step1">
+        <div class="gpm-step-icon"><i class="fas fa-folder-plus gpm-step-spin"></i></div>
+        <div class="gpm-step-label">
+          Creating folder structure
+          <div class="gpm-step-sub" id="step1sub">C:\graduate\batch …</div>
+        </div>
+      </div>
+      <div class="gpm-step" id="step2">
+        <div class="gpm-step-icon"><i class="fas fa-file-pdf"></i></div>
+        <div class="gpm-step-label">
+          Generating prospectus PDF
+          <div class="gpm-step-sub">Building official document layout…</div>
+        </div>
+      </div>
+      <div class="gpm-step" id="step3">
+        <div class="gpm-step-icon"><i class="fas fa-save"></i></div>
+        <div class="gpm-step-label">
+          Saving PDF to disk
+          <div class="gpm-step-sub">Writing file to local drive…</div>
+        </div>
+      </div>
+      <div class="gpm-step" id="step4">
+        <div class="gpm-step-icon"><i class="fas fa-database"></i></div>
+        <div class="gpm-step-label">
+          Updating graduation records
+          <div class="gpm-step-sub">Locking evaluation &amp; saving record…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">
   <div class="toast-icon" id="toastIcon"><i class="fas fa-check"></i></div>
   <span id="toastMsg"></span>
@@ -455,7 +624,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
 /* ═══════════════════════════════════════════════════════════
    CONSTANTS
 ═══════════════════════════════════════════════════════════ */
-const EVAL_PROC = '../../../data/evaluation_process.php';
+const EVAL_PROC = new URL('../../../data/evaluation_process.php', location.href).href;
 const VALID_GRADES = [1.00,1.25,1.50,1.75,2.00,2.25,2.50,2.75,3.00,4.00,5.00];
 const GRADE_LABELS = {
   1.00:'Excellent',1.25:'Very Good',1.50:'Very Good',1.75:'Good',
@@ -475,12 +644,14 @@ let phSettings = {
 };
 
 let currentStudent = null;
+let _gradConfirmBtn = null;   // graduationConfirmBtn — shared scope so _graduateRegenerateFlow can also touch it
 let loadedSubjects  = [];
 let prereqSetsData  = [];
 let gradeMap        = {};
 let currentAY       = '2025-2026';
 let focusYear       = '';
 let focusSem        = '';
+let graduationRedirectOnClose = false;
 let finalizedMap    = {};
 /* Set of subject IDs that have been manually unlocked (via password verification)
    so an instructor can edit a single row that would otherwise be locked. */
@@ -629,7 +800,7 @@ function loadMentees() {
   const fd = new FormData(); fd.append('action','get_mentees');
   fetch(EVAL_PROC,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
     const c = document.getElementById('menteesContainer');
-    if(!d.success || !d.mentees?.length) {
+    if(!d.success || !(d.mentees && d.mentees.length)) {
       c.innerHTML = `<div class="empty-state"><i class="fas fa-users"></i><h3>No mentees assigned</h3><p>No mentees are currently assigned to you.</p></div>`;
       return;
     }
@@ -644,7 +815,7 @@ function loadMentees() {
     let html = `<div class="mentee-grid" id="menteeGrid">`;
     d.mentees.forEach(m => {
       const full = `${m.first_name}${m.middle_name?' '+m.middle_name:''} ${m.last_name}${m.suffix?' '+m.suffix:''}`.trim();
-      const init = (m.avatar_initials || (m.first_name[0]+(m.last_name?.[0]||'')).toUpperCase()).trim();
+      const init = (m.avatar_initials || (m.first_name[0]+(m.last_name && m.last_name[0] ? m.last_name[0] : '')).toUpperCase()).trim();
       const pct  = m.total_subjects>0 ? Math.round(m.graded_count/m.total_subjects*100) : 0;
       const yrNum = (m.year_level||'0').replace(/[^0-9]/g,'');
       const semester = (m.year_level||'').includes('2nd Semester') ? '2nd Semester' : '1st Semester';
@@ -772,7 +943,13 @@ function _proceedWithEval(m, studentType) {
       document.getElementById('tab-prospectus-body').innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error</h3><p>${esc(evalData.message)}</p></div>`;
       return;
     }
-    if(evalData.ph_settings) phSettings = {...phSettings,...evalData.ph_settings};
+    if(evalData.ph_settings) {
+      phSettings = {...phSettings, ...evalData.ph_settings};
+      phSettings.school_name = phSettings.school_name || phSettings.schoolName || '';
+      phSettings.school_address = phSettings.school_address || phSettings.schoolAddress || '';
+      phSettings.institute_name = phSettings.institute_name || phSettings.instituteName || '';
+      phSettings.degree_name = phSettings.degree_name || phSettings.degreeName || '';
+    }
     if (evalData.student) {
       currentStudent = {...m, ...evalData.student};
     }
@@ -928,7 +1105,7 @@ function closeEval() {
 ══════════════════════════════════════════════════════════════════ */
 function buildCombinedBar(gwaData) {
   // Auto-detect current standing from student's year_level string
-  const standingStr = currentStudent?.year_level || '1st Year - 1st Semester';
+  const standingStr = (currentStudent && currentStudent.year_level) || '1st Year - 1st Semester';
   const {yr, sem} = parseStudentStanding(standingStr);
   const yearLabel = YEAR_LABELS[yr-1] || '1st Year';
   const semLabel  = sem === 1 ? '1st Semester' : '2nd Semester';
@@ -996,7 +1173,7 @@ function showComingSoonModal() {
       </div>
     </div>
   `;
-  document.getElementById('comingSoonModal')?.remove();
+  document.getElementById('comingSoonModal') && document.getElementById('comingSoonModal').remove();
   const modalDiv = document.createElement('div');
   modalDiv.id = 'comingSoonModal';
   modalDiv.innerHTML = modalHtml;
@@ -1090,16 +1267,16 @@ function showEnrollmentResultModal(yearLabel, semLabel) {
     return sy === yearLabel.toLowerCase() && ss.includes(semLabel === '1st Semester' ? '1st' : '2nd');
   });
 
-  // Build prereq unlock map
-  const prereqUnlockMapCurrent = buildPrereqUnlockMap(loadedSubjects, gradeMap, prereqSetsData, currentStudent?.major_id);
+// Build prereq unlock map
+   const prereqUnlockMapCurrent = buildPrereqUnlockMap(loadedSubjects, gradeMap, prereqSetsData, currentStudent && currentStudent.major_id);
 
-  const bodyHtml = `
+   const bodyHtml = `
     <div style="font-size:13px;font-weight:700;color:var(--gold-d);margin-bottom:10px;">
       <i class="fas fa-list-ul" style="margin-right:7px;"></i>Select Subjects for ${yearLabel} — ${semLabel}
     </div>
     <div id="rmSubjectList" style="max-height:280px;overflow-y:auto;margin-bottom:12px;">
       ${currentSubs.length ? currentSubs.map(s => {
-        const isBlocked = !(prereqUnlockMapCurrent[s.id]?.unlocked ?? true);
+        const isBlocked = !(prereqUnlockMapCurrent[s.id] && prereqUnlockMapCurrent[s.id].unlocked);
         return `<div class="rm-sub-row" data-id="${s.id}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafaf8;border-radius:8px;margin-bottom:6px;border:1px solid var(--border);${isBlocked ? 'opacity:0.6;' : ''}">
           <input type="checkbox" class="rm-sub-check" data-id="${s.id}" ${isBlocked ? 'disabled' : ''} style="width:16px;height:16px;accent-color:var(--gold);">
           <div style="flex:1;">
@@ -1211,32 +1388,32 @@ function showAlreadyEvaluatedModal(year, sem) {
       </div>
     </div>
   `;
-  document.getElementById('alreadyEvaluatedModal')?.remove();
-  const modalDiv = document.createElement('div');
-  modalDiv.id = 'alreadyEvaluatedModal';
-  modalDiv.innerHTML = modalHtml;
-  document.body.appendChild(modalDiv);
-}
+document.getElementById('alreadyEvaluatedModal') && document.getElementById('alreadyEvaluatedModal').remove();
+   const modalDiv = document.createElement('div');
+   modalDiv.id = 'alreadyEvaluatedModal';
+   modalDiv.innerHTML = modalHtml;
+   document.body.appendChild(modalDiv);
+ }
 
   function unfinalizeSession(year, sem) {
-    if(!confirm(`Unfinalize ${year} — ${sem}? This will remove the finalization lock and allow editing grades again.`)) {
-      return;
-    }
+     if(!confirm(`Unfinalize ${year} — ${sem}? This will remove the finalization lock and allow editing grades again.`)) {
+       return;
+     }
 
-    const fd = new FormData();
-    fd.append('action', 'unfinalize_session');
-    fd.append('student_id', currentStudent.id);
-    fd.append('major_id', currentStudent.major_id || 0);
-    fd.append('academic_year', currentAY);
-    fd.append('year_level', year);
-    fd.append('semester', sem);
+     const fd = new FormData();
+     fd.append('action', 'unfinalize_session');
+     fd.append('student_id', currentStudent.id);
+     fd.append('major_id', currentStudent.major_id || 0);
+     fd.append('academic_year', currentAY);
+     fd.append('year_level', year);
+     fd.append('semester', sem);
 
-    fetch(EVAL_PROC, {method:'POST', body:fd})
-      .then(r => r.json())
-      .then(data => {
-        if(data.success) {
-          const fkey = `${year}|${sem}`;
-          delete finalizedMap[fkey];
+     fetch(EVAL_PROC, {method:'POST', body:fd})
+       .then(r => r.json())
+       .then(data => {
+         if(data.success) {
+           const fkey = `${year}|${sem}`;
+           delete finalizedMap[fkey];
 
           const semCols = document.querySelectorAll(`.pro-sem-col[data-sem="${sem}"]`);
           semCols.forEach(col => {
@@ -1279,10 +1456,10 @@ function showAlreadyEvaluatedModal(year, sem) {
       });
    }
 
- function closeAlreadyEvaluatedModal() {
-  document.getElementById('alreadyEvaluatedModal')?.remove();
-  clearFocus();
-}
+function closeAlreadyEvaluatedModal() {
+   document.getElementById('alreadyEvaluatedModal') && document.getElementById('alreadyEvaluatedModal').remove();
+   clearFocus();
+ }
 
 function confirmViewEvaluated(year, sem) {
   closeAlreadyEvaluatedModal();
@@ -1351,7 +1528,7 @@ function clearFocus() {
     // Update Current GWA — based on subjects in the current year-semester combination from student's standing
     // Get the current standing from year_level and filter subjects accordingly
     let gwaPoints = 0, gwaUnits = 0;
-    const currentStanding = currentStudent?.year_level || '1st Year - 1st Semester';
+    const currentStanding = (currentStudent && currentStudent.year_level) || '1st Year - 1st Semester';
     const {yr, sem} = parseStudentStanding(currentStanding);
     const curYearLabel = YEAR_LABELS[yr-1] || '1st Year';
     const curSemWant = sem === 1 ? '1st' : '2nd';
@@ -1465,7 +1642,7 @@ function showResultModal(subjects, yearLabel, semLabel) {
    let verdict, headerClass, iconClass, iconContent, verdictSub;
    if(allPassed) {
      verdict='Student PASSED'; headerClass='rm-pass'; iconClass='pass-icon'; iconContent='🎓';
-     verdictSub=`All ${passedSubs.length} subject(s) passed with a semester GWA of <strong>${semGWA?.toFixed(2)||'—'}</strong>.`;
+     verdictSub=`All ${passedSubs.length} subject(s) passed with a semester GWA of <strong>${semGWA ? semGWA.toFixed(2) : '—'}</strong>.`;
    } else if(condSubs.length > 0 && failedSubs.length === 0) {
      verdict='CONDITIONAL Status'; headerClass='rm-cond'; iconClass='cond-icon'; iconContent='⚠️';
      verdictSub=`${condSubs.length} subject(s) received a conditional grade (4.00). Removal exam required.`;
@@ -1957,22 +2134,20 @@ const isGraduationEligible = yearLabel === '4th Year' &&
        ${bodyHtml}
        ${actionsHtml}
      </div>`;
-   document.getElementById('resultModal').classList.add('open');
-   
-   // Auto-confirm graduation if eligible
-   if(isGraduationEligible) {
-     toast('Auto-confirming graduation...', 'info', 1500);
-     setTimeout(() => {
-       confirmGraduation(yearLabel, semLabel);
-     }, 500);
-   }
-  
+document.getElementById('resultModal').classList.add('open');
+    
+    // Note: Graduation is confirmed only when user clicks the button, not auto-triggered
+    
 
 }
 
 function closeResultModal() {
   document.getElementById('resultModal').classList.remove('open');
   clearFocus();
+  if (graduationRedirectOnClose) {
+    graduationRedirectOnClose = false;
+    window.location.href = 'setup_graduate.php';
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -2121,117 +2296,337 @@ function stayStudent(fromYear, fromSem) {
      });
 }
 
+function showGraduationProgressModal() {
+  // showGraduationProgressModal — opens the animated loading overlay
+  const modal = document.getElementById('graduationProgressModal');
+  if (modal) { modal.style.display = 'flex'; }
+}
+
+function hideGraduationProgressModal() {
+  const modal = document.getElementById('graduationProgressModal');
+  if (modal) { modal.style.display = 'none'; }
+}
+
+/**
+ * updateGraduationProgress(percent, activeStep, subText)
+ *  percent    – 0‒100
+ *  activeStep – 1‒4  (current step; steps before it are marked done)
+ *  subText    – optional string shown under the active step
+ */
+function updateGraduationProgress(percent, activeStep, subText) {
+  // bar
+  const bar = document.getElementById('graduationProgressBar');
+  const pct = document.getElementById('progressPercentage');
+  if (bar) bar.style.width = Math.min(percent, 100) + '%';
+  if (pct) pct.textContent  = Math.round(Math.min(percent, 100)) + '%';
+
+  // step configs
+  const stepIcons = [
+    'fas fa-folder-plus',
+    'fas fa-file-pdf',
+    'fas fa-save',
+    'fas fa-database',
+  ];
+  const stepIconsDone  = 'fas fa-check';
+  const stepIconsActive = [
+    'fas fa-folder-open gpm-step-spin',
+    'fas fa-cog gpm-step-spin',
+    'fas fa-spinner gpm-step-spin',
+    'fas fa-database gpm-step-spin',
+  ];
+
+  for (let i = 1; i <= 4; i++) {
+    const stepEl  = document.getElementById('step' + i);
+    if (!stepEl) continue;
+    const iconEl  = stepEl.querySelector('.gpm-step-icon');
+
+    stepEl.classList.remove('active', 'done');
+
+    if (i < activeStep) {
+      // completed
+      stepEl.classList.add('done');
+      if (iconEl) iconEl.innerHTML = `<i class="${stepIconsDone}"></i>`;
+    } else if (i === activeStep) {
+      // currently running
+      stepEl.classList.add('active');
+      if (iconEl) iconEl.innerHTML = `<i class="${stepIconsActive[i-1]}"></i>`;
+      // update sub-text if provided
+      if (subText) {
+        const sub = stepEl.querySelector('.gpm-step-sub');
+        if (sub) sub.textContent = subText;
+      }
+    } else {
+      // pending
+      if (iconEl) iconEl.innerHTML = `<i class="${stepIcons[i-1]}"></i>`;
+    }
+  }
+
+  // subtitle
+  const subtitles = [
+    'Creating folder structure on local drive…',
+    'Rendering official prospectus document…',
+    'Writing PDF file to disk…',
+    'Locking evaluation & saving record…',
+  ];
+  const gpmSub = document.getElementById('gpmSubtitle');
+  if (gpmSub && activeStep >= 1 && activeStep <= 4) {
+    gpmSub.textContent = subtitles[activeStep - 1];
+  }
+}
+
+function _gpmMarkAllDone(pdfPath) {
+  // turn all steps green
+  for (let i = 1; i <= 4; i++) {
+    const stepEl = document.getElementById('step' + i);
+    if (!stepEl) continue;
+    stepEl.classList.remove('active');
+    stepEl.classList.add('done');
+    const iconEl = stepEl.querySelector('.gpm-step-icon');
+    if (iconEl) iconEl.innerHTML = '<i class="fas fa-check"></i>';
+  }
+  // bar done
+  const bar = document.getElementById('graduationProgressBar');
+  if (bar) { bar.style.width = '100%'; bar.classList.add('done-bar'); }
+  const pct = document.getElementById('progressPercentage');
+  if (pct) pct.textContent = '100%';
+  // icon
+  const wrap = document.getElementById('gpmIconWrap');
+  const ico  = document.getElementById('gpmIcon');
+  if (wrap) wrap.classList.add('done');
+  if (ico)  { ico.className = 'fas fa-check'; }
+  // title / subtitle
+  const t = document.getElementById('gpmTitle');
+  const s = document.getElementById('gpmSubtitle');
+  if (t) t.textContent = 'Graduation Confirmed!';
+  if (s) {
+    s.style.color = '#15803d';
+    s.textContent = pdfPath
+      ? 'PDF saved → ' + pdfPath
+      : 'Official prospectus saved to C:\\graduate\\batch …';
+  }
+}
+
+/* ── main confirm function ─────────────────────────────────────────── */
 function confirmGraduation(yearLabel, semLabel) {
-  if(!currentStudent) { toast('No student loaded.', 'error'); return; }
+  if (!currentStudent) { toast('No student loaded.', 'error'); return; }
 
-  // Show confirmation dialog
-  if(!confirm(`Are you sure you want to confirm graduation for this student?\n\nThis will:\n- Mark the student as graduated\n- Generate their prospectus PDF\n- Lock their evaluation record\n\nThis action cannot be undone.`)) {
-    return;
-  }
+  // custom confirm dialog (replace browser confirm for nicer UX if desired)
+  if (!confirm(
+    'Confirm Graduation?\n\n' +
+    'This will:\n' +
+    '  • Create C:\\graduate\\batch ' + currentAY + '\\… folder if needed\n' +
+    '  • Generate the official prospectus PDF\n' +
+    '  • Mark the student as Graduated\n' +
+    '  • Lock further evaluation\n\n' +
+    'This action CANNOT be undone.'
+  )) { return; }
 
-  // Disable button during processing
-  const btn = document.getElementById('graduationConfirmBtn');
-  if(btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-  }
+  _gradConfirmBtn = document.getElementById('graduationConfirmBtn');
+  if (_gradConfirmBtn) { _gradConfirmBtn.disabled = true; _gradConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing…'; }
 
-  // Prepare data for graduation processing
+  // ── show modal, kick off animated progress ──────────────────────────
+  showGraduationProgressModal();
+  updateGraduationProgress(5, 1, 'C:\\graduate\\batch ' + currentAY + '\\…');
+
+  // Smooth fake-progress ticker that pauses near 80% while waiting for server
+  let fakeP = 5;
+  const fakeTick = setInterval(() => {
+    if (fakeP >= 80) { clearInterval(fakeTick); return; }
+    const delta = fakeP < 30 ? 8 : fakeP < 55 ? 5 : 2;
+    fakeP = Math.min(fakeP + delta * Math.random(), 80);
+    const fakeStep = fakeP < 25 ? 1 : fakeP < 50 ? 2 : fakeP < 72 ? 3 : 3;
+    updateGraduationProgress(fakeP, fakeStep);
+  }, 380);
+
+  // step 1 → 2 after short delay (folder creation is fast)
+  setTimeout(() => updateGraduationProgress(28, 2), 900);
+
+  // ── POST to server ──────────────────────────────────────────────────
   const fd = new FormData();
-  fd.append('action', 'confirm_graduation');
-  fd.append('student_id', currentStudent.id);
-  fd.append('major_id', currentStudent.major_id || 0);
+  fd.append('action',        'confirm_graduation');
+  fd.append('student_id',    currentStudent.id);
+  fd.append('major_id',      currentStudent.major_id || 0);
   fd.append('academic_year', currentAY);
-  fd.append('year_level', yearLabel);
-  fd.append('semester', semLabel);
+  fd.append('year_level',    yearLabel);
+  fd.append('semester',      semLabel);
 
-  // Send request to server
-  fetch(EVAL_PROC, {method:'POST', body:fd})
-    .then(r => r.json())
+  fetch(EVAL_PROC, { method:'POST', body:fd, credentials:'same-origin', headers:{'Accept':'application/json'} })
+    .then(async r => {
+      const text = await r.text();
+      if (!r.ok) throw new Error('Server HTTP ' + r.status + ': ' + text);
+      if (/^\s*</.test(text)) throw new Error('Server returned HTML (check PHP errors): ' + text.slice(0, 300));
+      try { return JSON.parse(text); } catch (e) { throw new Error('Invalid JSON: ' + text.slice(0, 300)); }
+    })
     .then(data => {
-      if(data.success) {
-        // Show success message
-        toast('Graduation confirmed successfully! Generating prospectus...', 'success', 3000);
+      clearInterval(fakeTick);
 
-        // Update UI to show graduated status — premium success card
-        const graduationContainer = document.getElementById('graduationContainer');
-        if(graduationContainer) {
-          const gradDate = data.graduation_date || new Date().toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'});
-          graduationContainer.innerHTML = `
-            <div style="position:relative;overflow:hidden;padding:32px 28px 24px;background:linear-gradient(145deg,#f0fdf4,#dcfce7,#bbf7d0);border:2px solid #10b981;border-radius:20px;text-align:center;box-shadow:0 12px 40px rgba(16,185,129,0.22),0 2px 8px rgba(0,0,0,0.07);animation:slideInGreen .5s cubic-bezier(.34,1.56,.64,1);">
-              <style>@keyframes slideInGreen{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}</style>
-              <div style="width:90px;height:90px;margin:0 auto 16px;background:linear-gradient(145deg,#4ade80,#16a34a,#15803d);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;box-shadow:0 6px 24px rgba(22,163,74,.4),0 0 0 8px rgba(74,222,128,.15),0 0 0 16px rgba(74,222,128,.07);animation:popIn .6s .2s cubic-bezier(.34,1.56,.64,1) both;">
-                <i class="fas fa-user-graduate"></i>
-              </div>
-              <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center;">
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;box-shadow:0 2px 8px rgba(22,163,74,.4);">
-                  <i class="fas fa-award"></i> Congratulations!
-                </span>
-                <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;background:linear-gradient(135deg,#fef9e7,#fef3c7);color:#92400e;border:1.5px solid #d4a017;border-radius:20px;font-size:11px;font-weight:700;">
-                  <i class="fas fa-graduation-cap"></i> Officially Graduated
-                </span>
-              </div>
-              <h3 style="font-size:22px;font-weight:800;color:#166534;margin:0 0 6px 0;font-family:'Playfair Display',serif;">Student has Graduated!</h3>
-              <p style="font-size:12px;color:#166534;margin:0 0 20px 0;opacity:.85;">Curriculum completed. Evaluation locked. Official record saved.</p>
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;">
-                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
-                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Subjects Completed</div>
-                  <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.total_subjects||0}</div>
-                </div>
-                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
-                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Final GWA</div>
-                  <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.gwa||'—'}</div>
-                </div>
-                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
-                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Graduation Status</div>
-                  <div style="font-size:16px;font-weight:700;color:#166534;margin-top:6px;"><i class="fas fa-check-circle"></i> Graduated</div>
-                </div>
-                <div style="padding:16px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
-                  <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Graduation Date</div>
-                  <div style="font-size:12px;font-weight:700;color:#166534;margin-top:6px;">${gradDate}</div>
-                </div>
-              </div>
-              <div style="margin-bottom:16px;padding:10px 14px;background:rgba(22,163,74,.08);border-radius:10px;font-size:11px;color:#166534;">
-                <i class="fas fa-file-pdf" style="color:#dc2626;margin-right:5px;"></i> Prospectus PDF saved to <strong>C:\\graduate\\batch ${esc(currentAY)}\\</strong>
-              </div>
-              <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-                <div style="padding:12px 24px;background:rgba(22,163,74,.12);border:1.5px solid #10b981;border-radius:50px;font-size:13px;font-weight:700;color:#166534;display:inline-flex;align-items:center;gap:9px;">
-                  <i class="fas fa-spinner fa-spin"></i> Opening Graduate Records…
-                </div>
-              </div>
-            </div>`;
-        }
-
-        // Disable proceed/stay buttons since student is graduated
-        const proceedBtn = document.getElementById('rmProceedBtn');
-        const stayBtn = document.getElementById('rmStayBtn');
-        if(proceedBtn) { proceedBtn.disabled = true; proceedBtn.style.opacity = '0.5'; proceedBtn.style.cursor = 'not-allowed'; }
-        if(stayBtn) { stayBtn.disabled = true; stayBtn.style.opacity = '0.5'; stayBtn.style.cursor = 'not-allowed'; }
-
-        // Redirect to setup_graduate.php — pass student data so the list shows this graduate immediately
-        const _sid   = encodeURIComponent(currentStudent ? currentStudent.id : '');
-        const _batch = encodeURIComponent(currentAY || '');
-        const _pdfUrl = encodeURIComponent(data.pdf_url || '');
+      if (data.success) {
+        // animate to step 3 → 4 → 100
+        updateGraduationProgress(82, 3, 'Writing to ' + (data.pdf_path || 'C:\\graduate\\…'));
         setTimeout(() => {
-          window.location.href =
-            'setup_graduate.php?from_eval=1&student_id=' + _sid +
-            '&batch=' + _batch +
-            '&pdf_url=' + _pdfUrl;
-        }, 1600);
-      } else {
-        toast(data.message || 'Failed to confirm graduation', 'error');
-        if(btn) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+          updateGraduationProgress(93, 4);
+          setTimeout(() => {
+            _gpmMarkAllDone(data.pdf_path || '');
+
+            // pause 1.2 s so user can read "done", then transition
+            setTimeout(() => {
+              hideGraduationProgressModal();
+
+              // ── open PDF in a new tab ─────────────────────────────────
+              if (data.pdf_url) {
+                window.open(data.pdf_url, '_blank');
+              }
+
+              // Redirect the instructor to the graduate roster page after confirmation.
+              setTimeout(() => {
+                const batchPart = currentAY || '';
+                window.location.href = 'setup_graduate.php?from_eval=1&batch=' + encodeURIComponent(batchPart);
+              }, 900);
+
+              // ── swap graduation card to "officially graduated" view ─
+              const graduationContainer = document.getElementById('graduationContainer');
+              if (graduationContainer) {
+                const gradDate = data.graduation_date
+                  || new Date().toLocaleDateString('en-PH', {year:'numeric',month:'long',day:'numeric'});
+                const savedPath = data.pdf_path
+                  ? data.pdf_path.replace(/\//g,'\\')
+                  : 'C:\\graduate\\batch ' + esc(currentAY) + '\\…';
+
+                graduationContainer.innerHTML = `
+                <div style="position:relative;overflow:hidden;padding:32px 28px 24px;
+                     background:linear-gradient(145deg,#f0fdf4,#dcfce7,#bbf7d0);
+                     border:2px solid #10b981;border-radius:20px;text-align:center;
+                     box-shadow:0 12px 40px rgba(16,185,129,0.22),0 2px 8px rgba(0,0,0,0.07);
+                     animation:slideInGreen .5s cubic-bezier(.34,1.56,.64,1);">
+                  <style>
+                    @keyframes slideInGreen{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+                    @keyframes popInG{from{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.15)}to{transform:scale(1) rotate(0);opacity:1}}
+                  </style>
+                  <div style="width:90px;height:90px;margin:0 auto 16px;
+                       background:linear-gradient(145deg,#4ade80,#16a34a,#15803d);border-radius:50%;
+                       display:flex;align-items:center;justify-content:center;font-size:36px;color:#fff;
+                       box-shadow:0 6px 24px rgba(22,163,74,.4),0 0 0 8px rgba(74,222,128,.15),0 0 0 16px rgba(74,222,128,.07);
+                       animation:popInG .65s .1s cubic-bezier(.34,1.56,.64,1) both;">
+                    <i class="fas fa-user-graduate"></i>
+                  </div>
+                  <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;justify-content:center;">
+                    <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;
+                         background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border-radius:20px;
+                         font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+                         box-shadow:0 2px 8px rgba(22,163,74,.4);">
+                      <i class="fas fa-award"></i> Congratulations!
+                    </span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;padding:5px 14px;
+                         background:linear-gradient(135deg,#fef9e7,#fef3c7);color:#92400e;
+                         border:1.5px solid #d4a017;border-radius:20px;font-size:11px;font-weight:700;">
+                      <i class="fas fa-graduation-cap"></i> Officially Graduated
+                    </span>
+                  </div>
+                  <h3 style="font-size:22px;font-weight:800;color:#166534;margin:0 0 6px;font-family:'Playfair Display',serif;">
+                    Student has Graduated!
+                  </h3>
+                  <p style="font-size:12px;color:#166534;margin:0 0 20px;opacity:.85;">
+                    Curriculum completed. Evaluation locked. Official record saved.
+                  </p>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px;">
+                    <div style="padding:14px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Subjects Completed</div>
+                      <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.total_subjects||0}</div>
+                    </div>
+                    <div style="padding:14px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Final GWA</div>
+                      <div style="font-size:28px;font-weight:800;color:#166534;font-family:'Playfair Display',serif;">${data.gwa||'—'}</div>
+                    </div>
+                    <div style="padding:14px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Status</div>
+                      <div style="font-size:15px;font-weight:700;color:#166534;margin-top:4px;"><i class="fas fa-check-circle"></i> Graduated</div>
+                    </div>
+                    <div style="padding:14px;background:rgba(22,163,74,.1);border:1.5px solid rgba(22,163,74,.25);border-radius:14px;">
+                      <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:#166534;margin-bottom:6px;">Graduation Date</div>
+                      <div style="font-size:11px;font-weight:700;color:#166534;margin-top:4px;">${gradDate}</div>
+                    </div>
+                  </div>
+                  <div style="margin-bottom:16px;padding:10px 14px;
+                       background:rgba(22,163,74,.07);border:1px solid rgba(22,163,74,.18);
+                       border-radius:10px;font-size:11px;color:#166534;text-align:left;word-break:break-all;">
+                    <i class="fas fa-folder-open" style="color:#d4a017;margin-right:6px;"></i>
+                    <strong>Saved to:</strong> ${esc(savedPath)}
+                  </div>
+                  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                    <button type="button"
+                      onclick="window.open('../../../data/download_graduation_pdf.php?student_id=${currentStudent.id}','_blank')"
+                      style="padding:12px 22px;background:linear-gradient(135deg,#10b981,#059669);
+                             border:1.5px solid #10b981;border-radius:50px;font-size:13px;font-weight:700;
+                             color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:8px;
+                             box-shadow:0 4px 12px rgba(16,185,129,0.3);">
+                      <i class="fas fa-file-pdf"></i> Open PDF
+                    </button>
+                    <button type="button"
+                      onclick="loadMentees(); closeResultModal();"
+                      style="padding:12px 22px;background:rgba(22,163,74,.1);border:1.5px solid #10b981;
+                             border-radius:50px;font-size:13px;font-weight:700;color:#166534;
+                             cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+                      <i class="fas fa-times"></i> Close & View Graduate List
+                    </button>
+                  </div>
+                </div>`;
+              }
+
+              // lock proceed / stay buttons
+              ['rmProceedBtn','rmStayBtn'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.disabled = true; el.style.opacity='0.5'; el.style.cursor='not-allowed'; }
+              });
+
+            }, 1200);   // pause after "done" state
+          }, 600);      // step 4 settle
+        }, 500);        // step 3 settle
+
+       } else {
+         clearInterval(fakeTick);
+         if (_gradConfirmBtn) { _gradConfirmBtn.disabled = false; _gradConfirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation'; }
+        const msg = (data && data.message) ? data.message : 'Graduation confirmation failed.';
+        const bar = document.getElementById('graduationProgressBar');
+        const pct = document.getElementById('progressPercentage');
+        const wrap = document.getElementById('gpmIconWrap');
+        const ico  = document.getElementById('gpmIcon');
+        const t    = document.getElementById('gpmTitle');
+        const s    = document.getElementById('gpmSubtitle');
+        if (bar) { bar.style.width = '80%'; bar.style.background = 'linear-gradient(90deg,#ef4444,#dc2626)'; bar.style.animation = 'none'; }
+        if (pct) { pct.textContent = '80%'; pct.style.color = '#dc2626'; }
+        if (wrap) wrap.style.background = 'linear-gradient(145deg,#fca5a5,#ef4444)';
+        if (ico)  { ico.className = 'fas fa-times-circle'; }
+        if (t)    { t.textContent = 'Graduation Failed'; t.style.color = '#dc2626'; }
+        if (s)    { s.innerHTML = '⚠ ' + esc(msg); s.style.color = '#7f1d1d'; s.style.fontWeight = '600'; s.style.minHeight = 'auto'; }
+        // keep modal open; dismiss on backdrop click or Escape
+        const nativeClose = hideGraduationProgressModal;
+        function dismissError() {
+          const m = document.getElementById('graduationProgressModal');
+          if (m) { m.style.display = 'none'; }
         }
+        hideGraduationProgressModal = function () {
+          const m = document.getElementById('graduationProgressModal');
+          if (m) { m.style.display = 'none'; }
+          hideGraduationProgressModal = nativeClose;
+        };
+        const modal = document.getElementById('graduationProgressModal');
+        if (modal) {
+          modal.addEventListener('click', function (e) { if (e.target === modal) dismissError(); }, { once: true });
+        }
+        document.addEventListener('keydown', function _onEsc(e) { if (e.key === 'Escape') { dismissError(); document.removeEventListener('keydown', _onEsc); } });
+        console.error('Error confirming graduation:', msg);
+        toast('Error: ' + msg, 'error');
+        return;
       }
     })
     .catch(err => {
+      clearInterval(fakeTick);
+      hideGraduationProgressModal();
       console.error('Error confirming graduation:', err);
-      toast('Error confirming graduation', 'error');
-      if(btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+      toast('Error confirming graduation: ' + err.message, 'error');
+      if(_gradConfirmBtn) {
+        _gradConfirmBtn.disabled = false;
+        _gradConfirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
       }
     });
 }
@@ -2304,9 +2699,9 @@ function openGradesModal(year, sem) {
    // Show school header with major
    const schoolHeader = document.getElementById('gmSchoolHeader');
    schoolHeader.style.display = 'block';
-   document.getElementById('gmSchoolName').textContent = phSettings.school_name || '';
-   document.getElementById('gmSchoolAddress').textContent = phSettings.school_address || '';
-   document.getElementById('gmInstitute').textContent = phSettings.institute_name || '';
+   document.getElementById('gmSchoolName').textContent = phSettings.school_name || phSettings.schoolName || '';
+   document.getElementById('gmSchoolAddress').textContent = phSettings.school_address || phSettings.schoolAddress || '';
+   document.getElementById('gmInstitute').textContent = phSettings.institute_name || phSettings.instituteName || '';
    document.getElementById('gmDegree').textContent = `Major in ${m.major_name || '—'}`;
    
    // Update student info block
@@ -2430,10 +2825,10 @@ function printGradesTable() {
   const advisorName = window.advisorName || 'Adviser';
   const programHeadName = window.programHeadName || 'Program Head';
   const table = document.querySelector('.gm-table');
-  const schoolName = phSettings.school_name || 'Northern Bukidnon State College';
-  const schoolAddress = phSettings.school_address || 'Manolo Fortich, Bukidnon';
-  const instituteName = phSettings.institute_name || 'Institute for Business Management';
-  const degreeName = phSettings.degree_name || 'Bachelor of Science in Business Administration';
+  const schoolName = phSettings.school_name || phSettings.schoolName || 'Northern Bukidnon State College';
+  const schoolAddress = phSettings.school_address || phSettings.schoolAddress || 'Manolo Fortich, Bukidnon';
+  const instituteName = phSettings.institute_name || phSettings.instituteName || 'Institute for Business Management';
+  const degreeName = phSettings.degree_name || phSettings.degreeName || 'Bachelor of Science in Business Administration';
   const logoUrl = '../../../media/LOGO.jpg';
   
   if(!table) return;
@@ -3195,11 +3590,11 @@ function promoteStudent(fromYear, fromSem, toYear, toSem) {
   const hdrHtml = `<div class="pro-hdr">
     <img src="../../../media/LOGO.jpg" class="pro-logo" alt="School Logo">
     <div class="pro-title-block">
-      <div class="pro-school">${esc(phSettings.school_name)}</div>
-      <div class="pro-address">${esc(phSettings.school_address)}</div>
+      <div class="pro-school">${esc(phSettings.school_name || phSettings.schoolName || '')}</div>
+      <div class="pro-address">${esc(phSettings.school_address || phSettings.schoolAddress || '')}</div>
       <div style="border-top:1px solid #d4cfc5;margin:4px auto;width:80%;"></div>
-      <div class="pro-institute">${esc(phSettings.institute_name)}</div>
-      <div class="pro-degree">${esc(phSettings.degree_name)}</div>
+      <div class="pro-institute">${esc(phSettings.institute_name || phSettings.instituteName || '')}</div>
+      <div class="pro-degree">${esc(phSettings.degree_name || phSettings.degreeName || '')}</div>
       <div class="pro-major-line">Major in <strong>${esc(s.major_name||'—')}</strong></div>
       <div class="pro-label">&#9733; Student Evaluation Prospectus &#9733;</div>
     </div>
@@ -3326,7 +3721,8 @@ const sigHtml = `<div class="pro-sig-block">
                       const bPrereqPi   = prereqUnlockMap ? (prereqUnlockMap[sub.id]||{unlocked:true}) : {unlocked:true};
                       const bPrereqLocked = !bPrereqPi.unlocked;
                       const bManuallyUnlocked = manuallyUnlockedSubjects.has(parseInt(sub.id)) || manuallyUnlockedSubjects.has(sub.id);
-                      let bShouldDisable = (window.evaluationLocked === true) || bPrereqLocked || bIsCredited || !bIsInLoad;
+                      const bIsGraduated = s && s.status === 'graduated';
+                      let bShouldDisable = bIsGraduated || (window.evaluationLocked === true) || bPrereqLocked || bIsCredited || !bIsInLoad;
                       if (bManuallyUnlocked && !bIsCredited) bShouldDisable = false;
                       const bRowClass = bShouldDisable ? (bIsCredited ? 'row-credited' : 'row-locked') : '';
                       const bLockDesc = !bIsInLoad ? 'Not in student load' : (bPrereqLocked ? 'Prerequisite required' : '');
@@ -4404,16 +4800,136 @@ document.getElementById('resultModal').addEventListener('click', function(e) {
 
   <script>
   function quickEvaluate() {
-    if (window.evaluationLocked) {
-      toast('This student has graduated. Evaluation is locked.', 'error', 4500);
+    const overlay = document.getElementById('evalOverlay');
+
+    // Case 1 — Nothing is open: show the "open a student first" toast
+    if (!overlay || !overlay.classList.contains('open')) {
+      toast('Open a student prospectus first by clicking on a mentee card', 'info');
       return;
     }
-    const overlay = document.getElementById('evalOverlay');
-    if (overlay && overlay.classList.contains('open')) {
-      autoDetectAndEvaluate();
-    } else {
-      toast('Open a student prospectus first by clicking on a mentee card', 'info');
+
+    // Case 2 — Prospectus is open but the student is graduated:
+    //          show PDF locate/regenerate progress
+    if (window.evaluationLocked || (currentStudent && currentStudent.status === 'graduated')) {
+      const studentId = currentStudent ? currentStudent.id : (window.graduationRecord ? window.graduationRecord.student_id : null);
+      const pdfUrl    = window.graduationRecord && window.graduationRecord.pdf_path
+                        ? '../../../data/download_graduation_pdf.php?student_id=' + encodeURIComponent(studentId || '')
+                        : null;
+
+      showGraduationProgressModal();
+      updateGraduationProgress(10, 1, 'Checking graduation records…');
+
+      setTimeout(() => {
+        updateGraduationProgress(35, 2, 'Locating saved prospectus…');
+
+        if (pdfUrl) {
+          fetch(pdfUrl, { method: 'HEAD', redirect: 'follow' })
+            .then(resp => {
+              setTimeout(() => {
+                if (resp.ok && resp.status === 200) {
+                  updateGraduationProgress(68, 3, 'Re-opening existing PDF…');
+                  setTimeout(() => {
+                    updateGraduationProgress(88, 4, 'PDF ready — opening in new tab…');
+                    setTimeout(() => {
+                      hideGraduationProgressModal();
+                      window.open(pdfUrl, '_blank');
+                    }, 900);
+                  }, 700);
+                } else {
+                  _graduateRegenerateFlow(studentId);
+                }
+              }, 0);
+            })
+            .catch(() => {
+              setTimeout(() => { _graduateRegenerateFlow(studentId); }, 0);
+            });
+        } else {
+          setTimeout(() => { _graduateRegenerateFlow(studentId); }, 200);
+        }
+      }, 800);
+
+      return;
     }
+
+    // Case 3 — Prospectus is open and the student is not graduated: run normal auto-evaluate
+    autoDetectAndEvaluate();
+  }
+
+  function _graduateRegenerateFlow(studentId) {
+    updateGraduationProgress(55, 3, 'Record not found — regenerating prospectus…');
+
+    setTimeout(() => {
+      updateGraduationProgress(75, 4, 'Re-building official document and saving to disk…');
+
+      // Build POST payload for regenerate_graduation_pdf
+      const fd2 = new FormData();
+      fd2.append('action',        'regenerate_graduation_pdf');
+      fd2.append('student_id',    currentStudent.id);
+      fd2.append('academic_year', currentAY);
+      fd2.append('year_level',    currentStudent.year_level || '4th Year');
+      fd2.append('semester',      currentStudent.year_level && /2nd/i.test(currentStudent.year_level) ? '2nd Semester' : '2nd Semester');
+
+      fetch(EVAL_PROC, {method:'POST', body:fd2, credentials:'same-origin', headers:{'Accept':'application/json'}})
+        .then(async r => {
+          const text2 = await r.text();
+          if (!r.ok) throw new Error('Server HTTP ' + r.status + ': ' + text2);
+          if (/^\s*</.test(text2)) throw new Error('Server returned HTML (check PHP errors): ' + text2.slice(0, 300));
+          try { return JSON.parse(text2); } catch (e) { throw new Error('Invalid JSON: ' + text2.slice(0, 300)); }
+        })
+        .then(data => {
+          // restore label
+          if (_gradConfirmBtn) {
+            _gradConfirmBtn.disabled = false;
+            _gradConfirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+          }
+
+          if (data.success) {
+            // updateWindow
+            const newRecord = {
+              student_id:  currentStudent.id,
+              pdf_path:    data.pdf_path || '',
+              academic_year: currentAY,
+            };
+            window.graduationRecord = { ...window.graduationRecord, ...newRecord };
+
+            updateGraduationProgress(93, 4, 'Saved to ' + (data.pdf_path || '…'));
+            setTimeout(() => {
+              _gpmMarkAllDone(data.pdf_path || '');
+              // pause so instructor can see "done"
+              setTimeout(() => {
+                hideGraduationProgressModal();
+                // Open the freshly saved PDF in a new tab
+                if (data.pdf_url) {
+                  window.open(data.pdf_url, '_blank');
+                }
+              }, 1200);
+            }, 600);
+          } else {
+            updateGraduationProgress(90, 4);
+            // show error inside the modal
+            const bar  = document.getElementById('graduationProgressBar');
+            const pct  = document.getElementById('progressPercentage');
+            const wrap = document.getElementById('gpmIconWrap');
+            const ico  = document.getElementById('gpmIcon');
+            const t    = document.getElementById('gpmTitle');
+            const s    = document.getElementById('gpmSubtitle');
+            if (bar)  { bar.style.width='90%'; bar.style.background='linear-gradient(90deg,#ef4444,#dc2626)'; bar.style.animation='none'; }
+            if (pct)  { pct.textContent='90%'; pct.style.color='#dc2626'; }
+            if (wrap) { wrap.style.background='linear-gradient(145deg,#fca5a5,#ef4444)'; }
+            if (ico)  { ico.className='fas fa-times-circle'; }
+            if (t)    { t.textContent='Regeneration Failed'; t.style.color='#dc2626'; }
+            if (s)    { s.innerHTML='⚠ ' + esc(data.message || 'Unknown error'); s.style.color='#7f1d1d'; s.style.fontWeight='600'; s.style.minHeight='auto'; }
+            toast('Error: ' + (data.message || 'regeneration failed'), 'error');
+          }
+        })
+        .catch(err => {
+          if (_gradConfirmBtn) {
+            _gradConfirmBtn.disabled = false;
+            _gradConfirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Graduation';
+          }
+          toast('Error regenerating PDF: ' + err.message, 'error');
+        });
+    }, 700);
   }
   </script>
 

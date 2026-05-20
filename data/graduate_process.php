@@ -25,93 +25,71 @@ $action = $_POST['action'] ?? $_GET['action'] ?? '';
 $instructor_id = (int) ($_SESSION['user_id'] ?? 0);
 
 if ($action === 'list') {
-    // List graduates with filtering
+    // List graduates by scanning PDF files on disk under C:/graduate/
     $batch = $_POST['batch'] ?? '';
     $major = $_POST['major'] ?? '';
     $search = $_POST['search'] ?? '';
-    
+
     try {
-        $query = "
-            SELECT s.*, 
-                   gr.gwa, 
-                   gr.graduation_date,
-                   gr.total_subjects,
-                   m.display_name AS major_name
-            FROM students s
-            LEFT JOIN graduation_records gr ON s.id = gr.student_id
-            LEFT JOIN majors m ON s.major_id = m.id
-            WHERE s.status = 'graduated'
-        ";
-        
-        $params = [];
-        $types = '';
-        
+        $records = scan_graduate_pdfs(graduation_disk_base());
+
+        // ── filter: batch year ──────────────────────────────────────────────
         if ($batch) {
-            $query .= " AND gr.academic_year = ?";
-            $params[] = $batch;
-            $types .= 's';
+            $records = array_values(array_filter($records, fn($r) => $r['batch_year'] === $batch));
         }
-        
+
+        // ── filter: major ──────────────────────────────────────────────────
         if ($major) {
-            if ($major === 'OM') {
-                $query .= ' AND (LOWER(m.display_name) LIKE ? OR LOWER(m.major_name) LIKE ?)';
-                $params[] = '%operational%';
-                $params[] = '%operational%';
-            } elseif ($major === 'FM') {
-                $query .= ' AND (LOWER(m.display_name) LIKE ? OR LOWER(m.major_name) LIKE ?)';
-                $params[] = '%financial%';
-                $params[] = '%financial%';
-            } elseif ($major === 'MM') {
-                $query .= ' AND (LOWER(m.display_name) LIKE ? OR LOWER(m.major_name) LIKE ?)';
-                $params[] = '%marketing%';
-                $params[] = '%marketing%';
-            } else {
-                $query .= ' AND m.display_name = ?';
-                $params[] = $major;
-            }
+            $records = array_values(array_filter($records, function ($r) use ($major) {
+                $slug = strtolower($r['major_slug'] ?? '');
+                $name = strtolower($r['major_name'] ?? '');
+                if ($major === 'OM') return str_contains($slug, 'op') || str_contains($slug, 'om') || str_contains($name, 'operational');
+                if ($major === 'FM') return str_contains($slug, 'fn') || str_contains($slug, 'fm') || str_contains($name, 'financial');
+                if ($major === 'MM') return str_contains($slug, 'mk') || str_contains($slug, 'mm') || str_contains($name, 'marketing');
+                return false;
+            }));
         }
-        
+
+        // ── filter: text search ────────────────────────────────────────────
         if ($search) {
-            $query .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_id LIKE ?)";
-            $searchParam = "%{$search}%";
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $params[] = $searchParam;
-            $types .= 'sss';
+            $q = strtolower($search);
+            $records = array_values(array_filter($records, function ($r) use ($q) {
+                return str_contains(strtolower($r['student_label'] ?? ''), $q)
+                    || str_contains(strtolower($r['file_name'] ?? ''), $q);
+            }));
         }
-        
-        $query .= " ORDER BY s.last_name, s.first_name";
-        
-        $stmt = $pdo->prepare($query);
-        if ($params) {
-            $stmt->execute($params);
-        } else {
-            $stmt->execute();
-        }
-        
-        $graduates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        if (empty($graduates)) {
+
+        // ── sort by filename ───────────────────────────────────────────────
+        usort($records, fn($a, $b) => strcmp($a['file_name'] ?? '', $b['file_name'] ?? ''));
+
+        if (empty($records)) {
             echo '<div class="no-data"><i class="fas fa-user-graduate"></i><p>No graduates found matching the criteria.</p></div>';
             exit;
         }
 
-        echo '<div class="table-responsive"><table><thead><tr><th>Name</th><th>Student ID</th><th>Major</th><th>GWA</th><th>Graduation Date</th><th>Subjects</th><th>Actions</th></tr></thead><tbody>';
-        foreach ($graduates as $graduate) {
+        $dl = '../../../data/download_graduation_pdf.php?file_path=';
+
+        echo '<div class="table-responsive"><table><thead><tr><th>Name</th><th>Student ID</th><th>Major</th><th>Final GWA</th><th>Batch Year</th><th>Actions</th></tr></thead><tbody>';
+        foreach ($records as $rec) {
+            $label    = htmlspecialchars($rec['student_label']);
+            $sid      = htmlspecialchars($rec['student_number'] ?? 'N/A');
+            $majorNm  = htmlspecialchars($rec['major_name']);
+            $gwa      = $rec['gwa'] !== null && $rec['gwa'] !== '' ? number_format((float) $rec['gwa'], 2) : 'N/A';
+            $batch    = htmlspecialchars($rec['batch_year'] ?? 'N/A');
+            $fpath    = $rec['file_path'];
             echo '
             <tr>
-                <td>' . htmlspecialchars($graduate['last_name'] . ', ' . $graduate['first_name'] . ' ' . ($graduate['middle_name'] ?? '')) . '</td>
-                <td>' . htmlspecialchars($graduate['student_number'] ?? 'N/A') . '</td>
-                <td>' . htmlspecialchars($graduate['major_name'] ?? 'N/A') . '</td>
-                <td>' . htmlspecialchars($graduate['gwa'] ?? 'N/A') . '</td>
-                <td>' . htmlspecialchars($graduate['graduation_date'] ?? 'N/A') . '</td>
-                <td>' . htmlspecialchars($graduate['total_subjects'] ?? 0) . '</td>
+                <td>' . $label . '</td>
+                <td>' . $sid . '</td>
+                <td>' . $majorNm . '</td>
+                <td>' . $gwa . '</td>
+                <td>' . $batch . '</td>
                 <td>
                     <div class="btn-group">
-                        <button class="btn btn-outline btn-sm" onclick="viewGraduateDetails(' . $graduate['id'] . ')">
+                        <button class="btn btn-outline btn-sm" onclick="viewGraduateDetails(\'' . $fpath . '\')">
                             <i class="fas fa-eye"></i> View
                         </button>
-                        <button class="btn btn-outline btn-sm" onclick="downloadProspectus(' . $graduate['id'] . ')">
+                        <button class="btn btn-outline btn-sm" onclick="downloadProspectus(\'' . $fpath . '\')">
                             <i class="fas fa-download"></i> PDF
                         </button>
                     </div>
@@ -119,7 +97,7 @@ if ($action === 'list') {
             </tr>';
         }
         echo '</tbody></table></div>';
-    } catch (PDOException $e) {
+    } catch (Exception $e) {
         echo '<div class="no-data"><i class="fas fa-exclamation-triangle"></i><p>Error loading graduates: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
     }
     exit;
@@ -129,7 +107,15 @@ if ($action === 'get_eligible_students') {
     try {
         ensure_graduation_schema($pdo);
         $stmt = $pdo->prepare("
-            SELECT s.*, m.display_name AS major_name
+            SELECT s.id            AS student_id,
+                   s.first_name,
+                   s.last_name,
+                   s.middle_name,
+                   s.email,
+                   s.major_id,
+                   s.year_level,
+                   s.status,
+                   m.display_name   AS major_name
             FROM students s
             JOIN majors m ON s.major_id = m.id
             JOIN mentees me ON me.student_id = s.id AND me.mentor_id = ?
@@ -147,7 +133,7 @@ if ($action === 'get_eligible_students') {
             if ($mid <= 0) {
                 continue;
             }
-            $c = student_curriculum_completion($pdo, (int) $row['id'], $mid);
+            $c = student_curriculum_completion($pdo, (int) ($row['student_id'] ?? $row['id'] ?? 0), $mid);
             if (!empty($c['complete'])) {
                 $students[] = $row;
             }
@@ -171,7 +157,17 @@ if ($action === 'get_student_details') {
     
     try {
         $stmt = $pdo->prepare('
-            SELECT s.*, m.display_name AS major_name
+            SELECT s.id            AS student_id,
+                   s.student_id    AS student_number,
+                   s.first_name,
+                   s.last_name,
+                   s.middle_name,
+                   s.email,
+                   s.major_id,
+                   s.year_level,
+                   s.status,
+                   s.student_type,
+                   m.display_name   AS major_name
             FROM students s
             JOIN majors m ON s.major_id = m.id
             JOIN mentees me ON me.student_id = s.id AND me.mentor_id = ?
@@ -204,7 +200,17 @@ if ($action === 'generate_pdf') {
         ensure_graduation_schema($pdo);
 
         $stmt = $pdo->prepare('
-            SELECT s.*, m.display_name AS major_name
+            SELECT s.id            AS student_id,
+                   s.student_id    AS student_number,
+                   s.first_name,
+                   s.last_name,
+                   s.middle_name,
+                   s.email,
+                   s.major_id,
+                   s.year_level,
+                   s.status,
+                   s.student_type,
+                   m.display_name   AS major_name
             FROM students s
             JOIN majors m ON s.major_id = m.id
             JOIN mentees me ON me.student_id = s.id AND me.mentor_id = ?
@@ -229,6 +235,7 @@ if ($action === 'generate_pdf') {
 
         $advisorName = '';
         $stmtAdv = $pdo->prepare('SELECT first_name, middle_name, last_name, suffix FROM instructors WHERE id = ?');
+        $stmtAdv->execute([$instructor_id]);
         $stmtAdv->execute([$instructor_id]);
         if ($advRow = $stmtAdv->fetch(PDO::FETCH_ASSOC)) {
             $advisorName = trim($advRow['first_name'] . ($advRow['middle_name'] ? ' ' . substr((string) $advRow['middle_name'], 0, 1) . '.' : '') . ' ' . $advRow['last_name'] . ($advRow['suffix'] ? ' ' . $advRow['suffix'] : ''));
@@ -304,7 +311,7 @@ if ($action === 'generate_pdf') {
             $pdfPath,
         ]);
 
-        $pdfUrl = '../data/download_graduation_pdf.php?student_id=' . $student_id;
+        $pdfUrl = '../../../data/download_graduation_pdf.php?student_id=' . $student_id;
 
         echo json_encode([
             'success' => true,
@@ -332,7 +339,7 @@ if ($action === 'get_folder_structure') {
                 if ($dir === '.' || $dir === '..') continue;
                 $dirPath = $basePath . $dir;
                 if (is_dir($dirPath)) {
-                    $structure .= '<div class="folder-item"><i class="fas fa-folder"></i><span>' . htmlspecialchars($dir) . '\</span></div>';
+                    $structure .= '<div class="folder-item"><i class="fas fa-folder"></i><span>' . htmlspecialchars($dir) . '\\</span></div>';
                     
                     // Scan batch directory
                     $batchDirs = scandir($dirPath);
@@ -340,7 +347,7 @@ if ($action === 'get_folder_structure') {
                         if ($batchDir === '.' || $batchDir === '..') continue;
                         $batchPath = $dirPath . '/' . $batchDir;
                         if (is_dir($batchPath)) {
-                            $structure .= '<div class="folder-item" style="margin-left:20px;"><i class="fas fa-folder"></i><span>' . htmlspecialchars($batchDir) . '\</span></div>';
+                            $structure .= '<div class="folder-item" style="margin-left:20px;"><i class="fas fa-folder"></i><span>' . htmlspecialchars($batchDir) . '\\</span></div>';
                             
                             // Scan major directory
                             $majorDirs = scandir($batchPath);
@@ -348,7 +355,7 @@ if ($action === 'get_folder_structure') {
                                 if ($majorDir === '.' || $majorDir === '..') continue;
                                 $majorPath = $batchPath . '/' . $majorDir;
                                 if (is_dir($majorPath)) {
-                                    $structure .= '<div class="folder-item" style="margin-left:40px;"><i class="fas fa-folder"></i><span>' . htmlspecialchars($majorDir) . '\</span></div>';
+                                    $structure .= '<div class="folder-item" style="margin-left:40px;"><i class="fas fa-folder"></i><span>' . htmlspecialchars($majorDir) . '\\</span></div>';
                                     
                                     // Scan PDF files
                                     $files = scandir($majorPath);
@@ -368,47 +375,53 @@ if ($action === 'get_folder_structure') {
             $structure = '<div class="no-data"><i class="fas fa-info-circle"></i><p>No graduate folder structure found. PDFs will be created when generating prospectus.</p></div>';
         }
         
-        echo $structure;
+        echo json_encode(['success' => true, 'html' => $structure]);
     } catch (Exception $e) {
-        echo '<div class="no-data"><i class="fas fa-exclamation-triangle"></i><p>Error reading folder structure: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
+        echo json_encode(['success' => false, 'message' => 'Error reading folder structure: ' . $e->getMessage()]);
     }
     exit;
 }
 
+
 if ($action === 'get_reports') {
-    // Generate reports for a specific batch
+    // Generate reports for a specific batch — DB-based (pulls GWA, date, subjects)
     $batch = $_POST['batch'] ?? '';
-    
+
     if (!$batch) {
         echo json_encode(['success' => false, 'message' => 'Batch year required']);
         exit;
     }
-    
+
     try {
         $stmt = $pdo->prepare("
-            SELECT s.*, 
-                   gr.gwa, 
+            SELECT s.id            AS student_id,
+                   s.student_id    AS student_number,
+                   s.first_name,
+                   s.last_name,
+                   s.middle_name,
+                   s.email,
+                   gr.gwa,
                    gr.graduation_date,
-                   m.display_name AS major_name
-            FROM students s
-            JOIN graduation_records gr ON s.id = gr.student_id
+                   gr.total_subjects,
+                   m.display_name   AS major_name
+            FROM graduation_records gr
+            JOIN students s ON s.id = gr.student_id
             JOIN majors m ON s.major_id = m.id
             WHERE gr.academic_year = ?
             ORDER BY s.last_name, s.first_name
         ");
         $stmt->execute([$batch]);
         $graduates = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
-        // Generate HTML report
+
         if (empty($graduates)) {
             echo '<div class="no-data"><i class="fas fa-info-circle"></i><p>No graduation records found for batch ' . htmlspecialchars($batch) . '.</p></div>';
             exit;
         }
-        
+
         echo '
         <h3>Graduation Report - Batch ' . htmlspecialchars($batch) . '</h3>
-        <p>Generated on: ' . htmlspecialchars(date('F j, Y, g:i a')) . '</p>
-        
+        <p>Generated on: ' . htmlspecialchars(date('F j, Y, g:i a')) . '  ·  Source: database records</p>
+
         <div class="table-responsive">
             <table>
                 <thead>
@@ -422,7 +435,7 @@ if ($action === 'get_reports') {
                     </tr>
                 </thead>
                 <tbody>';
-        
+
         foreach ($graduates as $graduate) {
             echo '
                     <tr>
@@ -434,18 +447,15 @@ if ($action === 'get_reports') {
                         <td>' . htmlspecialchars($graduate['total_subjects'] ?? 0) . '</td>
                     </tr>';
         }
-        
+
         echo '
                 </tbody>
             </table>
         </div>
-        
+
         <div style="margin-top:20px;">
             <button class="btn btn-outline" onclick="window.print()">
                 <i class="fas fa-print"></i> Print Report
-            </button>
-            <button class="btn btn-secondary" onclick="exportToCSV()">
-                <i class="fas fa-file-csv"></i> Export to CSV
             </button>
         </div>';
     } catch (PDOException $e) {
@@ -455,25 +465,25 @@ if ($action === 'get_reports') {
 }
 
 if ($action === 'get_stats') {
-    // Get statistics for a specific batch
+    // Get statistics for a specific batch — DB-based (pulls GWA stats, major breakdown)
     $batch = $_POST['batch'] ?? '';
-    
+
     if (!$batch) {
         echo json_encode(['success' => false, 'message' => 'Batch year required']);
         exit;
     }
-    
+
     try {
         $stmt = $pdo->prepare("
-            SELECT 
+            SELECT
                 COUNT(*) as total_graduates,
                 AVG(gr.gwa) as average_gwa,
                 MIN(gr.gwa) as minimum_gwa,
                 MAX(gr.gwa) as maximum_gwa,
                 m.display_name as major_name,
                 COUNT(*) as major_count
-            FROM students s
-            JOIN graduation_records gr ON s.id = gr.student_id
+            FROM graduation_records gr
+            JOIN students s ON s.id = gr.student_id
             JOIN majors m ON s.major_id = m.id
             WHERE gr.academic_year = ?
             GROUP BY m.display_name
@@ -481,35 +491,28 @@ if ($action === 'get_stats') {
         ");
         $stmt->execute([$batch]);
         $stats = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        
+
         // Get overall stats
         $overallStmt = $pdo->prepare("
-            SELECT 
+            SELECT
                 COUNT(*) as total_graduates,
                 AVG(gr.gwa) as average_gwa
-            FROM students s
-            JOIN graduation_records gr ON s.id = gr.student_id
+            FROM graduation_records gr
             WHERE gr.academic_year = ?
         ");
         $overallStmt->execute([$batch]);
         $overall = $overallStmt->fetch(PDO::FETCH_ASSOC);
-        
+
         // Generate stats cards
         $html = '';
-        
+
         // Overall stats
         $html .= '
         <div class="stat-card">
             <div class="stat-number">' . htmlspecialchars($overall['total_graduates'] ?? 0) . '</div>
             <div class="stat-label">Total Graduates</div>
-        </div>
-        
-        <div class="stat-card">
-            <div class="stat-number">' . htmlspecialchars(number_format($overall['average_gwa'] ?? 0, 2)) . '</div>
-            <div class="stat-label">Average GWA</div>
         </div>';
-        
-        // Major breakdown
+
         foreach ($stats as $stat) {
             $html .= '
             <div class="stat-card">
@@ -517,7 +520,7 @@ if ($action === 'get_stats') {
                 <div class="stat-label">' . htmlspecialchars($stat['major_name'] ?? 'Unknown') . ' Graduates</div>
             </div>';
         }
-        
+
         echo $html;
     } catch (PDOException $e) {
         echo '<div class="no-data"><i class="fas fa-exclamation-triangle"></i><p>Error loading statistics: ' . htmlspecialchars($e->getMessage()) . '</p></div>';

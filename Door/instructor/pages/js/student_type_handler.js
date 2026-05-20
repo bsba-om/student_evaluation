@@ -90,7 +90,7 @@ const StudentTypeHandler = (() => {
     if (prevBadge) {
       if (existingType) {
         prevBadge.style.display = 'inline-flex';
-        prevBadge.innerHTML = `<i class="fas fa-history" style="margin-right:5px;"></i> Previously: ${TYPES[existingType]?.label || existingType}`;
+        prevBadge.innerHTML = '<i class="fas fa-history" style="margin-right:5px;"></i> Previously: ' + (TYPES[existingType] ? TYPES[existingType].label : existingType);
       } else {
         prevBadge.style.display = 'none';
       }

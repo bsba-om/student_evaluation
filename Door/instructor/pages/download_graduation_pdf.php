@@ -20,6 +20,7 @@ if (!$role_access['allowed']) {
 }
 
 $studentId = (int)($_GET['student_id'] ?? 0);
+$isInline  = isset($_GET['inline']);
 if (!$studentId) {
     http_response_code(400);
     echo 'student_id is required';
@@ -28,16 +29,31 @@ if (!$studentId) {
 
 /* ── Look up the saved PDF path in the graduates table ─────────────────── */
 try {
+    // Try graduation_records table first
     $stmt = $pdo->prepare("
-        SELECT g.pdf_path, s.first_name, s.last_name, g.academic_year
-          FROM graduates g
-          JOIN students s ON s.id = g.student_id
-         WHERE g.student_id = ?
-         ORDER BY g.created_at DESC
+        SELECT gr.pdf_path, s.first_name, s.last_name, gr.academic_year
+          FROM graduation_records gr
+          JOIN students s ON s.id = gr.student_id
+         WHERE gr.student_id = ?
+         ORDER BY gr.created_at DESC
          LIMIT 1
     ");
     $stmt->execute([$studentId]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Fallback to graduates table if needed
+    if (!$row) {
+        $stmt = $pdo->prepare("
+            SELECT g.pdf_path, s.first_name, s.last_name, g.academic_year
+              FROM graduates g
+              JOIN students s ON s.id = g.student_id
+             WHERE g.student_id = ?
+             ORDER BY g.created_at DESC
+             LIMIT 1
+        ");
+        $stmt->execute([$studentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) {
     http_response_code(500);
     echo 'Database error: ' . htmlspecialchars($e->getMessage());
@@ -70,7 +86,11 @@ $downloadName = "prospectus_{$lastName}_{$firstName}_batch{$batch}.{$ext}";
 $mimeType = $ext === 'html' ? 'text/html' : 'application/pdf';
 
 header('Content-Type: ' . $mimeType);
-header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+if ($isInline) {
+    header('Content-Disposition: inline; filename="' . $downloadName . '"');
+} else {
+    header('Content-Disposition: attachment; filename="' . $downloadName . '"');
+}
 header('Content-Length: ' . filesize($filePath));
 header('Cache-Control: private, no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
