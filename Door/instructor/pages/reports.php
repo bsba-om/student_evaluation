@@ -45,10 +45,8 @@ $mock_data = [
 
 // Process data if access is allowed
 $evaluation_data = [];
-$graduate_data = [];
 $best_performers = [];
 $eval_stats = ['total_evaluated' => 0, 'in_progress' => 0, 'not_started' => 0, 'completed' => 0];
-$grad_stats = ['total_graduates' => 0, 'pending' => 0, 'confirmed' => 0];
 
 if (!$show_role_modal) {
     try {
@@ -146,31 +144,6 @@ if (!$show_role_modal) {
         $evaluation_data = [];
     }
 
-    // ─── GRADUATE REPORT DATA ───
-    try {
-        $stmt = $pdo->prepare("
-            SELECT s.id, s.student_id, s.first_name, s.middle_name, s.last_name, s.suffix,
-                   s.year_level, s.avatar_initials, s.avatar_gradient_from, s.avatar_gradient_to,
-                   maj.display_name as major_name, maj.gradient_from as major_gradient_from, maj.gradient_to as major_gradient_to,
-                   gr.academic_year as batch_year, gr.graduation_date as graduated_at
-            FROM mentees me
-            JOIN students s ON me.student_id = s.id
-            LEFT JOIN majors maj ON s.major_id = maj.id
-            LEFT JOIN graduation_records gr ON gr.student_id = s.id
-            WHERE me.mentor_id = ? AND gr.id IS NOT NULL
-            ORDER BY gr.graduation_date DESC
-        ");
-        $stmt->execute([$instructor_id]);
-        $graduate_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $grad_stats['total_graduates'] = count($graduate_data);
-        foreach ($graduate_data as $g) {
-            $grad_stats['confirmed']++;
-        }
-    } catch (PDOException $e) {
-        $graduate_data = [];
-    }
-
     // ─── BEST PERFORMERS (Top students by average grade) ───
     try {
         $stmt = $pdo->prepare("
@@ -201,9 +174,98 @@ if (!$show_role_modal) {
 }
 
 // Helper functions
+
+/**
+ * Load JSON sidecar files from C:/graduate/ and return a map indexed by the
+ * parsed student-ID token in the filename (e.g.  _s14_, _s10_, _s13_).
+ *
+ * This index is matched against graduation_records.student_id when the students
+ * table has no rows, so names and majors still render from the sidecar metadata.
+ *
+ * Sidecar signature (written by graduation_support.php):
+ *   {  "student_number": "…",  "student_name": "Firstname Lastname",
+ *      "major_name": "…", "gwa": 1.xxx, "graduation_date": "YYYY-MM-DD", … }
+ */
+function load_graduate_sidecar_map(string $baseDir = 'C:/graduate/'): array
+{
+    $map = [];
+    if (!is_dir($baseDir)) return $map;
+
+    $batchDirs = @scandir($baseDir);
+    if ($batchDirs === false) return $map;
+
+    foreach ($batchDirs as $batchDir) {
+        if ($batchDir === '.' || $batchDir === '..') continue;
+        $batchPath = $baseDir . $batchDir;
+        if (!is_dir($batchPath)) continue;
+
+        $majorDirs = @scandir($batchPath);
+        if ($majorDirs === false) continue;
+
+        foreach ($majorDirs as $majorDir) {
+            if ($majorDir === '.' || $majorDir === '..') continue;
+            $majorPath = $batchPath . '/' . $majorDir;
+            if (!is_dir($majorPath)) continue;
+
+            $files = @scandir($majorPath);
+            if ($files === false) continue;
+
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..') continue;
+                if (strtolower(pathinfo($file, PATHINFO_EXTENSION)) !== 'json') continue;
+
+                $jsonPath = $majorPath . '/' . $file;
+                $json     = @file_get_contents($jsonPath);
+                if ($json === false) continue;
+
+                $meta = json_decode($json, true);
+                if (!is_array($meta)) continue;
+
+                // Extract the student-ID from the sidecar's own filename stem
+                // Filename format: first_last_s{ID}_major_gwaX.xx_batchYYYY-YYYY.pdf.json
+                $stem = pathinfo($file, PATHINFO_FILENAME);   // strip .json
+                $sidFromFile = '';
+                if (preg_match('/_s(\d+)_/', $stem, $fm)) {
+                    $sidFromFile = $fm[1];                   // e.g. "14"
+                } elseif (preg_match('/_s(\d+)(?:[^0-9]|$)/', $stem, $fm)) {
+                    $sidFromFile = $fm[1];
+                }
+
+                // Also try the sidecar's own student_number field as secondary key
+                $snMeta = trim((string)($meta['student_number'] ?? ''));
+
+                // Reject entries where neither key resolves to a numeric ID
+                if ($sidFromFile === '' && $snMeta === '') continue;
+
+                // Split "Firstname Lastname" / "Lastname, Firstname" into first + last
+                $fullName = trim((string)($meta['student_name'] ?? ''));
+                $commaPos = strpos($fullName, ',');
+                if ($commaPos !== false) {
+                    // "Lastname, Firstname Middlename" format
+                    $parts = explode(' ', trim(substr($fullName, $commaPos + 1)), 2);
+                    $meta['first_name'] = $parts[0] ?? '';
+                    $meta['last_name']  = substr($fullName, 0, $commaPos);
+                } else {
+                    $parts = explode(' ', $fullName, 2);
+                    $meta['first_name'] = $parts[0] ?? '';
+                    $meta['last_name']  = $parts[1] ?? '';
+                }
+                // Also store with the sidecar's own student_number so both keys work
+                $key = $sidFromFile !== '' ? $sidFromFile : $snMeta;
+                $map[$key]           = $meta;
+                if ($snMeta !== '' && $snMeta !== $key) {
+                    $map[$snMeta] = $meta;   // secondary key
+                }
+            }
+        }
+    }
+
+    return $map;
+}
+
 function getStudentFullName($s) {
     $n = trim(($s['first_name'] ?? '') . ' ' . ($s['middle_name'] ?? '') . ' ' . ($s['last_name'] ?? ''));
-    return trim($n . ' ' . ($s['suffix'] ?? ''));
+    return trim(preg_replace('/  +/', ' ', $n . ' ' . ($s['suffix'] ?? '')));
 }
 
 function getStudentInitials($s) {
@@ -960,9 +1022,6 @@ function yearLevelLabel($level) {
                 <button class="section-tab" onclick="switchTab('performers')">
                     <i class="fas fa-trophy"></i> Best Performers
                 </button>
-                <button class="section-tab" onclick="switchTab('graduates')">
-                    <i class="fas fa-user-graduate"></i> Graduate Report
-                </button>
             </div>
 
             <!-- ═══════════════════════════════════════════════════════════
@@ -1207,89 +1266,6 @@ function yearLevelLabel($level) {
                 </div>
             </div>
 
-            <!-- ═══════════════════════════════════════════════════════════
-                 SECTION 3: GRADUATE REPORT
-            ═══════════════════════════════════════════════════════════ -->
-            <div class="section-content" id="section-graduates">
-                <!-- Graduate Stats -->
-                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
-                    <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
-                        <div class="stat-header">
-                            <div class="stat-icon purple"><i class="fas fa-user-graduate"></i></div>
-                        </div>
-                        <div class="stat-type">Total Graduates</div>
-                        <div class="stat-value"><?php echo $grad_stats['total_graduates']; ?></div>
-                        <div class="stat-label">From your mentees</div>
-                    </div>
-                    <div class="stat-card" style="border-left: 4px solid #059669;">
-                        <div class="stat-header">
-                            <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
-                        </div>
-                        <div class="stat-type">Confirmed</div>
-                        <div class="stat-value"><?php echo $grad_stats['confirmed']; ?></div>
-<div class="stat-label">Graduation confirmed</div>
-                     </div>
-                 </div>
-
-                <div class="generator-section">
-                    <div class="generator-header">
-                        <i class="fas fa-graduation-cap"></i>
-                        <h2>Graduate Records</h2>
-                    </div>
-
-                    <?php if (!empty($graduate_data)): ?>
-                    <div style="overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-light);">
-<table style="width: 100%; border-collapse: collapse;">
-                             <thead>
-                                 <tr style="background: linear-gradient(135deg, #1a1209, #2d1f07);">
-                                     <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Student</th>
-                                     <th style="padding: 14px 16px; text-align: left; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Major</th>
-                                     <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Batch Year</th>
-                                     <th style="padding: 14px 16px; text-align: center; color: #fff; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Graduated</th>
-                                 </tr>
-                             </thead>
-<tbody>
-                                 <?php foreach ($graduate_data as $grad): 
-                                     $fullName = getStudentFullName($grad);
-                                     $initials = getStudentInitials($grad);
-                                     $gradient = getStudentGradient($grad);
-                                 ?>
-                                <tr style="border-bottom: 1px solid #f3f4f6; transition: background 0.15s;">
-                                    <td style="padding: 14px 16px;">
-                                        <div style="display: flex; align-items: center; gap: 12px;">
-                                            <div style="width: 38px; height: 38px; border-radius: 10px; background: <?php echo $gradient; ?>; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0;">
-                                                <?php echo htmlspecialchars($initials); ?>
-                                            </div>
-                                            <div>
-                                                <div style="font-weight: 600; font-size: 14px; color: #1a1a1a;"><?php echo htmlspecialchars($fullName); ?></div>
-                                                <div style="font-size: 11px; color: #9ca3af;"><?php echo htmlspecialchars($grad['student_id'] ?? ''); ?></div>
-                                            </div>
-                                        </div>
-</td>
-                                     <td style="padding: 14px 16px; font-size: 13px; color: #4b5563;"><?php echo htmlspecialchars($grad['major_name'] ?? '—'); ?></td>
-                                     <td style="padding: 14px 16px; text-align: center; font-size: 13px; font-weight: 600; color: #4b5563;">
-                                         <?php echo htmlspecialchars($grad['batch_year'] ?? '—'); ?>
-                                     </td>
-                                     <td style="padding: 14px 16px; text-align: center; font-size: 12px; color: #6b7280;">
-                                         <?php echo $grad['graduated_at'] ? date('M j, Y', strtotime($grad['graduated_at'])) : '—'; ?>
-                                     </td>
-                                 </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php else: ?>
-                    <div class="empty-state">
-                        <i class="fas fa-user-graduate"></i>
-                        <h3>No Graduate Records</h3>
-                        <p>No graduates found among your mentees. Students will appear here once they complete their evaluation and are confirmed for graduation.</p>
-                    </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </main>
-    </div>
-
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -1307,7 +1283,7 @@ function yearLevelLabel($level) {
         
         // Find and activate the clicked tab button
         const tabs = document.querySelectorAll('.section-tab');
-        const tabMap = { 'evaluation': 0, 'performers': 1, 'graduates': 2 };
+        const tabMap = { 'evaluation': 0, 'performers': 1 };
         if (tabMap[tabName] !== undefined) {
             tabs[tabMap[tabName]].classList.add('active');
         }

@@ -553,11 +553,11 @@
    QUICK STATS ROW - Premium Cards
    ========================================== */
 .quick-stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    margin-bottom: 32px;
-}
+     display: grid;
+     grid-template-columns: repeat(3, 1fr);
+     gap: 20px;
+     margin-bottom: 32px;
+ }
 
 .stats-highlight {
     background: var(--gold-gradient);
@@ -2768,9 +2768,9 @@ a.performance-item:hover {
 }
 
 @media (max-width: 1200px) {
-    .quick-stats-row {
-        grid-template-columns: repeat(2, 1fr);
-    }
+     .quick-stats-row {
+         grid-template-columns: repeat(3, 1fr);
+     }
     
     .quick-actions-grid {
         grid-template-columns: repeat(3, 1fr);

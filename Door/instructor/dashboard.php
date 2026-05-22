@@ -18,6 +18,14 @@ $active_tasks = 0;
 $recent_evaluations = [];
 $recent_feedback = [];
 $recent_activities = [];
+$graduated_mentees = [];
+$graduated_mentee_count = 0;
+$evaluation_stats = [];
+$current_school_year = '2025-2026';
+$eval_percentage = 0;
+$evaluated_students = 0;
+$total_eval_students = 0;
+$top_mentees_gwa = [];
 
 if ($pdo) {
     try {
@@ -152,6 +160,56 @@ if ($pdo) {
     }
 
     try {
+        // Get evaluation stats for current school year
+        $sql = "SELECT 
+                    COUNT(DISTINCT e.student_id) as evaluated_count,
+                    COUNT(DISTINCT s.id) as total_students
+                FROM students s
+                JOIN courses c ON s.course_code = c.course_code
+                JOIN instructor_courses ic ON c.id = ic.course_id
+                LEFT JOIN evaluations e ON s.student_id = e.student_id 
+                    AND ic.course_id = e.course_id 
+                    AND e.academic_year = '2025-2026'
+                WHERE ic.instructor_id = ?";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        $result = $stmt->fetch();
+        $evaluated_students = $result['evaluated_count'] ?? 0;
+        $total_eval_students = $result['total_students'] ?? 0;
+        $eval_percentage = $total_eval_students > 0 ? round(($evaluated_students / $total_eval_students) * 100) : 0;
+    } catch (PDOException $e) {
+        $evaluated_students = 0;
+        $eval_percentage = 0;
+    }
+
+    try {
+        // Get top 10 mentees with highest GWA for current school year by semester
+        $sql = "SELECT 
+                    s.id, s.first_name, s.last_name, s.student_id as student_number,
+                    es.gwa, es.semester, es.year_level
+                FROM students s
+                JOIN mentees m ON s.id = m.student_id
+                JOIN evaluation_sessions es ON s.student_id = es.student_id
+                WHERE m.mentor_id = ? AND es.academic_year = ?
+                ORDER BY es.gwa DESC
+                LIMIT 10";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id, $current_school_year]);
+        while ($row = $stmt->fetch()) {
+            $top_mentees_gwa[] = [
+                'id' => $row['id'],
+                'name' => $row['first_name'] . ' ' . $row['last_name'],
+                'student_number' => $row['student_number'],
+                'gwa' => $row['gwa'],
+                'semester' => $row['semester'],
+                'year_level' => $row['year_level']
+            ];
+        }
+    } catch (PDOException $e) {
+        $top_mentees_gwa = [];
+    }
+
+    try {
         // Recent activities: combine evaluations, tasks, and mentees
         $activities = [];
 
@@ -201,6 +259,32 @@ if ($pdo) {
 
     } catch (PDOException $e) {
         $recent_activities = [];
+    }
+
+    try {
+        // Get graduated mentees for this instructor
+        $sql = "SELECT s.id, s.first_name, s.last_name, s.student_id as student_number, gr.gwa, gr.graduation_date
+                FROM students s
+                JOIN mentees m ON s.id = m.student_id
+                JOIN graduation_records gr ON s.id = gr.student_id
+                WHERE m.mentor_id = ?
+                ORDER BY gr.graduation_date DESC
+                LIMIT 5";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([$instructor_id]);
+        while ($row = $stmt->fetch()) {
+            $graduated_mentees[] = [
+                'id' => $row['id'],
+                'name' => $row['first_name'] . ' ' . $row['last_name'],
+                'student_number' => $row['student_number'],
+                'gwa' => $row['gwa'],
+                'graduation_date' => $row['graduation_date']
+            ];
+        }
+        $graduated_mentee_count = count($graduated_mentees);
+    } catch (PDOException $e) {
+        $graduated_mentees = [];
+        $graduated_mentee_count = 0;
     }
 }
 ?>
@@ -795,16 +879,6 @@ if ($pdo) {
             <div class="stats-grid">
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="stat-card-icon gold">
-                            <i class="fas fa-book"></i>
-                        </div>
-                    </div>
-                    <div class="stat-card-value"><?php echo $course_count; ?></div>
-                    <div class="stat-card-label">My Courses</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
                         <div class="stat-card-icon blue">
                             <i class="fas fa-user-graduate"></i>
                         </div>
@@ -820,32 +894,15 @@ if ($pdo) {
 
                 <div class="stat-card">
                     <div class="stat-card-header">
-                        <div class="stat-card-icon purple">
-                            <i class="fas fa-star"></i>
+                        <div class="stat-card-icon indigo">
+                            <i class="fas fa-file-alt"></i>
                         </div>
                     </div>
-                    <div class="stat-card-value"><?php echo $avg_rating; ?></div>
-                    <div class="stat-card-label">My Rating</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <div class="stat-card-icon green">
-                            <i class="fas fa-comment-dots"></i>
-                        </div>
+                    <div class="stat-card-value"><?php echo $reports_generated; ?></div>
+                    <div class="stat-card-label">Reports Generated</div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-chart-line"></i> Analytics Ready
                     </div>
-                    <div class="stat-card-value"><?php echo $new_feedback; ?></div>
-                    <div class="stat-card-label">New Feedback</div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <div class="stat-card-icon orange">
-                            <i class="fas fa-clock"></i>
-                        </div>
-                    </div>
-                    <div class="stat-card-value"><?php echo $pending_evaluations; ?></div>
-                    <div class="stat-card-label">Pending Evaluations</div>
                 </div>
 
                 <div class="stat-card">
@@ -861,19 +918,6 @@ if ($pdo) {
                         <div class="stat-progress-bar" style="width: <?php echo min(($active_tasks / max($student_count, 1)) * 100, 100); ?>%"></div>
                     </div>
                     <?php endif; ?>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <div class="stat-card-icon indigo">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                    </div>
-                    <div class="stat-card-value"><?php echo $reports_generated; ?></div>
-                    <div class="stat-card-label">Reports Generated</div>
-                    <div class="stat-change positive">
-                        <i class="fas fa-chart-line"></i> Analytics Ready
-                    </div>
                 </div>
             </div>
 
@@ -891,7 +935,7 @@ if ($pdo) {
                     </a>
                     <a href="pages/reports.php" class="action-btn tertiary">
                         <i class="fas fa-file-download"></i>
-                        <span>Generate Report</span>
+                        <span>View Reports</span>
                     </a>
                     <a href="pages/profile.php" class="action-btn quaternary">
                         <i class="fas fa-user-cog"></i>
@@ -905,14 +949,25 @@ if ($pdo) {
                 <!-- Recent Activity -->
                 <div class="activity-card">
                     <div class="activity-header">
-                        <h3><i class="fas fa-history"></i> Recent Activity</h3>
-                        <a href="#" class="view-all">View All</a>
+                        <h3><i class="fas fa-tasks"></i> Task Statistics</h3>
                     </div>
                     <div class="activity-list">
                         <?php if (empty($recent_activities)): ?>
                         <div class="activity-item empty">
-                            <i class="fas fa-info-circle"></i>
-                            <span>No recent activity</span>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%;">
+                                <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 10px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: #1f2937;"><?php echo $course_count; ?></div>
+                                    <div style="font-size: 12px; color: #4b5563;">Total Courses</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #dcfce7, #bbf7d0); border-radius: 10px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: #1f2937;"><?php echo $student_count; ?></div>
+                                    <div style="font-size: 12px; color: #4b5563;">Total Students</div>
+                                </div>
+                                <div style="text-align: center; padding: 15px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 10px;">
+                                    <div style="font-size: 24px; font-weight: 700; color: #1f2937;"><?php echo $active_tasks; ?></div>
+                                    <div style="font-size: 12px; color: #4b5563;">Active Tasks</div>
+                                </div>
+                            </div>
                         </div>
                         <?php else: ?>
                         <?php foreach ($recent_activities as $activity): ?>
@@ -979,76 +1034,104 @@ if ($pdo) {
                         <?php endif; ?>
 
                         <?php if ($pending_evaluations == 0 && $new_mentees == 0 && $active_tasks == 0): ?>
-                        <div class="notification-item empty">
-                            <i class="fas fa-check-circle"></i>
-                            <span>All caught up!</span>
+                        <div class="notification-item success">
+                            <i class="fas fa-graduation-cap"></i>
+                            <div class="notification-content">
+                                <div class="notification-title"><?php echo $graduated_mentee_count; ?> Graduated Mentees</div>
+                                <div class="notification-desc"><?php echo $graduated_mentee_count > 0 ? 'Congratulations on your mentees\' success!' : 'No mentees have graduated yet'; ?></div>
+                                <?php if ($graduated_mentee_count > 0): ?>
+                                <div style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+                                    <?php foreach ($graduated_mentees as $gm): ?>
+                                    <div style="font-size: 12px; padding: 4px 0; border-bottom: 1px solid #e5e7eb;">
+                                        <span style="font-weight: 600;"><?php echo htmlspecialchars($gm['name']); ?></span>
+                                        <span style="color: #6b7280;"> - GWA: <?php echo $gm['gwa'] ? number_format($gm['gwa'], 2) : 'N/A'; ?></span>
+                                    </div>
+                                    <?php endforeach; ?>
+                                </div>
+                                <?php endif; ?>
+                                <a href="pages/students.php" class="notification-action">View Mentees</a>
+                            </div>
                         </div>
                         <?php endif; ?>
                     </div>
                 </div>
             </div>
 
-            <!-- Content Grid -->
-            <div class="content-grid">
-                <!-- Recent Evaluations Card -->
-                <div class="content-card">
-                    <div class="content-card-header">
-                        <h3><i class="fas fa-clipboard-list"></i> My Recent Evaluations</h3>
-                        <a href="pages/evaluations.php" class="view-all">View All</a>
-                    </div>
-                    <div class="content-card-body">
-                        <table class="eval-table">
-                            <thead>
-                                <tr>
-                                    <th>Course</th>
-                                    <th>Students</th>
-                                    <th>Rating</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($recent_evaluations as $eval): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($eval['course_name']); ?></td>
-                                    <td><?php echo $eval['student_count']; ?></td>
-                                    <td><span class="rating-badge <?php echo $eval['rating'] >= 4.7 ? 'excellent' : ($eval['rating'] >= 4.4 ? 'good' : 'average'); ?>"><?php echo number_format($eval['rating'], 1); ?></span></td>
-                                    <td><?php echo date('M j, Y', strtotime($eval['evaluation_date'])); ?></td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+<!-- Content Grid -->
+             <div class="content-grid">
+                 <!-- Recent Evaluations Card -->
+                 <div class="content-card">
+                     <div class="content-card-header">
+                         <h3><i class="fas fa-clipboard-list"></i> My Recent Evaluations</h3>
+                         <a href="pages/evaluations.php" class="view-all">View All</a>
+                     </div>
+                     <div class="content-card-body">
+                         <div style="margin-bottom: 15px; padding: 12px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 8px;">
+                             <div style="display: flex; justify-content: space-between; align-items: center;">
+                                 <span style="font-weight: 600; color: #1f2937;">Evaluation Progress (<?php echo $current_school_year; ?>)</span>
+                                 <span style="font-weight: 700; color: #2563eb;"><?php echo $eval_percentage; ?>%</span>
+                             </div>
+                             <div style="font-size: 12px; color: #4b5563; margin-top: 4px;">
+                                 <?php echo $evaluated_students; ?> of <?php echo $total_eval_students; ?> students evaluated
+                             </div>
+                         </div>
+                         <table class="eval-table">
+                             <thead>
+                                 <tr>
+                                     <th>Course</th>
+                                     <th>Students</th>
+                                     <th>Rating</th>
+                                     <th>Date</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <?php foreach ($recent_evaluations as $eval): ?>
+                                 <tr>
+                                     <td><?php echo htmlspecialchars($eval['course_name']); ?></td>
+                                     <td><?php echo $eval['student_count']; ?></td>
+                                     <td><span class="rating-badge <?php echo $eval['rating'] >= 4.7 ? 'excellent' : ($eval['rating'] >= 4.4 ? 'good' : 'average'); ?>"><?php echo number_format($eval['rating'], 1); ?></span></td>
+                                     <td><?php echo date('M j, Y', strtotime($eval['evaluation_date'])); ?></td>
+                                 </tr>
+                                 <?php endforeach; ?>
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
 
-                <!-- Recent Feedback Card -->
-                <div class="content-card">
-                    <div class="content-card-header">
-                        <h3><i class="fas fa-comment-alt"></i> Recent Feedback</h3>
-                        <a href="pages/feedback.php" class="view-all">View All</a>
-                    </div>
-                    <div class="content-card-body">
-                        <div class="feedback-list">
-                            <?php foreach ($recent_feedback as $fb): ?>
-                            <div class="feedback-item">
-                                <div class="feedback-header">
-                                    <span class="feedback-course"><?php echo htmlspecialchars($fb['course_name']); ?></span>
-                                    <span class="feedback-date"><?php echo date('M j, Y', strtotime($fb['feedback_date'])); ?></span>
-                                </div>
-                                <p class="feedback-text">"<?php echo htmlspecialchars($fb['feedback_text']); ?>"</p>
-                                <div class="feedback-rating">
-                                    <?php
-                                    $full_stars = floor($fb['rating']);
-                                    $half_star = ($fb['rating'] - $full_stars) >= 0.25;
-                                    for ($i = 0; $i < $full_stars; $i++) echo '<i class="fas fa-star"></i>';
-                                    if ($half_star) echo '<i class="fas fa-star-half-alt"></i>';
-                                    for ($i = $full_stars + ($half_star ? 1 : 0); $i < 5; $i++) echo '<i class="far fa-star"></i>';
-                                    ?>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                </div>
+<!-- Top Mentees GWA Card -->
+                 <div class="content-card">
+                     <div class="content-card-header">
+                         <h3><i class="fas fa-trophy"></i> Top 10 Mentees GWA (<?php echo $current_school_year; ?>)</h3>
+                     </div>
+                     <div class="content-card-body">
+                         <table class="eval-table">
+                             <thead>
+                                 <tr>
+                                     <th>Rank</th>
+                                     <th>Name</th>
+                                     <th>GWA</th>
+                                     <th>Semester</th>
+                                 </tr>
+                             </thead>
+                             <tbody>
+                                 <?php if (empty($top_mentees_gwa)): ?>
+                                 <tr>
+                                     <td colspan="4" style="text-align: center; color: #9ca3af;">No GWA data available</td>
+                                 </tr>
+                                 <?php else: ?>
+                                 <?php foreach ($top_mentees_gwa as $index => $mentee): ?>
+                                 <tr>
+                                     <td><span style="font-weight: 700; color: #d4a843;"><?php echo $index + 1; ?></span></td>
+                                     <td><?php echo htmlspecialchars($mentee['name']); ?></td>
+                                     <td><span class="rating-badge <?php echo $mentee['gwa'] >= 90 ? 'excellent' : ($mentee['gwa'] >= 80 ? 'good' : 'average'); ?>"><?php echo number_format($mentee['gwa'], 2); ?></span></td>
+                                     <td><?php echo htmlspecialchars($mentee['semester']); ?></td>
+                                 </tr>
+                                 <?php endforeach; ?>
+                                 <?php endif; ?>
+                             </tbody>
+                         </table>
+                     </div>
+                 </div>
             </div>
         </main>
     </div>

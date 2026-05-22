@@ -185,6 +185,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'delete_student') {
     exit;
 }
 
+// Delete multiple students (AJAX)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($action === 'delete_students' || ($_POST['action'] ?? '') === 'delete_students')) {
+    header('Content-Type: application/json');
+    $ids = json_decode($_POST['student_ids'] ?? '[]', true);
+    if (!is_array($ids) || empty($ids)) {
+        echo json_encode(['success' => false, 'message' => 'No student IDs provided']);
+        exit;
+    }
+    $ids = array_map('intval', $ids);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    if ($pdo) {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM students WHERE id IN ($placeholders)");
+            $stmt->execute($ids);
+            echo json_encode(['success' => true, 'message' => 'Students deleted successfully']);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => 'Failed to delete students']);
+        }
+    } else {
+        echo json_encode(['success' => true, 'message' => 'Students deleted (demo)']);
+    }
+    exit;
+}
+
+// List graduated students (AJAX)
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && $action === 'list_graduated') {
+    header('Content-Type: application/json');
+    $q = trim($_GET['q'] ?? '');
+    $batch = trim($_GET['batch'] ?? ''); // filter by year_level or batch
+    try {
+        $sql = "SELECT s.*, m.display_name as major_display, m.major_name, gr.academic_year as grad_academic_year, gr.year_level as grad_year_level, gr.semester as grad_semester FROM students s LEFT JOIN majors m ON s.major_id = m.id LEFT JOIN graduation_records gr ON gr.student_id = s.id WHERE LOWER(COALESCE(s.status,'')) = 'graduated'";
+        $params = [];
+        if ($batch !== '') {
+            $sql .= " AND s.year_level = ?";
+            $params[] = $batch;
+        }
+        if ($q !== '') {
+            $sql .= " AND (s.first_name LIKE ? OR s.last_name LIKE ? OR s.student_id LIKE ? OR s.email LIKE ? OR CONCAT(s.first_name,' ',s.last_name) LIKE ? )";
+            $term = '%'.$q.'%';
+            $params = array_merge($params, [$term,$term,$term,$term,$term]);
+        }
+        $sql .= " ORDER BY s.last_name, s.first_name LIMIT 1000";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode(['success' => true, 'students' => $rows]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Database error']);
+    }
+    exit;
+}
+
 // Import students (CSV, Excel, Word)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'import_students') {
     if (!isset($_FILES['import_file'])) {

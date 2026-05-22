@@ -62,60 +62,67 @@ if (!$show_role_modal) {
         $on_travel_instructors = [];
     }
     
-     // Fetch instructors with their details
-     $promoted_ids = [];
-     $program_head_emails = [];
-     
-     try {
-         // Get promoted instructor IDs from admin_promotions
-         $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head'");
-         $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
-         $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
-         
-         // Get program head emails from program_heads table
-         $stmt = $pdo->query("SELECT email FROM program_heads");
-         $program_head_emails = array_map('strtolower', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
-         
-         // Check which tables exist for subqueries
-         $has_courses = $pdo->query("SHOW TABLES LIKE 'courses'")->rowCount() > 0;
-         $has_evaluations = $pdo->query("SHOW TABLES LIKE 'evaluations'")->rowCount() > 0;
-         
-          $sql = "SELECT 
-              i.id, 
-              i.first_name, 
-              i.middle_name,
-              i.last_name, 
-              i.suffix,
-              i.email, 
-              i.department, 
-              i.position,
-              i.phone,
-              i.birthday,
-              i.avatar_gradient_from, 
-              i.avatar_gradient_to, 
-              i.status";
-         
-         if ($has_courses) {
-             $sql .= ", (SELECT COUNT(*) FROM courses c WHERE c.instructor_id = i.id) as course_count";
-         } else {
-             $sql .= ", 0 as course_count";
-         }
-         
-         if ($has_evaluations) {
-             $sql .= ", (SELECT COALESCE(AVG(e.rating),0) FROM evaluations e WHERE e.instructor_id = i.id) as avg_rating";
-         } else {
-             $sql .= ", 0 as avg_rating";
-         }
-         
-         $sql .= " FROM instructors i ORDER BY i.last_name";
-         
-         $stmt = $pdo->query($sql);
-         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-             $instructors[] = $row;
-         }
-     } catch (PDOException $e) {
-         $instructors = [];
-     }
+// Fetch instructors with their details
+      $promoted_ids = [];
+      $program_head_emails = [];
+      
+      try {
+          // Get promoted instructor IDs from admin_promotions
+          $stmt = $pdo->query("SELECT instructor_id FROM admin_promotions WHERE promoted_to = 'program_head'");
+          $promotions = $stmt->fetchAll(PDO::FETCH_COLUMN);
+          $promoted_ids = array_map('intval', is_array($promotions) ? $promotions : []);
+          
+          // Get program head emails from program_heads table
+          $stmt = $pdo->query("SELECT email FROM program_heads");
+          $program_head_emails = array_map('strtolower', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+          
+          // Check which tables exist for subqueries
+          $has_courses = $pdo->query("SHOW TABLES LIKE 'courses'")->rowCount() > 0;
+          $has_evaluations = $pdo->query("SHOW TABLES LIKE 'evaluations'")->rowCount() > 0;
+          
+           $sql = "SELECT 
+               i.id, 
+               i.first_name, 
+               i.middle_name,
+               i.last_name, 
+               i.suffix,
+               i.email, 
+               i.department, 
+               i.position,
+               i.phone,
+               i.birthday,
+               i.avatar_gradient_from, 
+               i.avatar_gradient_to, 
+               i.status";
+          
+          if ($has_courses) {
+              $sql .= ", (SELECT COUNT(*) FROM courses c WHERE c.instructor_id = i.id) as course_count";
+          } else {
+              $sql .= ", 0 as course_count";
+          }
+          
+          if ($has_evaluations) {
+              $sql .= ", (SELECT COALESCE(AVG(e.rating),0) FROM evaluations e WHERE e.instructor_id = i.id) as avg_rating";
+          } else {
+              $sql .= ", 0 as avg_rating";
+          }
+          
+          $sql .= " FROM instructors i ORDER BY i.last_name";
+          
+          $stmt = $pdo->query($sql);
+          $birthday_md = date('m-d'); // "05-22"
+          $instructors_today_birthday = []; // names who have birthday today
+          while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+              // Check birthday: format stored date to "m-d", compare with today
+              if (!empty($row['birthday']) && date('m-d', strtotime($row['birthday'])) === $birthday_md) {
+                  $instructors_today_birthday[] = $row['id']; // track IDs for fast lookup
+              }
+              $instructors[] = $row;
+          }
+      } catch (PDOException $e) {
+          $instructors = [];
+          $instructors_today_birthday = [];
+      }
 }
 ?>
 <!DOCTYPE html>
@@ -739,11 +746,14 @@ if (!$show_role_modal) {
                                   ?>
                                   <tr data-instructor-id="<?php echo $inst['id']; ?>" data-status="<?php echo htmlspecialchars($status); ?>">
                                       <td>
-                                         <div class="instructor-cell">
-                                             <span class="avatar" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($inst['avatar_gradient_from'] ?? '#B8860B'); ?>, <?php echo htmlspecialchars($inst['avatar_gradient_to'] ?? '#D4A843'); ?>);"><?php echo $initials; ?></span>
-                                             <span class="instructor-name"><?php echo htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']); ?></span>
-                                         </div>
-                                     </td>
+                                          <div class="instructor-cell">
+                                              <span class="avatar" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($inst['avatar_gradient_from'] ?? '#B8860B'); ?>, <?php echo htmlspecialchars($inst['avatar_gradient_to'] ?? '#D4A843'); ?>);"><?php echo $initials; ?></span>
+                                              <span class="instructor-name"><?php echo htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']); ?></span>
+                                              <?php if (in_array($inst['id'], $instructors_today_birthday ?? [])): ?>
+                                              <span class="bd-badge" title="🎂 Birthday today!"><i class="fas fa-birthday-cake"></i> Birthday!</span>
+                                              <?php endif; ?>
+                                          </div>
+                                      </td>
                                      <td><?php echo htmlspecialchars($inst['email']); ?></td>
                                      <td><span class="status-badge" style="background: #f0ebe3; color: #4a5568; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;"><?php echo $role; ?></span></td>
                                      <td><span class="status-badge status-<?php echo htmlspecialchars($status); ?>"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i><?php echo ucwords(str_replace('_', ' ', htmlspecialchars($status))); ?></span></td>
@@ -1003,11 +1013,61 @@ if (!$show_role_modal) {
      opacity: 0.6;
      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
  }
- .empty-state p {
-     margin: 0;
-     font-size: 13px;
-     font-weight: 600;
- }
+        .empty-state p {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Birthday badge on instructor list */
+        .bd-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fef3c7, #fcd34d);
+            color: #92400e;
+            border: 1px solid #f59e0b;
+            white-space: nowrap;
+            flex-shrink: 0;
+            animation: birthdayPulse 1.5s ease infinite;
+        }
+        .bd-badge i {
+            font-size: 11px;
+        }
+        @keyframes birthdayPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+            50%      { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0); }
+        }
+
+        /* Birthday banner on instructor detail modal */
+        .detail-birthday-banner {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0 0;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fff7ed, #fef3c7);
+            border: 2px solid #f59e0b;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #92400e;
+            animation: birthdayBounce 0.6s ease;
+        }
+        .detail-birthday-banner i {
+            font-size: 20px;
+        }
+        @keyframes birthdayBounce {
+            0%   { transform: scale(0.9); opacity: 0; }
+            60%  { transform: scale(1.03); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .hidden { display: none !important; }
  </style>
  <div id="instructorDetailsModal">
      <div id="instructorDetailsContent">
@@ -1039,6 +1099,8 @@ if (!$show_role_modal) {
     const onDutyInstructors = <?php echo json_encode($on_duty_instructors); ?>;
     const onLeaveInstructors = <?php echo json_encode($on_leave_instructors); ?>;
     const onTravelInstructors = <?php echo json_encode($on_travel_instructors); ?>;
+    const instructorsTodayBirthday = <?php echo json_encode($instructors_today_birthday ?? []); ?>;
+    const instructorsTodayBirthdayMD = (new Date()).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit' }).replace('/', '-'); // "MM-DD"
      
       document.addEventListener('DOMContentLoaded', function() {
           // Initialize
@@ -1127,12 +1189,13 @@ const tr = document.createElement('tr');
                       tr.dataset.instructorId = inst.id;
                       tr.dataset.status = status;
                       tr.innerHTML = `
-                          <td>
-                              <div class="instructor-cell">
-                                  <span class="avatar" style="background: linear-gradient(135deg, ${inst.avatar_gradient_from || '#B8860B'}, ${inst.avatar_gradient_to || '#D4A843'});">${initials}</span>
-                                  <span class="instructor-name">${escapeHtml(inst.first_name + ' ' + inst.last_name)}</span>
-                              </div>
-                          </td>
+                           <td>
+                               <div class="instructor-cell">
+                                   <span class="avatar" style="background: linear-gradient(135deg, ${inst.avatar_gradient_from || '#B8860B'}, ${inst.avatar_gradient_to || '#D4A843'});">${initials}</span>
+                                   <span class="instructor-name">${escapeHtml(inst.first_name + ' ' + inst.last_name)}</span>
+                                   ${instructorsTodayBirthday.includes(inst.id) ? '<span class="bd-badge" title="🎂 Birthday today!"><i class="fas fa-birthday-cake"></i> Birthday!</span>' : ''}
+                               </div>
+                           </td>
                           <td>${escapeHtml(inst.email)}</td>
                           <td><span class="status-badge" style="background: #f0ebe3; color: #4a5568; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;">${role}</span></td>
 <td><span class="status-badge status-${escapeHtml(status)}"><i class="fas fa-circle" style="font-size: 8px; margin-right: 4px;"></i>${escapeHtml(ucwords(status.replace('_', ' ')))}</span></td>
@@ -1338,9 +1401,14 @@ renderTable();
 
                   // Format birthday
                   let formattedBirthday = 'N/A';
+                  let isBirthdayToday = false;
                   if (instructor.birthday) {
-                      const date = new Date(instructor.birthday);
-                      formattedBirthday = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                      try {
+                          const bd = new Date(instructor.birthday + 'T00:00:00');
+                          const md = String(bd.getMonth() + 1).padStart(2, '0') + '-' + String(bd.getDate()).padStart(2, '0');
+                          isBirthdayToday = (md === instructorsTodayBirthdayMD);
+                          formattedBirthday = bd.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                      } catch(e) { formattedBirthday = instructor.birthday; }
                   }
 
                    // Build HTML
@@ -1356,8 +1424,9 @@ renderTable();
                                <h3>${escapeHtml(fullName)}</h3>
                                <span class="role-badge">${escapeHtml(role)}</span>
                            </div>
-                       </div>
-                       <div class="detail-grid">
+                        </div>
+                        ${isBirthdayToday ? '<div class="detail-birthday-banner"><i class="fas fa-birthday-cake"></i> Happy Birthday! 🎉</div>' : ''}
+                        <div class="detail-grid">
                            <div class="detail-item">
                                <span class="detail-label">Email</span>
                                <span class="detail-value">${escapeHtml(instructor.email || 'N/A')}</span>

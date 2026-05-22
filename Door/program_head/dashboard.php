@@ -99,23 +99,38 @@ try {
 }
 
 // Fetch department performance
-$dept_performance = [];
-try {
-    $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
-    if ($stmt->rowCount() > 0) {
-        $sql = "SELECT COALESCE(e.department, 'General') as department, 
-                       COALESCE(AVG(e.rating),0) as avg_rating 
-                FROM evaluations e 
-                GROUP BY e.department 
-                ORDER BY avg_rating DESC";
-        $stmt = $pdo->query($sql);
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $dept_performance[] = $row;
-        }
-    }
-} catch (PDOException $e) {
     $dept_performance = [];
-}
+    try {
+        $stmt = $pdo->query("SHOW TABLES LIKE 'evaluations'");
+        if ($stmt->rowCount() > 0) {
+            $sql = "SELECT COALESCE(e.department, 'General') as department, 
+                           COALESCE(AVG(e.rating),0) as avg_rating 
+                    FROM evaluations e 
+                    GROUP BY e.department 
+                    ORDER BY avg_rating DESC";
+            $stmt = $pdo->query($sql);
+            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                $dept_performance[] = $row;
+            }
+        }
+    } catch (PDOException $e) {
+        $dept_performance = [];
+    }
+
+    // Fetch all instructor birthdays — keyed as "m-d" => [full names]
+    $birthday_map = [];
+    try {
+        $stmt = $pdo->query("SELECT first_name, last_name, birthday FROM instructors WHERE birthday IS NOT NULL AND birthday != ''");
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as $r) {
+            $md = date('n-j', strtotime($r['birthday']));   // e.g. "5-22"  (no leading zero)
+            $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? ''));
+            if (!isset($birthday_map[$md])) $birthday_map[$md] = [];
+            $birthday_map[$md][] = $name;
+        }
+    } catch (PDOException $e) {
+        $birthday_map = [];
+    }
 
 // Fetch majors for department overview
 $majors = [];
@@ -124,6 +139,66 @@ try {
     $majors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $majors = [];
+}
+
+// Fetch graduated students count per major
+$graduated_total = 0;
+$graduated_by_major = [];
+try {
+    $sql = "SELECT m.id, COALESCE(m.display_name, m.major_name) AS major_label, COUNT(s.id) AS cnt
+            FROM majors m
+            LEFT JOIN students s ON s.major_id = m.id AND LOWER(COALESCE(s.status,'')) = 'graduated'
+            GROUP BY m.id ORDER BY m.major_name";
+    $stmt = $pdo->query($sql);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+        $graduated_by_major[$r['major_label']] = (int) $r['cnt'];
+        $graduated_total += (int) $r['cnt'];
+    }
+} catch (PDOException $e) {
+    $graduated_total = 0;
+    $graduated_by_major = [];
+}
+
+// Fetch total students count per major
+$students_by_major = [];
+try {
+    $sql = "SELECT m.id, COALESCE(m.display_name, m.major_name) AS major_label, COUNT(s.id) AS cnt
+            FROM majors m
+            LEFT JOIN students s ON s.major_id = m.id
+            GROUP BY m.id ORDER BY m.major_name";
+    $stmt = $pdo->query($sql);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+        $students_by_major[$r['major_label']] = (int) $r['cnt'];
+    }
+} catch (PDOException $e) {
+    $students_by_major = [];
+}
+
+// Fetch subjects count per major
+$subjects_by_major = [];
+try {
+    $sql = "SELECT m.id, COALESCE(m.display_name, m.major_name) AS major_label, COUNT(ms.id) AS cnt
+            FROM majors m
+            LEFT JOIN major_subjects ms ON ms.major_id = m.id
+            GROUP BY m.id ORDER BY m.major_name";
+    $stmt = $pdo->query($sql);
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($rows as $r) {
+        $subjects_by_major[$r['major_label']] = (int) $r['cnt'];
+    }
+} catch (PDOException $e) {
+    $subjects_by_major = [];
+}
+
+// Total major subjects (for department overview percentages)
+$total_major_subjects = 0;
+try {
+    $stmt = $pdo->query("SELECT COUNT(*) as cnt FROM major_subjects");
+    $total_major_subjects = (int) ($stmt->fetchColumn() ?: 0);
+} catch (PDOException $e) {
+    $total_major_subjects = 0;
 }
 
 // Fetch students by year (combine 3rd Year variations)
@@ -412,6 +487,37 @@ try {
         background: #fff;
         color: #4f46e5;
         box-shadow: 0 1px 3px rgba(255, 255, 255, 0.4);
+    }
+
+    /* ==========================================
+       BIRTHDAY INDICATOR STYLES
+       ========================================== */
+    .birthday-badge {
+        margin-top: 2px;
+        font-size: 9px;
+        font-weight: 700;
+        color: #ec4899;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 5px;
+        background: rgba(244, 114, 182, 0.12);
+        border-radius: 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+    .birthday-badge i {
+        font-size: 8px;
+        flex-shrink: 0;
+    }
+    .calendar-day.has-birthday.has-event .birthday-badge {
+        margin-top: 3px;
+    }
+    .calendar-day.today.has-birthday .birthday-badge {
+        color: #fff;
+        background: rgba(236, 72, 153, 0.5);
     }
 
     /* ==========================================
@@ -1779,13 +1885,19 @@ try {
                     <a href="pages/reports.php" class="stats-highlight clickable-stat">
                         <div class="stat-card-inner">
                             <div class="stat-card-icon-wrap green">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fas fa-user-graduate"></i>
                             </div>
                             <div class="stat-card-data">
-                                <div class="stat-card-value"><?php echo $completed_evaluations; ?></div>
-                                <div class="stat-card-label">Completed Evaluations</div>
-                                <div class="stat-card-sub">
-                                    <span class="sub-rate"><i class="fas fa-chart-line"></i> <?php echo $eval_completion_rate; ?>% Completion Rate</span>
+                                <div class="stat-card-value"><?php echo $graduated_total; ?></div>
+                                <div class="stat-card-label">Graduated Students</div>
+                                <div class="stat-card-sub" style="max-height:64px;overflow:auto;display:block;">
+                                    <?php if (!empty($graduated_by_major)): ?>
+                                        <?php foreach ($graduated_by_major as $label => $cnt): ?>
+                                            <div style="font-size:12px;margin:2px 0;"><strong><?php echo htmlspecialchars($label); ?>:</strong> <?php echo $cnt; ?></div>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <span class="sub-rate"><i class="fas fa-chart-line"></i> No graduated students</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
@@ -1808,21 +1920,7 @@ try {
                         </div>
                     </a>
                     
-                    <a href="pages/departments.php" class="stats-highlight clickable-stat">
-                        <div class="stat-card-inner">
-                            <div class="stat-card-icon-wrap purple">
-                                <i class="fas fa-book"></i>
-                            </div>
-                            <div class="stat-card-data">
-                                <div class="stat-card-value"><?php echo $active_courses; ?></div>
-                                <div class="stat-card-label">Active Courses</div>
-                                <div class="stat-card-sub">
-                                    <span class="sub-majors"><i class="fas fa-building"></i> <?php echo count($majors); ?> Majors</span>
-                                </div>
-                            </div>
-                            <div class="stat-card-arrow"><i class="fas fa-arrow-right"></i></div>
-                        </div>
-                    </a>
+
                 </div>
             </section>
 
@@ -1843,63 +1941,28 @@ try {
             <!-- Main Content Grid -->
             <section class="main-grid-section">
                 <div class="dashboard-grid">
-                    <!-- Department Overview Card -->
-                    <div class="content-card wide-card">
-                        <div class="content-card-header">
-                            <div class="card-header-left">
-                                <h3><i class="fas fa-building"></i> Department Overview</h3>
-                            </div>
-                            <a href="pages/departments.php" class="view-all">
-                                Manage <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                        <div class="content-card-body">
-                            <?php if (empty($majors)): ?>
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">
-                                        <i class="fas fa-folder-open"></i>
-                                    </div>
-                                    <p>No departments found</p>
-                                    <span>Add departments to get started</span>
-                                    <a href="pages/departments.php" class="btn-primary" style="margin-top: 16px; display: inline-flex;">
-                                        <i class="fas fa-plus"></i> Add Department
-                                    </a>
-                                </div>
-                            <?php else: ?>
-                                <!-- Department Stats Row -->
-                                <div class="dept-stats-row">
-                                    <div class="dept-stat-box">
-                                        <div class="dept-stat-icon majors">
-                                            <i class="fas fa-book"></i>
-                                        </div>
-                                        <div class="dept-stat-info">
-                                            <div class="dept-stat-value"><?php echo count($majors); ?></div>
-                                            <div class="dept-stat-label">Majors</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="dept-stat-box">
-                                        <div class="dept-stat-icon courses">
-                                            <i class="fas fa-book-open"></i>
-                                        </div>
-                                        <div class="dept-stat-info">
-                                            <div class="dept-stat-value"><?php echo $active_courses; ?></div>
-                                            <div class="dept-stat-label">Active Courses</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="dept-stat-box">
-                                        <div class="dept-stat-icon students">
-                                            <i class="fas fa-user-graduate"></i>
-                                        </div>
-                                        <div class="dept-stat-info">
-                                            <div class="dept-stat-value"><?php echo $total_students; ?></div>
-                                            <div class="dept-stat-label">Total Students</div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Majors List -->
+<!-- Department Overview Card -->
+                     <div class="content-card wide-card">
+                         <div class="content-card-header">
+                             <div class="card-header-left">
+                                 <h3><i class="fas fa-building"></i> Graduated Student Count</h3>
+                             </div>
+                             
+                         </div>
+                         <div class="content-card-body">
+                             <?php if (empty($majors)): ?>
+                                 <div class="empty-state">
+                                     <div class="empty-state-icon">
+                                         <i class="fas fa-folder-open"></i>
+                                     </div>
+                                     <p>No departments found</p>
+                                     <span>Add departments to get started</span>
+                                     <a href="pages/departments.php" class="btn-primary" style="margin-top: 16px; display: inline-flex;">
+                                         <i class="fas fa-plus"></i> Add Department
+                                     </a>
+                                 </div>
+<?php else: ?>
+                                <!-- Majors List with Student and Subject Counts -->
                                 <div class="dept-majors-section">
                                     <div class="section-header-modern">
                                         <h4 class="section-title">
@@ -1911,18 +1974,10 @@ try {
                                     </div>
                                     
                                     <div class="dept-majors-grid">
-                                        <?php 
-                                        $display_majors = array_slice($majors, 0, 4);
-                                        foreach ($display_majors as $major): 
-                                            $major_id = $major['id'];
-                                            try {
-                                                $stmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM students WHERE major_id = ?");
-                                                $stmt->execute([$major_id]);
-                                                $student_count = $stmt->fetchColumn() ?: 0;
-                                            } catch (PDOException $e) {
-                                                $student_count = 0;
-                                            }
-                                            $percentage = $total_students > 0 ? min(100, round(($student_count / $total_students) * 100)) : 0;
+                                        <?php foreach ($majors as $major): 
+                                            $major_name = $major['display_name'] ?? $major['major_name'];
+                                            $student_count = $students_by_major[$major_name] ?? 0;
+                                            $subject_count = $subjects_by_major[$major_name] ?? 0;
                                         ?>
                                         <a href="pages/departments.php" class="dept-card">
                                             <div class="dept-card-header">
@@ -1933,188 +1988,49 @@ try {
                                                     <?php echo ($major['is_active'] ?? 1) ? 'Active' : 'Inactive'; ?>
                                                 </span>
                                             </div>
-                                            <h4 class="dept-title"><?php echo htmlspecialchars($major['display_name'] ?? $major['major_name']); ?></h4>
+                                            <h4 class="dept-title"><?php echo htmlspecialchars($major_name); ?></h4>
                                             <p class="dept-subtitle"><?php echo htmlspecialchars($major['description'] ?? 'No description'); ?></p>
                                             <div class="dept-value"><?php echo $student_count; ?></div>
-                                            <div class="progress-bar">
-                                                <div class="progress" style="width: <?php echo $percentage; ?>%"></div>
-                                            </div>
+                                            <div class="dept-sub-label">Students</div>
                                             <div class="dept-link" style="margin-top: 12px;">
                                                 <i class="fas fa-eye"></i> View Details
                                             </div>
                                         </a>
                                         <?php endforeach; ?>
                                     </div>
-                                    
-                                    <?php if (count($majors) > 4): ?>
-                                    <div class="dept-more-section">
-                                        <a href="pages/departments.php" class="dept-view-all-btn">
-                                            <i class="fas fa-plus-circle"></i> View All <?php echo count($majors); ?> Majors
-                                        </a>
-                                    </div>
-                                    <?php endif; ?>
                                 </div>
-
-                                 <!-- Students by Year -->
-                                 <?php if (!empty($yearLevels)): ?>
-                                 <div class="dept-majors-section">
-                                     <div class="section-header-modern">
-                                         <h4 class="section-title">
-                                             <i class="fas fa-layer-group"></i> Students by Year Level
-                                         </h4>
-                                         <a href="pages/student_enrollment.php" class="section-action">
-                                             View Enrollment <i class="fas fa-arrow-right"></i>
-                                         </a>
-                                     </div>
-                                     
-                                     <div class="dept-majors-grid year-majors-grid">
-                                         <?php 
-                                         $year_colors = [
-                                             '1st Year' => ['bg_class' => 'year-green', 'icon' => 'fa-user-graduate'],
-                                             '2nd Year' => ['bg_class' => 'year-blue', 'icon' => 'fa-user-graduate'],
-                                             '3rd Year' => ['bg_class' => 'year-purple', 'icon' => 'fa-user-graduate'],
-                                             '4th Year' => ['bg_class' => 'year-amber', 'icon' => 'fa-user-graduate']
-                                         ];
-                                         $max_count = 0;
-                                         foreach ($yearLevels as $y) {
-                                             if (intval($y['count']) > $max_count) $max_count = intval($y['count']);
-                                         }
-                                         foreach ($yearLevels as $index => $year): 
-                                             $count = intval($year['count']);
-                                             $bar_pct = $max_count > 0 ? round(($count / $max_count) * 100) : 0;
-                                             $pct_total = $total_students > 0 ? round(($count / $total_students) * 100) : 0;
-                                             $year_key = $year['year_level'];
-                                             $colors = $year_colors[$year_key] ?? $year_colors['1st Year'];
-                                         ?>
-                                         <a href="pages/student_enrollment.php?year=<?php echo urlencode($year['year_level']); ?>" class="dept-card year-dept-card">
-                                             <div class="dept-card-header">
-                                                 <div class="dept-icon <?php echo $colors['bg_class']; ?>">
-                                                     <i class="fas <?php echo $colors['icon']; ?>"></i>
-                                                 </div>
-                                                 <span class="status-badge active"><?php echo htmlspecialchars($year['year_level']); ?></span>
-                                             </div>
-                                             <h4 class="dept-title"><?php echo htmlspecialchars($year['year_level']); ?></h4>
-                                             <p class="dept-subtitle">Enrollment</p>
-                                             <div class="dept-value"><?php echo $count; ?></div>
-                                              <div class="progress-bar">
-                                                  <div class="progress" style="width: <?php echo $bar_pct; ?>%;"></div>
-                                              </div>
-                                          </a>
-<?php endforeach; ?>
-                                       </div>
-                                   </div>
-
-<!-- Current Month Events -->
-                                    <div class="dept-majors-section">
-                                        <div class="section-header-modern">
-                                            <h4 class="section-title" id="events-section-title">
-                                                <i class="fas fa-calendar-check"></i> Events for <?php echo $current_month_name; ?>
-                                            </h4>
-                                            <span class="month-event-count" id="events-section-count"><?php echo count($current_month_events); ?></span>
-                                        </div>
-                                        <?php if (!empty($current_month_events)): ?>
-                                        <div class="current-month-events-list" id="current-month-events-list">
-                                           <?php foreach ($current_month_events as $event): 
-                                               $first_date = new DateTime($event['dates'][0]);
-                                               $is_past = $first_date < new DateTime('today');
-                                           ?>
-                                           <div class="current-month-event-row <?php echo $is_past ? 'past-event' : ''; ?>" onclick="viewEvent(<?php echo $event['id']; ?>)">
-                                               <div class="current-month-event-date-col">
-                                                   <span class="current-month-event-day-num"><?php echo count($event['dates']) > 1 ? count($event['dates']) : $first_date->format('j'); ?></span>
-                                                   <span class="current-month-event-day-suffix"><?php echo count($event['dates']) > 1 ? 'dates' : $first_date->format('M'); ?></span>
-                                               </div>
-                                               <div class="current-month-event-details">
-                                                   <span class="current-month-event-name"><?php echo htmlspecialchars($event['title']); ?></span>
-                                                   <div class="current-month-event-dates">
-                                                       <?php foreach (array_slice($event['dates'], 0, 3) as $date): 
-                                                           $d = new DateTime($date);
-                                                       ?>
-                                                           <span class="event-date-tag"><?php echo $d->format('j'); ?> <?php echo $d->format('M'); ?></span>
-                                                       <?php endforeach; ?>
-                                                       <?php if (count($event['dates']) > 3): ?>
-                                                           <span class="event-date-tag event-date-more">+<?php echo count($event['dates']) - 3; ?></span>
-                                                       <?php endif; ?>
-                                                   </div>
-                                                   <?php if (!empty($event['instructor_names'])): ?>
-                                                   <span class="current-month-event-inst"><i class="fas fa-user"></i> <?php echo htmlspecialchars(implode(', ', array_slice($event['instructor_names'], 0, 2))); ?></span>
-                                                   <?php endif; ?>
-                                               </div>
-                                               <div class="current-month-event-chevron"><i class="fas fa-chevron-right"></i></div>
-                                           </div>
-                                           <?php endforeach; ?>
-                                       </div>
-<?php else: ?>
-                                        <div class="no-month-events-compact" id="no-month-events">
-                                            <i class="fas fa-calendar-xmark"></i> No events this month
-                                        </div>
-                                        <?php endif; ?>
+                                
+                                <!-- Subjects per Major Section -->
+                                <div class="dept-majors-section" style="margin-top: 24px;">
+                                    <div class="section-header-modern">
+                                        <h4 class="section-title">
+                                            <i class="fas fa-book"></i> Subjects per Major
+                                        </h4>
                                     </div>
-                                   <?php endif; ?>
-                                   
-                                   <!-- Upcoming Events Section -->
-                                  <?php if (!empty($upcoming_events_by_month)): ?>
-                                  <div class="dept-majors-section">
-                                      <div class="section-header-modern">
-                                          <h4 class="section-title">
-                                              <i class="fas fa-calendar-check"></i> Upcoming Events
-                                          </h4>
-                                          <a href="pages/reports.php" class="section-action">
-                                              View All <i class="fas fa-arrow-right"></i>
-                                          </a>
-                                      </div>
-                                      
-                                      <div class="events-compact-list">
-                                          <?php 
-                                          $all_upcoming_events = [];
-                                          foreach ($upcoming_events_by_month as $month_key => $month_data) {
-                                              foreach ($month_data['events'] as $event) {
-                                                  $all_upcoming_events[] = array_merge($event, ['month_name' => $month_data['month_name']]);
-                                              }
-                                          }
-                                          $display_events = array_slice($all_upcoming_events, 0, 5);
-                                          
-                                          foreach ($display_events as $event): 
-                                              $event_date = new DateTime($event['event_date']);
-                                          ?>
-                                          <div class="event-compact-card" onclick="viewEvent(<?php echo $event['id']; ?>)">
-                                              <div class="event-date-badge-compact">
-                                                  <span class="event-day-num"><?php echo $event_date->format('j'); ?></span>
-                                                  <span class="event-month-short"><?php echo $event_date->format('M'); ?></span>
-                                              </div>
-                                              <div class="event-info-compact">
-                                                  <h5 class="event-title-compact"><?php echo htmlspecialchars($event['title']); ?></h5>
-                                                  <div class="event-meta-compact">
-                                                      <?php if (!empty($event['instructor_names'])): ?>
-                                                      <span class="event-assigned">
-                                                          <i class="fas fa-user"></i>
-                                                          <?php echo htmlspecialchars(implode(', ', $event['instructor_names'])); ?>
-                                                      </span>
-                                                      <?php else: ?>
-                                                      <span class="event-assigned">
-                                                          <i class="fas fa-users"></i> No instructors
-                                                      </span>
-                                                      <?php endif; ?>
-                                                  </div>
-                                              </div>
-                                              <div class="event-arrow">
-                                                  <i class="fas fa-chevron-right"></i>
-                                              </div>
-                                          </div>
-                                          <?php endforeach; ?>
-                                          
-                                          <?php if (count($all_upcoming_events) > 5): ?>
-                                          <div class="events-more-link">
-                                              <i class="fas fa-calendar-week"></i> +<?php echo count($all_upcoming_events) - 5; ?> more events
-                                          </div>
-                                          <?php endif; ?>
-                                      </div>
-                                  </div>
-                                  <?php endif; ?>
+                                    
+                                    <div class="dept-majors-grid">
+                                        <?php foreach ($majors as $major): 
+                                            $major_name = $major['display_name'] ?? $major['major_name'];
+                                            $subject_count = $subjects_by_major[$major_name] ?? 0;
+                                        ?>
+                                        <div class="dept-card">
+                                            <div class="dept-card-header">
+                                                <div class="dept-icon majors">
+                                                    <i class="fas fa-book-open"></i>
+                                                </div>
+                                                <span class="status-badge active"><?php echo htmlspecialchars($major_name); ?></span>
+                                            </div>
+                                            <div class="dept-value" style="margin-top: 16px;"><?php echo $subject_count; ?></div>
+                                            <div class="dept-sub-label">Subjects</div>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
                             <?php endif; ?>
-                        </div>
-                    </div>
+                         </div>
+                     </div>
 
-                    <!-- Right Column: Calendar + Performance -->
+                     <!-- Right Column: Calendar + Performance -->
                     <div class="right-column-grid">
                         <!-- Calendar Card -->
                         <div class="content-card">
@@ -2170,134 +2086,7 @@ try {
                             </div>
                         </div>
 
-                        <!-- Performance Overview Card -->
-                        <div class="content-card">
-                            <div class="content-card-header gold-header">
-                                <h3><i class="fas fa-chart-line"></i> Performance Overview</h3>
-                                <a href="pages/reports.php" class="view-all">
-                                    Full Report <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                            <div class="content-card-body">
-                                <div class="performance-summary">
-                                    <div class="perf-stat">
-                                        <span class="perf-label">Average Rating</span>
-                                        <span class="perf-value"><?php echo number_format($avg_rating, 1); ?>/5.0</span>
-                                        <div class="perf-stars">
-                                            <?php 
-                                            $full_stars = floor($avg_rating);
-                                            $half_star = ($avg_rating - $full_stars) >= 0.5;
-                                            for ($i = 0; $i < 5; $i++):
-                                                if ($i < $full_stars): ?>
-                                                    <i class="fas fa-star"></i>
-                                                <?php elseif ($i === $full_stars && $half_star): ?>
-                                                    <i class="fas fa-star-half-alt"></i>
-                                                <?php else: ?>
-                                                    <i class="far fa-star"></i>
-                                                <?php endif;
-                                            endfor; ?>
-                                        </div>
-                                    </div>
-                                    <div class="perf-stat">
-                                        <span class="perf-label">Completion Rate</span>
-                                        <span class="perf-value"><?php echo $eval_completion_rate; ?>%</span>
-                                        <div class="perf-progress-mini">
-                                            <div class="perf-progress-bar" style="width: <?php echo $eval_completion_rate; ?>%"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <?php if (!empty($dept_performance)): ?>
-                                <div class="perf-list">
-                                    <div class="perf-list-title">Department Ratings</div>
-                                    <?php foreach (array_slice($dept_performance, 0, 4) as $dept): ?>
-                                    <div class="perf-item">
-                                        <div class="perf-info">
-                                            <span class="perf-name"><?php echo htmlspecialchars($dept['department']); ?></span>
-                                            <span class="perf-rating"><?php echo number_format($dept['avg_rating'], 1); ?>/5.0</span>
-                                        </div>
-                                        <div class="progress-bar">
-                                            <div class="progress" style="width: <?php echo ($dept['avg_rating'] / 5) * 100; ?>%"></div>
-                                        </div>
-                                    </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                <?php else: ?>
-                                    <div class="empty-state-small">
-                                        <i class="fas fa-chart-pie"></i>
-                                        <p>No performance data yet</p>
-                                        <a href="pages/reports.php" class="btn-primary" style="margin-top: 12px; font-size: 12px; padding: 10px 18px;">
-                                            <i class="fas fa-plus"></i> Start Evaluation
-                                        </a>
-                                    </div>
-                                <?php endif; ?>
-                                
-                                <a href="pages/reports.php" class="view-all centered-link">
-                                    <i class="fas fa-chart-bar"></i> Full Reports
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Upcoming Events by Month Section -->
-            <?php if (!empty($upcoming_events_by_month)): ?>
-            <section class="upcoming-events-section">
-                <div class="section-header-modern">
-                    <h3 class="section-title">
-                        <i class="fas fa-calendar-alt"></i> Upcoming Events
-                    </h3>
-                </div>
-                
-                <div class="events-by-month-grid">
-                    <?php foreach ($upcoming_events_by_month as $month_key => $month_data): ?>
-                    <div class="month-events-card">
-                        <div class="month-card-header">
-                            <h4 class="month-title">
-                                <i class="fas fa-calendar-week"></i> <?php echo htmlspecialchars($month_data['month_name']); ?>
-                            </h4>
-                            <span class="month-event-count"><?php echo count($month_data['events']); ?> event<?php echo count($month_data['events']) > 1 ? 's' : ''; ?></span>
-                        </div>
-                        <div class="month-card-body">
-                            <?php foreach ($month_data['events'] as $event): 
-                                $event_date = new DateTime($event['event_date']);
-                                $day_suffix = date('S', strtotime($event['event_date']));
-                                $formatted_date = $event_date->format('F j') . $day_suffix;
-                            ?>
-                            <div class="event-item-compact" onclick="viewEvent(<?php echo $event['id']; ?>)">
-                                <div class="event-date-badge-small">
-                                    <span class="event-day-num"><?php echo $event_date->format('j'); ?></span>
-                                    <span class="event-month-short"><?php echo $event_date->format('M'); ?></span>
-                                </div>
-                                <div class="event-details-compact">
-                                    <h5 class="event-title-compact"><?php echo htmlspecialchars($event['title']); ?></h5>
-                                    <div class="event-meta-compact">
-                                        <?php if (!empty($event['instructor_names'])): ?>
-                                            <span class="event-assigned">
-                                                <i class="fas fa-user"></i>
-                                                <?php echo htmlspecialchars(implode(', ', array_slice($event['instructor_names'], 0, 2))); ?>
-                                                <?php if (count($event['instructor_names']) > 2): ?>
-                                                    +<?php echo count($event['instructor_names']) - 2; ?> more
-                                                <?php endif; ?>
-                                            </span>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="event-action-icon">
-                                    <i class="fas fa-chevron-right"></i>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
-                        </div>
-                    </div>
-                    <?php endforeach; ?>
-                </div>
-            </section>
-            <?php endif; ?>
-        </main>
-    </div>
-
+                        
     <!-- Event Modal -->
     <div id="eventModal" class="event-modal-overlay" style="display:none;">
         <div class="event-modal">
@@ -2395,6 +2184,8 @@ try {
     let calendarEvents = {}; // { "2024-01-15": [{id, title, ...}], ... }
     let currentViewEventId = null;
     let currentViewEventDate = null;
+
+    const birthdayMap = <?php echo json_encode($birthday_map, JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG); ?>;
 
     // Multi-date picker state
     let dpMonth = new Date().getMonth();
@@ -2576,11 +2367,19 @@ try {
             const hasEvents = calendarEvents[dateKey] && calendarEvents[dateKey].length > 0;
             const eventCount = hasEvents ? calendarEvents[dateKey].length : 0;
             
+            // ── Birthday badge ──────────────────────────────────────────
+            const birthdayKey = String(currentMonth + 1) + '-' + String(day);  // "n-j", e.g. "5-22"
+            const birthdayNames = birthdayMap[birthdayKey] || [];
+            const hasBirthday = birthdayNames.length > 0;
+            const birthdayNamesStr = birthdayNames.join(', ');
+            // ──────────────────────────────────────────────────────────────
+            
             let classes = 'calendar-day';
             if (isToday) classes += ' today';
             if (isWeekend) classes += ' weekend';
             if (hasEvents) classes += ' has-event';
             if (eventCount > 1) classes += ' has-multiple-events';
+            if (hasBirthday) classes += ' has-birthday';
             
             let indicatorHtml = '';
             if (eventCount === 1) {
@@ -2588,16 +2387,26 @@ try {
             } else if (eventCount > 1) {
                 indicatorHtml = '<div class="multi-event-badge">' + eventCount + '</div><div class="event-indicator"><span class="event-dot"></span><span class="event-dot"></span></div>';
             }
+            let birthdayHtml = '';
+            if (hasBirthday) {
+                const names = birthdayNames.slice(0, 3).join(', ');
+                birthdayHtml = '<div class="birthday-badge"><i class="fas fa-birthday-cake"></i>' + birthdayNamesStr + '</div>';
+            }
 
             let eventTooltips = '';
             if (hasEvents) {
                 const titles = calendarEvents[dateKey].map(function(e) { return e.title; }).join(' | ');
                 eventTooltips = ' title="' + titles.replace(/"/g, '&quot;') + '" ';
             }
+            let birthdayTooltipAttr = '';
+            if (hasBirthday) {
+                birthdayTooltipAttr = ' title="🎂 Birthday: ' + birthdayNamesStr.replace(/"/g, '&quot;') + '" ';
+            }
             
-            html += '<div class="' + classes + '" data-day="' + day + '" data-date="' + dateKey + '" ' + eventTooltips + ' onclick="selectDay(' + day + ')">' +
+            html += '<div class="' + classes + '" data-day="' + day + '" data-date="' + dateKey + '" ' + eventTooltips + birthdayTooltipAttr + ' onclick="selectDay(' + day + ')">' +
                         '<span class="day-number">' + day + '</span>' +
                         indicatorHtml +
+                        birthdayHtml +
                     '</div>';
         }
         

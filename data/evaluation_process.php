@@ -772,6 +772,42 @@ if ($action === 'save_grade') {
             $student_id, $subject_id, $major_id, $raw, $rounded, $status,
             $semester, $year_level, $academic_year, $instructor_id, $remarks
         ]);
+
+        // Auto-finalize Bridging session if this is a Bridging subject with passing grade
+        if ($year_level === 'Bridging' && $status === 'passed') {
+            // Check if all Bridging subjects for this student/major/academic_year have passing grades
+            $checkStmt = $pdo->prepare("
+                SELECT COUNT(*) as total,
+                       SUM(CASE WHEN sg.grade_rounded IS NOT NULL AND sg.grade_rounded <= 3.0 THEN 1 ELSE 0 END) as passed
+                FROM major_subjects ms
+                LEFT JOIN student_grades sg ON sg.student_id = ? AND sg.subject_id = ms.subject_id
+                    AND sg.year_level = 'Bridging' AND sg.academic_year = ?
+                WHERE ms.major_id = ? AND ms.year_level = 'Bridging'
+            ");
+            $checkStmt->execute([$student_id, $academic_year, $major_id]);
+            $checkResult = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($checkResult && $checkResult['total'] > 0 && $checkResult['passed'] == $checkResult['total']) {
+                // All Bridging subjects passed - auto-finalize the session
+                $finalStmt = $pdo->prepare("
+                    INSERT INTO evaluation_sessions
+                        (instructor_id, student_id, major_id, academic_year, year_level, semester,
+                         session_status, gwa, total_units_taken, total_units_passed, notes)
+                    VALUES (?,?,?,?,?,'1st Semester','finalized',0,0,0,'Auto-finalized: All Bridging subjects passed')
+                    ON DUPLICATE KEY UPDATE
+                        session_status    = 'finalized',
+                        gwa               = VALUES(gwa),
+                        total_units_taken = VALUES(total_units_taken),
+                        total_units_passed= VALUES(total_units_passed),
+                        notes             = VALUES(notes),
+                        updated_at        = NOW()
+                ");
+                $finalStmt->execute([
+                    $instructor_id, $student_id, $major_id, $academic_year, 'Bridging'
+                ]);
+            }
+        }
+
         echo json_encode([
             'success'       => true,
             'message'       => 'Grade saved successfully',

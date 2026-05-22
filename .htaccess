@@ -1,0 +1,6 @@
+<IfModule mod_php7.c>
+  php_value output_buffering Off
+</IfModule>
+<IfModule mod_php8.c>
+  php_value output_buffering Off
+</IfModule>

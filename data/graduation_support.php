@@ -699,19 +699,16 @@ function graduation_generate_prospectus_pdf(
 ): ?string {
     $errorOut = null;
     $lib = __DIR__ . '/lib/fpdf186/fpdf.php';
-    $fontPath = __DIR__ . '/lib/fpdf186/font/';
     if (!is_file($lib)) {
         $errorOut = 'FPDF library missing (data/lib/fpdf186/fpdf.php)';
         return null;
     }
-    if (!defined('FPDF_FONTPATH')) {
-        define('FPDF_FONTPATH', $fontPath);
-    }
-    if (!is_dir($fontPath) || !is_file($fontPath . 'helveticai.php')) {
-        $errorOut = 'FPDF font directory is missing or incomplete: ' . $fontPath;
-        return null;
-    }
     require_once $lib;
+    // Font directory / custom font files are not needed when using
+    // core FPDF fonts (Helvetica, Times, Courier, …).  Skip the
+    // FPDF_FONTPATH define and strict file-existence check so that
+    // PDF generation works on servers where the font/ folder was not
+    // deployed (e.g. InfinityFree).
 
     $majorName = (string) ($student['major_name'] ?? '');
     $majorSlug = graduation_major_slug($majorName);
