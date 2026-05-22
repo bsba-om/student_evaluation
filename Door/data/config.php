@@ -1,31 +1,11 @@
 <?php
-// Door/data/config.php
+// Database configuration
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+define('DB_NAME', 'checkmate');
 
-$creds = [
-    'localhost' => [
-        'host' => 'localhost',
-        'user' => 'root',
-        'pass' => '',
-        'name' => 'checkmate',
-    ],
-];
-
-$server_key = 'localhost';
-if (!array_key_exists($server_key, $creds)) {
-    $creds[$server_key] = [
-        'host' => 'localhost',
-        'user' => '',
-        'pass' => '',
-        'name' => 'checkmate',
-    ];
-}
-
-$c = $creds[$server_key];
-define('DB_HOST', $c['host']);
-define('DB_USER', $c['user']);
-define('DB_PASS', $c['pass']);
-define('DB_NAME', $c['name']);
-
+// Create PDO connection
 try {
     $pdo = new PDO(
         "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4",
@@ -39,6 +19,19 @@ try {
         ]
     );
 } catch (PDOException $e) {
+    // In production, log this error instead of displaying
     error_log("Database connection failed: " . $e->getMessage());
     $pdo = null;
 }
+
+// For mysqli compatibility (if any legacy code still uses it)
+$conn = null;
+try {
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    if ($conn->connect_error) {
+        $conn = null;
+    }
+} catch (Exception $e) {
+    $conn = null;
+}
+?>
