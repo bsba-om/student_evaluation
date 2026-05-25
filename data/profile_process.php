@@ -50,6 +50,7 @@ function updatePersonal($pdo, $instructor_id) {
     $position = trim($_POST['position'] ?? '');
     $middle_name = trim($_POST['middle_name'] ?? '');
     $suffix = trim($_POST['suffix'] ?? '');
+    $birthday = isset($_POST['birthday']) ? ($_POST['birthday'] === '' ? null : $_POST['birthday']) : null;
     
     if (empty($first_name) || empty($last_name)) {
         echo json_encode(['success' => false, 'message' => 'First name and last name are required']);
@@ -57,8 +58,8 @@ function updatePersonal($pdo, $instructor_id) {
     }
     
     try {
-        $stmt = $pdo->prepare("UPDATE instructors SET first_name = ?, last_name = ?, position = ?, middle_name = ?, suffix = ? WHERE id = ?");
-        $stmt->execute([$first_name, $last_name, $position, $middle_name, $suffix, $instructor_id]);
+        $stmt = $pdo->prepare("UPDATE instructors SET first_name = ?, last_name = ?, position = ?, middle_name = ?, suffix = ?, birthday = ? WHERE id = ?");
+        $stmt->execute([$first_name, $last_name, $position, $middle_name, $suffix, $birthday, $instructor_id]);
         echo json_encode(['success' => true, 'message' => 'Personal information updated successfully']);
     } catch (PDOException $e) {
         echo json_encode(['success' => false, 'message' => 'Failed to update: ' . $e->getMessage()]);

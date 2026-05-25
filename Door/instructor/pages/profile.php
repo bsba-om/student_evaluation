@@ -543,8 +543,11 @@ $show_role_modal = !$role_access['allowed'];
                             </div>
                             <div class="info-item">
                                 <div class="info-label"><i class="fas fa-birthday-cake"></i> Birthday</div>
-                                <div class="info-value"><?php echo !empty($profile['birthday']) ? date('F j, Y', strtotime($profile['birthday'])) : '-'; ?></div>
-                                <div class="edit-input"><input type="date" name="birthday" value="<?php echo htmlspecialchars($profile['birthday'] ?? ''); ?>"></div>
+                                <div class="info-value"><?php 
+                                    $bday = $profile['birthday'] ?? '';
+                                    echo (!empty($bday) && $bday !== '0000-00-00') ? date('F j, Y', strtotime($bday)) : '-'; 
+                                ?></div>
+                                <div class="edit-input"><input type="date" name="birthday" value="<?php echo (!empty($profile['birthday']) && $profile['birthday'] !== '0000-00-00') ? htmlspecialchars($profile['birthday']) : ''; ?>"></div>
                             </div>
                             <div class="info-item">
                                 <div class="info-label"><i class="fas fa-toggle-on"></i> Status</div>
@@ -742,42 +745,44 @@ $show_role_modal = !$role_access['allowed'];
             actions.innerHTML = '<button type="button" class="btn-edit" id="editPersonalBtn" onclick="editPersonal()" style="padding:10px 20px;border:none;border-radius:10px;font-family:Poppins,sans-serif;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg, var(--gold), var(--gold-dark));color:white;box-shadow:0 4px 12px rgba(212,168,67,0.3);"><i class="fas fa-edit"></i> Edit</button>';
         }
         
-        function savePersonal() {
-            const saveBtn = document.getElementById('savePersonalBtn');
-            const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-            saveBtn.disabled = true;
-            
-            const formData = new FormData();
-            formData.append('action', 'update_personal');
-            formData.append('instructor_id', <?php echo $instructor_id; ?>);
-            
-            const inputs = document.querySelectorAll('#personalInfo .edit-input input');
-            inputs.forEach(input => {
-                if (!input.readOnly) formData.append(input.name, input.value);
-            });
-            
-            fetch('../../../data/profile_process.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(r => r.json())
-            .then(data => {
-                saveBtn.disabled = false;
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    showToast(data.message, 'error');
-                    saveBtn.innerHTML = originalText;
-                }
-            })
-            .catch(err => {
-                saveBtn.disabled = false;
-                showToast('Error: ' + err.message, 'error');
-                saveBtn.innerHTML = originalText;
-            });
+function savePersonal() {
+    const saveBtn = document.getElementById('savePersonalBtn');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    saveBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('action', 'update_personal');
+    formData.append('instructor_id', <?php echo $instructor_id; ?>);
+    
+    const inputs = document.querySelectorAll('#personalInfo .edit-input input');
+    inputs.forEach(input => {
+        if (!input.readOnly) {
+            formData.append(input.name, input.value);
         }
+    });
+    
+    fetch('../../../data/profile_process.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        saveBtn.disabled = false;
+        if (data.success) {
+            showToast(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.message, 'error');
+            saveBtn.innerHTML = originalText;
+        }
+    })
+    .catch(err => {
+        saveBtn.disabled = false;
+        showToast('Error: ' + err.message, 'error');
+        saveBtn.innerHTML = originalText;
+    });
+}
         
         function editContact() {
             const infoGrid = document.getElementById('contactInfo');
