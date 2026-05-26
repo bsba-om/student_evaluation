@@ -1177,33 +1177,55 @@ if (!$show_role_modal) {
         }
 
         /* Student Row - Enhanced */
-        .student-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 14px 16px;
-            background: var(--cream);
-            border-radius: var(--radius-md);
-            margin-bottom: 10px;
-            border: 1px solid transparent;
-            transition: all var(--transition-fast);
-            cursor: pointer;
-        }
+.student-row {
+             display: flex;
+             align-items: center;
+             gap: 14px;
+             padding: 14px 16px;
+             background: var(--cream);
+             border-radius: var(--radius-md);
+             margin-bottom: 10px;
+             border: 1px solid transparent;
+             transition: all var(--transition-fast);
+             cursor: pointer;
+         }
 
-        .student-row:last-child {
-            margin-bottom: 0;
-        }
+         .student-row:last-child {
+             margin-bottom: 0;
+         }
 
-        .student-row:hover {
-            background: var(--white);
-            border-color: var(--gold-light);
-            transform: translateX(4px);
-            box-shadow: 0 4px 14px rgba(184, 134, 11, 0.1);
-        }
+         .student-row:hover {
+             background: var(--white);
+             border-color: var(--gold-light);
+             transform: translateX(4px);
+             box-shadow: 0 4px 14px rgba(184, 134, 11, 0.1);
+         }
 
-        .student-row:active {
-            transform: translateX(2px) scale(0.99);
-        }
+         .student-row:active {
+             transform: translateX(2px) scale(0.99);
+         }
+
+         .student-row .student-delete-btn {
+             opacity: 0;
+             margin-left: auto;
+             padding: 6px 10px;
+             background: var(--danger-bg);
+             color: var(--danger);
+             border: 1px solid rgba(220, 38, 38, 0.2);
+             border-radius: var(--radius-sm);
+             cursor: pointer;
+             transition: all var(--transition-fast);
+         }
+
+         .student-row:hover .student-delete-btn {
+             opacity: 1;
+         }
+
+         .student-row .student-delete-btn:hover {
+             background: var(--danger);
+             color: white;
+             transform: scale(1.1);
+         }
 
         .student-avatar {
             width: 42px;
@@ -2571,6 +2593,9 @@ if (!$show_role_modal) {
                                         <span><i class="fas fa-book"></i> <?php echo htmlspecialchars($student['major_display'] ?? ($student['major_name'] ?? 'N/A')); ?></span>
                                     </div>
                                 </div>
+                                <button class="student-delete-btn" onclick="deleteStudentFromRow(<?php echo $student['id']; ?>, event)" title="Delete Student">
+                                    <i class="fas fa-trash"></i>
+                                </button>
                             </div>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -2936,6 +2961,32 @@ if (!$show_role_modal) {
             } catch (error) {
                 console.error('Delete error:', error);
                 alert('Error deleting student');
+            }
+        }
+
+        async function deleteStudentFromRow(studentId, event) {
+            event.stopPropagation();
+            if (confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
+                try {
+                    const formData = new FormData();
+                    formData.append('student_id', studentId);
+                    
+                    const response = await fetch('../../data/student_manage.php?action=delete_student', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to delete student'));
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    alert('Error deleting student');
+                }
             }
         }
 
