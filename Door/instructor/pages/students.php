@@ -8,6 +8,8 @@ $instructor_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
 $user_name = isset($_SESSION['user_name']) ? $_SESSION['user_name'] : 'Jane Teacher';
 
 $stats = ['total_students' => 0, 'by_major' => [], 'by_year' => [], 'by_gender' => [], 'total_tasks' => 0];
+$ph_settings = [];
+$current_academic_year = '2025-2026';
 
 if (!$show_role_modal) {
     require_once '../../data/config.php';
@@ -27,6 +29,18 @@ if (!$show_role_modal) {
         $stmt = $pdo->prepare("SELECT COUNT(*) FROM tasks WHERE instructor_id = ?");
         $stmt->execute([$instructor_id]);
         $stats['total_tasks'] = $stmt->fetchColumn();
+    } catch (PDOException $e) {}
+}
+
+if (!$show_role_modal) {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['setting_value']) {
+            $ph_settings = json_decode($row['setting_value'], true) ?: [];
+            $current_academic_year = $ph_settings['academicYear'] ?? $ph_settings['academic_year'] ?? $current_academic_year;
+        }
     } catch (PDOException $e) {}
 }
 

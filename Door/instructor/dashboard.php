@@ -136,6 +136,18 @@ $recent_activities   = [];
 $graduated_mentees   = [];
 $graduated_mentee_count = 0;
 $current_school_year = '2025-2026';
+$ph_settings = [];
+if ($pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['setting_value']) {
+            $ph_settings = json_decode($row['setting_value'], true) ?: [];
+            $current_school_year = $ph_settings['academicYear'] ?? $ph_settings['academic_year'] ?? $current_school_year;
+        }
+    } catch (PDOException $e) {}
+}
 $eval_percentage     = 0;
 $evaluated_students  = 0;
 $total_eval_students = 0;
@@ -884,7 +896,7 @@ $calendarEventsJson = json_encode($calendar_events_map);
             <button class="topbar-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
             <div>
                 <div class="topbar-title">Dashboard</div>
-                <div class="topbar-subtitle">Instructor Panel</div>
+                <div class="topbar-subtitle"><?php echo htmlspecialchars(($ph_settings['deptName'] ?? $ph_settings['department_name'] ?? 'Instructor') . ' Panel', ENT_QUOTES); ?></div>
             </div>
         </div>
         <div class="topbar-right">

@@ -476,6 +476,7 @@ function switchTab(tab, btn) {
 
                     if (Object.prototype.hasOwnProperty.call(s, 'deptName') && deptNameEl) deptNameEl.value = s.deptName || '';
                     if (Object.prototype.hasOwnProperty.call(s, 'academicYear') && academicYearEl) academicYearEl.value = s.academicYear || '';
+                    else if (Object.prototype.hasOwnProperty.call(s, 'academic_year') && academicYearEl) academicYearEl.value = s.academic_year || '';
                     if (Object.prototype.hasOwnProperty.call(s, 'deptDesc') && deptDescEl) deptDescEl.value = s.deptDesc || '';
                     if (s.currentSemester && currentSemesterEl) currentSemesterEl.value = s.currentSemester;
                     if (s.enrollmentStatus && enrollmentStatusEl) enrollmentStatusEl.value = s.enrollmentStatus;

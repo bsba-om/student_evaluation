@@ -260,11 +260,12 @@ const TransferEvaluation = (() => {
 <td style="font-size:10px;padding:6px 8px;">${_escHtml(s.subject_name)}</td>
               <td style="text-align:center;font-weight:600;padding:6px;">${parseFloat(s.units) || 0}</td>
               <td style="padding:6px 8px;">
-                <input type="number" class="te-grade-inp" id="te-grade-${s.id}"
-                       value="${prev.grade || ''}" min="1" max="5" step="0.01" placeholder="—"
+                <input type="text" inputmode="decimal" class="te-grade-inp" id="te-grade-${s.id}"
+                       value="${prev.grade || ''}" placeholder="—"
                        style="width:60px;padding:4px 6px;border:1.5px solid var(--border);border-radius:6px;font-size:11px;font-weight:700;text-align:center;font-family:'Poppins',sans-serif;"
                        ${gradeDisabled ? 'disabled' : ''}
                        oninput="TransferEvaluation.formatGradeInput(${s.id}, this)"
+                       onblur="TransferEvaluation.normalizeGradeInput(${s.id}, this)"
                        onkeydown="TransferEvaluation.blockExtraInput(${s.id}, event); if(event.key==='Enter') TransferEvaluation.updatePrevGrade(${s.id}, this.value)">
               </td>
             </tr>`;
@@ -313,9 +314,10 @@ const TransferEvaluation = (() => {
     footer.innerHTML = `
     <button class="te-btn-cancel" onclick="TransferEvaluation.close()"><i class="fas fa-times"></i> Cancel</button>
     <button class="te-btn-skip" onclick="TransferEvaluation.skipPrevious()"><i class="fas fa-forward"></i> Skip (No Previous Subjects)</button>
-    <button class="te-btn-next" onclick="TransferEvaluation.goToStep(2)"><i class="fas fa-arrow-right"></i> Next: Validate</button>`;
+    <button class="te-btn-next" id="tePrevNextBtn" onclick="TransferEvaluation.goToStep(2)"><i class="fas fa-arrow-right"></i> Next: Validate</button>`;
 
     _updatePrevCount();
+    _updatePrevNextState();
   }
 
   /* ── Step 2: Validation ── */
@@ -547,35 +549,59 @@ const TransferEvaluation = (() => {
     if (checked) {
       if (!_previousSubjects[sid]) _previousSubjects[sid] = {};
       _previousSubjects[sid].validated = true;
-      if (gradeInp) gradeInp.disabled = false;
+      if (gradeInp) {
+        gradeInp.disabled = false;
+        gradeInp.focus();
+      }
     } else {
       delete _previousSubjects[sid];
       if (gradeInp) { gradeInp.disabled = true; gradeInp.value = ''; }
     }
     _save();
     _updatePrevCount();
+    _updatePrevNextState();
   }
 
   function formatGradeInput(sid, inp) {
     if (!inp || inp.disabled) return;
-    const val = inp.value;
-    if (val === '' || val === null || val === undefined) return;
-    let s = String(val).replace(/[^0-9.]/g, '');
-    if (s === '' || s === '.') return;
-    let digits = s.replace(/\./g, '');
-    if (digits.length > 3) digits = digits.slice(0, 3);
-    if (digits.length === 1) {
-      inp.value = digits;
+    const raw = String(inp.value || '');
+    if (raw.trim() === '') {
+      if (!_previousSubjects[sid]) _previousSubjects[sid] = { validated: true };
+      _previousSubjects[sid].grade = '';
+      _save();
+      _updatePrevNextState();
       return;
     }
-    if (digits.length === 2) {
-      inp.value = digits[0] + '.' + digits[1];
-      return;
+    let normalized = raw.replace(/[^0-9.]/g, '');
+    // If user types digits without a dot, treat the first 1..3 digits as x, x.x or x.xx
+    if (!normalized.includes('.')) {
+      const digits = normalized.replace(/\./g, '').replace(/[^0-9]/g, '');
+      if (digits.length === 0) {
+        inp.value = '';
+      } else if (digits.length === 1) {
+        inp.value = digits;
+      } else if (digits.length === 2) {
+        inp.value = digits[0] + '.' + digits[1];
+      } else { // 3 or more
+        inp.value = digits[0] + '.' + digits[1] + digits[2];
+      }
+    } else {
+      const parts = normalized.split('.');
+      let intPart = (parts[0] || '0').replace(/[^0-9]/g, '');
+      let decPart = parts.slice(1).join('').replace(/[^0-9]/g, '').slice(0, 2);
+      // Ensure integer part is at most 1 digit (grades are 1-5)
+      if (intPart.length > 1) intPart = intPart.slice(0, 1);
+      if (decPart.length > 0) {
+        inp.value = `${intPart}.${decPart}`;
+      } else {
+        inp.value = intPart;
+      }
     }
-    if (digits.length === 3) {
-      inp.value = digits[0] + '.' + digits[1] + digits[2];
-      return;
-    }
+
+    if (!_previousSubjects[sid]) _previousSubjects[sid] = { validated: true };
+    _previousSubjects[sid].grade = inp.value;
+    _save();
+    _updatePrevNextState();
   }
 
   function blockExtraInput(sid, evt) {
@@ -587,6 +613,9 @@ const TransferEvaluation = (() => {
     if (digits.length >= 3 && isDigit) {
       evt.preventDefault();
     }
+    if (evt.key === 'e' || evt.key === 'E' || evt.key === '+' || evt.key === '-') {
+      evt.preventDefault();
+    }
   }
 
   function updatePrevGrade(sid, value) {
@@ -595,6 +624,21 @@ const TransferEvaluation = (() => {
     _previousSubjects[sid].validated = true;
     _save();
     _updatePrevCount();
+    _updatePrevNextState();
+  }
+
+  function normalizeGradeInput(sid, inp) {
+    if (!inp || inp.disabled) return;
+    const raw = String(inp.value || '').replace(/,/g, '.').trim();
+    const grade = parseFloat(raw);
+    if (!Number.isNaN(grade) && grade >= 1 && grade <= 5) {
+      inp.value = grade.toFixed(2);
+      if (!_previousSubjects[sid]) _previousSubjects[sid] = { validated: true };
+      _previousSubjects[sid].grade = inp.value;
+      _save();
+      _updatePrevCount();
+      _updatePrevNextState();
+    }
   }
 
   function toggleCurrentLoad(sid, checked) {
@@ -622,6 +666,7 @@ const TransferEvaluation = (() => {
     const unitsEl = document.getElementById('tePrevUnits');
     if (countEl) countEl.textContent = `${count} selected`;
     if (unitsEl) unitsEl.textContent = `${units} units credited`;
+    _updatePrevNextState();
   }
 
   function _updateLoadCount() {
@@ -644,6 +689,26 @@ const TransferEvaluation = (() => {
       const text = row.textContent.toLowerCase();
       row.style.display = text.includes(q) ? '' : 'none';
     });
+  }
+
+  function _isPreviousStepReady() {
+    const selectedIds = Object.keys(_previousSubjects);
+    if (selectedIds.length === 0) return true;
+    return selectedIds.every(sid => {
+      const ps = _previousSubjects[sid];
+      if (!ps || ps.grade == null || String(ps.grade).trim() === '') return false;
+      const grade = parseFloat(String(ps.grade).replace(/,/g, '.'));
+      return !Number.isNaN(grade) && grade >= 1 && grade <= 5;
+    });
+  }
+
+  function _updatePrevNextState() {
+    const btn = document.getElementById('tePrevNextBtn');
+    if (!btn) return;
+    const ready = _isPreviousStepReady();
+    btn.disabled = !ready;
+    btn.style.opacity = ready ? '1' : '0.5';
+    btn.style.cursor = ready ? 'pointer' : 'not-allowed';
   }
 
   function filterLoadSubjects() {
@@ -731,6 +796,7 @@ const TransferEvaluation = (() => {
     skipPrevious,
     togglePrevSubject,
     formatGradeInput,
+    normalizeGradeInput,
     blockExtraInput,
     updatePrevGrade,
     toggleCurrentLoad,

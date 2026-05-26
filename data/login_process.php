@@ -40,9 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'message' => 'Invalid role selected'
         ]);
     }
-   if (!$pdo) {
-        demoLogin($role, $email, $password);
-        exit;
+    if (!$pdo) {
+        jsonResponse([
+            'success' => false,
+            'message' => 'Unable to connect to the database. Please try again later.'
+        ]);
     }
 
     try {
@@ -120,75 +122,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 }
 
- function demoLogin($role, $email, $password) {
-    $demo_credentials = [
-        'admin' => [
-            'email' => 'admin@cjcm.edu',
-            'password' => 'password123'
-        ],
-        'program_head' => [
-            'email' => 'head@test.com',
-            'password' => 'password123'
-        ],
-        'instructor' => [
-            'email' => 'teacher@test.com',
-            'password' => 'password123'
-        ]
-    ];
-
-    $demo_email = $demo_credentials[$role]['email'] ?? '';
-    $demo_password = $demo_credentials[$role]['password'] ?? '';
-
-     if ($email === $demo_email && $password === $demo_password) {
-         // Set session
-         $_SESSION['user_id'] = 1;
-         $_SESSION['user_email'] = $email;
-         $_SESSION['user_role'] = $role;
-         
-         // Get actual name from database if available
-         $user_name = match($role) {
-             'admin' => 'Administrator',
-             'program_head' => 'John Head',
-             'instructor' => 'Jane Teacher',
-             default => 'User'
-         };
-         
-         if (!empty($pdo)) {
-             try {
-                 $table = match($role) {
-                     'admin' => 'admins',
-                     'program_head' => 'program_heads',
-                     'instructor' => 'instructors',
-                     default => 'instructors'
-                 };
-                 $stmt = $pdo->prepare("SELECT first_name, last_name FROM $table WHERE id = 1");
-                 $stmt->execute();
-                 $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                 if ($row && !empty($row['first_name'])) {
-                     $user_name = trim($row['first_name'] . ' ' . ($row['last_name'] ?? ''));
-                 }
-             } catch (Exception $e) {}
-         }
-         
-         $_SESSION['user_name'] = $user_name;
-
-          // Redirect based on role
-          $redirect = match($role) {
-              'admin' => 'Door/admin/dashboard.php',
-              'program_head' => 'Door/program_head/dashboard.php',
-              'instructor' => 'Door/instructor/dashboard.php',
-              default => 'Door/program_head/dashboard.php'
-          };
-
-         jsonResponse([
-             'success' => true,
-             'message' => 'Login successful (Demo Mode)',
-             'redirect' => $redirect
-         ]);
-     } else {
-         jsonResponse([
-             'success' => false,
-             'message' => 'Invalid email or password. Try: ' . $demo_email . ' / ' . $demo_password
-         ]);
-     }
-}

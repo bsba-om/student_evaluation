@@ -248,17 +248,6 @@ if (file_exists($config_path)) {
                  </button>
              </form>
 
-              <div class="demo-credentials" style="font-size: 0.75rem; color: var(--light-text); margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border-light); position: relative;">
-                  <button type="button" id="dismissDemoCredentials" style="position: absolute; top: 8px; right: 8px; background: none; border: none; color: var(--light-text); cursor: pointer; font-size: 1rem; line-height: 1; padding: 4px; opacity: 0.6; transition: opacity 0.2s;">
-                      <i class="fas fa-times"></i>
-                  </button>
-                  <p style="margin-bottom: 6px; font-weight: 600; color: var(--gold-dark);">Demo Credentials:</p>
-                  <div style="font-size: 0.7rem; line-height: 1.5; margin-left: 8px;">
-                      <div><strong>Admin:</strong> admin@cjcm.edu / password123</div>
-                      <div><strong>Instructor:</strong> teacher@test.com / password123</div>
-                  </div>
-              </div>
-
              <div class="login-footer" id="loginFooter" style="display:none;">
                  <p style="color: var(--medium-text); font-size: 0.85rem; margin-bottom: 12px;">
                      <i class="fas fa-info-circle" style="color: var(--gold-primary); margin-right: 6px;"></i>

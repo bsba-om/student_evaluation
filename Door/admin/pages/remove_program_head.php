@@ -43,11 +43,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #d4a843, #e8c768); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">JH</div>
                             <div>
                                 <div style="font-weight: 600;">John Harris</div>
-                                <div style="font-size: 12px; color: #6b7280;">john.harris@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">john.harris@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>john.harris@cjcm.edu</td>
+                    <td>john.harris@example.com</td>
                     <td>Computer Science</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -63,11 +63,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #60a5fa); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">SM</div>
                             <div>
                                 <div style="font-weight: 600;">Sarah Miller</div>
-                                <div style="font-size: 12px; color: #6b7280;">sarah.miller@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">sarah.miller@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>sarah.miller@cjcm.edu</td>
+                    <td>sarah.miller@example.com</td>
                     <td>Information Technology</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -83,11 +83,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #16a34a, #4ade80); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">RW</div>
                             <div>
                                 <div style="font-weight: 600;">Robert Wilson</div>
-                                <div style="font-size: 12px; color: #6b7280;">robert.wilson@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">robert.wilson@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>robert.wilson@cjcm.edu</td>
+                    <td>robert.wilson@example.com</td>
                     <td>Business Administration</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -103,11 +103,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">LJ</div>
                             <div>
                                 <div style="font-weight: 600;">Lisa Johnson</div>
-                                <div style="font-size: 12px; color: #6b7280;">lisa.johnson@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">lisa.johnson@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>lisa.johnson@cjcm.edu</td>
+                    <td>lisa.johnson@example.com</td>
                     <td>Engineering</td>
                     <td><span class="status-badge inactive">Inactive</span></td>
                     <td>
@@ -123,11 +123,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #fbbf24); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">MB</div>
                             <div>
                                 <div style="font-weight: 600;">Michael Brown</div>
-                                <div style="font-size: 12px; color: #6b7280;">michael.brown@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">michael.brown@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>michael.brown@cjcm.edu</td>
+                    <td>michael.brown@example.com</td>
                     <td>Mathematics</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -143,11 +143,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #ec4899, #f472b6); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">AW</div>
                             <div>
                                 <div style="font-weight: 600;">Amanda White</div>
-                                <div style="font-size: 12px; color: #6b7280;">amanda.white@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">amanda.white@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>amanda.white@cjcm.edu</td>
+                    <td>amanda.white@example.com</td>
                     <td>Computer Science</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -163,11 +163,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #14b8a6, #2dd4bf); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">DK</div>
                             <div>
                                 <div style="font-weight: 600;">David Kim</div>
-                                <div style="font-size: 12px; color: #6b7280;">david.kim@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">david.kim@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>david.kim@cjcm.edu</td>
+                    <td>david.kim@example.com</td>
                     <td>Information Technology</td>
                     <td><span class="status-badge active">Active</span></td>
                     <td>
@@ -183,11 +183,11 @@
                             <div style="width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #818cf8); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px;">EG</div>
                             <div>
                                 <div style="font-weight: 600;">Emily Garcia</div>
-                                <div style="font-size: 12px; color: #6b7280;">emily.garcia@cjcm.edu</div>
+                                <div style="font-size: 12px; color: #6b7280;">emily.garcia@example.com</div>
                             </div>
                         </div>
                     </td>
-                    <td>emily.garcia@cjcm.edu</td>
+                    <td>emily.garcia@example.com</td>
                     <td>Business Administration</td>
                     <td><span class="status-badge inactive">Inactive</span></td>
                     <td>

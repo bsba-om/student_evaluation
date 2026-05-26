@@ -22,6 +22,17 @@ if (!$show_role_modal) {
     $monthly_evals = [];
     $rating_dist = [0, 0, 0, 0, 0];
     $graduated_count = 0;
+    $ph_settings = [];
+    $current_academic_year = '2025-2026';
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['setting_value']) {
+            $ph_settings = json_decode($row['setting_value'], true) ?: [];
+            $current_academic_year = $ph_settings['academicYear'] ?? $ph_settings['academic_year'] ?? $current_academic_year;
+        }
+    } catch (PDOException $e) {}
     
     // Check which tables exist
     $has_evaluations = false;
@@ -254,22 +265,33 @@ if (!$show_role_modal) {
         $prev_month = date('Y-m', strtotime('-2 month'));
         $current_month = date('Y-m');
         
+        $ay_parts = explode('-', $current_academic_year);
+        $prev_academic_year = null;
+        if (count($ay_parts) === 2 && is_numeric($ay_parts[0]) && is_numeric($ay_parts[1])) {
+            $prev_academic_year = ($ay_parts[0] - 1) . '-' . ($ay_parts[1] - 1);
+        }
+        if (!$prev_academic_year) {
+            $prev_academic_year = $current_academic_year;
+        }
+
         // Current period enrolled and passed
-        $stmt = $pdo->query("SELECT 
+        $stmt = $pdo->prepare("SELECT 
             COUNT(*) as enrolled,
             SUM(CASE WHEN status = 'passed' THEN 1 ELSE 0 END) as passed
             FROM student_grades 
-            WHERE academic_year = '2025-2026' AND semester = '1st Semester'");
+            WHERE academic_year = ? AND semester = '1st Semester'");
+        $stmt->execute([$current_academic_year]);
         $result = $stmt->fetch();
         $current_enrolled_count = intval($result['enrolled'] ?? 0);
         $current_passed_count = intval($result['passed'] ?? 0);
         
         // Previous period (last semester) enrolled and passed
-        $stmt = $pdo->query("SELECT 
+        $stmt = $pdo->prepare("SELECT 
             COUNT(*) as enrolled,
             SUM(CASE WHEN status = 'passed' THEN 1 ELSE 0 END) as passed
             FROM student_grades 
-            WHERE academic_year = '2024-2025' AND semester = '2nd Semester'");
+            WHERE academic_year = ? AND semester = '2nd Semester'");
+        $stmt->execute([$prev_academic_year]);
         $result = $stmt->fetch();
         $prev_enrolled_count = intval($result['enrolled'] ?? 0);
         $prev_passed_count = intval($result['passed'] ?? 0);

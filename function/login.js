@@ -106,19 +106,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Dismiss demo credentials permanently
-    const dismissDemoBtn = document.getElementById('dismissDemoCredentials');
-    const demoCredentialsDiv = dismissDemoBtn ? dismissDemoBtn.closest('.demo-credentials') : null;
-
-    if (dismissDemoBtn && demoCredentialsDiv) {
-        // Check if dismissed previously
-        if (localStorage.getItem('demoCredentialsDismissed') === 'true') {
-            demoCredentialsDiv.style.display = 'none';
-        }
-
-        dismissDemoBtn.addEventListener('click', function() {
-            demoCredentialsDiv.style.display = 'none';
-            localStorage.setItem('demoCredentialsDismissed', 'true');
-        });
-    }
 });

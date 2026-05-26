@@ -6,6 +6,20 @@ $show_role_modal = !$role_access['allowed'];
 $instructor_id = $_SESSION['user_id'] ?? 1;
 $user_name = $_SESSION['user_name'] ?? 'Instructor';
 if (!$show_role_modal) { require_once '../../../data/config.php'; }
+
+$ph_settings = [];
+$current_academic_year = '2025-2026';
+if (!$show_role_modal) {
+    try {
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'program_head_settings'");
+        $stmt->execute();
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && $row['setting_value']) {
+            $ph_settings = json_decode($row['setting_value'], true) ?: [];
+            $current_academic_year = $ph_settings['academicYear'] ?? $ph_settings['academic_year'] ?? $current_academic_year;
+        }
+    } catch (PDOException $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -302,7 +316,7 @@ if (!$show_role_modal) { require_once '../../../data/config.php'; }
       <div class="hero-banner" style="background:linear-gradient(135deg,#d4a843 0%,#b8922f 40%,#a38023 100%);border-radius:20px;padding:28px 32px;margin-bottom:24px;position:relative;overflow:hidden;display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;">
         <div style="position:relative;z-index:1;">
           <div class="hero-eyebrow" style="display:flex;align-items:center;gap:8px;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#fff;margin-bottom:8px;">
-            <span style="width:24px;height:2px;background:#fff;border-radius:2px;"></span> Instructor Portal | A.Y. 2025-2026
+            <span style="width:24px;height:2px;background:#fff;border-radius:2px;"></span> <?php echo htmlspecialchars(($ph_settings['deptName'] ?? $ph_settings['department_name'] ?? 'Instructor') . ' Portal', ENT_QUOTES); ?> | A.Y. <?php echo htmlspecialchars($current_academic_year, ENT_QUOTES); ?>
           </div>
           <h1 class="hero-title" style="font-family:'Playfair Display',serif;font-size:32px;font-weight:800;color:#fff;line-height:1.1;margin-bottom:6px;"><em style="color:#2d1f07;font-style:normal;">My Mentees</em></h1>
           <p class="hero-sub" style="font-size:13px;color:rgba(255,255,255,.85);max-width:300px;">Select a student to open their evaluation prospectus</p>
@@ -656,7 +670,7 @@ let _gradConfirmBtn = null;   // graduationConfirmBtn — shared scope so _gradu
 let loadedSubjects  = [];
 let prereqSetsData  = [];
 let gradeMap        = {};
-let currentAY       = '2025-2026';
+let currentAY       = '<?php echo htmlspecialchars($current_academic_year, ENT_QUOTES); ?>';
 let focusYear       = '';
 let focusSem        = '';
 let graduationRedirectOnClose = false;
@@ -749,7 +763,16 @@ function buildPrereqUnlockMap(subjects, gMap, prereqSets, studentMajorId) {
   subjects.forEach(s => {
     const prereqField = s.display_prerequisite || s.prerequisite || s.prerequisite_subject_code || '';
     const prereqCodes = parsePrereqCodes(prereqField);
-    const prereqSubjects = prereqCodes.map(code => byCode[code]).filter(Boolean);
+    // Resolve prereq codes to subject objects. Allow flexible matching where
+    // a token like 'RSS' should match 'RSS 3' or similar variants.
+    const prereqSubjects = prereqCodes.map(code => {
+      if(byCode[code]) return byCode[code];
+      // fallback: find subject whose normalized code starts with the token
+      const found = subjects.find(ls => normalizePrereqCode(ls.subject_code).startsWith(code));
+      if(found) return found;
+      // last resort: find subject whose normalized code contains the token
+      return subjects.find(ls => normalizePrereqCode(ls.subject_code).includes(code)) || null;
+    }).filter(Boolean);
     let directLocked = false;
     let directPrereqSubj = prereqSubjects.length ? prereqSubjects[0] : null;
     if(prereqSubjects.length) {
@@ -973,6 +996,8 @@ function _proceedWithEval(m, studentType) {
       phSettings.school_address = phSettings.school_address || phSettings.schoolAddress || '';
       phSettings.institute_name = phSettings.institute_name || phSettings.instituteName || '';
       phSettings.degree_name = phSettings.degree_name || phSettings.degreeName || '';
+      const runtimeAY = evalData.ph_settings.academicYear || evalData.ph_settings.academic_year;
+      if (runtimeAY) currentAY = runtimeAY;
     }
     if (evalData.student) {
       currentStudent = {...m, ...evalData.student};
@@ -1841,6 +1866,17 @@ const isGraduationEligible = yearLabel === '4th Year' &&
       return set.subjects.some(ps => parseInt(ps.id) !== parseInt(subject.id) && gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
     });
   };
+  const hasPendingSamePrereqSetMember = subject => {
+    if (!Array.isArray(prereqSetsData) || !currentStudent?.major_id) return false;
+    return prereqSetsData.some(set => {
+      if (set.major_id != currentStudent.major_id) return false;
+      if (!Array.isArray(set.subjects)) return false;
+      const memberIds = set.subjects.map(ps => parseInt(ps.id));
+      if (!memberIds.includes(parseInt(subject.id))) return false;
+      if (set.subjects.length < 2) return false;
+      return set.subjects.every(ps => gradeMap[ps.id] == null);
+    });
+  };
   nextSemSubsWithStatus.forEach(s => {
     const pi = prereqUnlockMapCurrent[s.id] || {};
     const directSubjects = pi.directPrereqSubjects || (pi.directPrereqSubj ? [pi.directPrereqSubj] : []);
@@ -1860,10 +1896,17 @@ const isGraduationEligible = yearLabel === '4th Year' &&
 
     const setFailed = pi.setLocked && (pi.setBlockedBy||[]).some(ps => gradeMap[ps.id] != null && gradeStatus(roundGrade(gradeMap[ps.id])) === 'failed');
     const sameSetFailed = hasFailedSamePrereqSetMember(s);
+    // Pending if the prerequisite set is locked because some members are ungraded,
+    // or if the previous heuristic indicates all members are ungraded.
+    const sameSetPending = !sameSetFailed && (
+      (pi.setLocked && (pi.setBlockedBy||[]).some(ps => gradeMap[ps.id] == null)) ||
+      hasPendingSamePrereqSetMember(s)
+    );
     nextSemStatusInfo[s.id] = {
       failedDirect: failedDirect || fallbackFailedDirect,
       setFailed,
-      sameSetFailed
+      sameSetFailed,
+      sameSetPending
     };
   });
 
@@ -1929,13 +1972,14 @@ const isGraduationEligible = yearLabel === '4th Year' &&
              ${availableNextSubs.map(s=>{
                const statusInfo = nextSemStatusInfo[s.id] || {}; 
                const isUnavailable = statusInfo.failedDirect || statusInfo.setFailed || statusInfo.sameSetFailed;
-               const statusLabel = isUnavailable ? 'Unavailable' : 'Available';
-               const statusStyle = isUnavailable ? 'background:var(--red-l);color:#991b1b;' : 'background:var(--green-l);color:#166534;';
+               const isPendingDecision = !isUnavailable && statusInfo.sameSetPending;
+               const statusLabel = isUnavailable ? 'Unavailable' : isPendingDecision ? 'Pending decision' : 'Available';
+               const statusStyle = isUnavailable ? 'background:var(--red-l);color:#991b1b;' : isPendingDecision ? 'background:var(--amber-l);color:#92400e;' : 'background:var(--green-l);color:#166534;';
                const disabledAttr = isUnavailable ? 'disabled' : '';
-               const checkedAttr = isUnavailable ? '' : 'checked';
+               const checkedAttr = (isUnavailable || isPendingDecision) ? '' : 'checked';
                const rowCursor = isUnavailable ? 'default' : 'pointer';
                const rowOpacity = isUnavailable ? 'opacity:.65;' : '';
-               const titleText = isUnavailable ? 'Prerequisite failed or another subject in the same prereq group failed' : '';
+               const titleText = isUnavailable ? 'Prerequisite failed or another subject in the same prereq group failed' : isPendingDecision ? 'Subject shares a prerequisite set and is not taken yet; instructor decision is required.' : '';
                return `
              <tr id="rmrow-${s.id}" style="background:#fff;${rowOpacity}cursor:${rowCursor};" ${isUnavailable ? '' : `onclick="document.getElementById('rmchk-${s.id}').click();"`} title="${titleText}">
                <td style="padding:7px 10px;text-align:center;border-bottom:1px solid var(--border);">
@@ -2042,7 +2086,7 @@ const isGraduationEligible = yearLabel === '4th Year' &&
       window._rmAvailableSubs = availableNextSubs;
       window._rmSelectedIds   = new Set(availableNextSubs.filter(s => {
         const statusInfo = nextSemStatusInfo[s.id] || {};
-        return !(statusInfo.failedDirect || statusInfo.setFailed || statusInfo.sameSetFailed);
+        return !(statusInfo.failedDirect || statusInfo.setFailed || statusInfo.sameSetFailed || statusInfo.sameSetPending);
       }).map(s => s.id));
     }
 
@@ -3906,6 +3950,7 @@ const sigHtml = `<div class="pro-sig-block">
                                 min="1" max="5" step="0.01" placeholder="—"
                                 oninput="onGradeInput(${sub.id}, event)"
                                 onkeydown="onGradeKeydown(${sub.id}, event); if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}');}"
+                                onblur="normalizeGradeInput(${sub.id}, event)"
                                 onchange="onGradeChange(${sub.id},${s.id},${s.major_id},'1st Semester','Bridging','${esc(ay)}')"
                                 ${bShouldDisable ? `disabled title="${bLockDesc||'Locked'}"` : 'title="1.00 to 5.00 · Enter to save"'}>
                               <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
@@ -4062,6 +4107,7 @@ rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.y
                min="1" max="5" step="0.01" placeholder="—"
                oninput="onGradeInput(${sub.id}, event)"
                onkeydown="onGradeKeydown(${sub.id}, event); if(event.key==='Enter'){event.preventDefault();saveGrade(${sub.id},${student.id},${student.major_id},'${esc(sub.semester)}','${esc(sub.year_level)}','${esc(ay)}');}"
+               onblur="normalizeGradeInput(${sub.id}, event)"
                ${shouldDisable?'disabled title="'+lockDesc+'"':'title="1.00 to 5.00 · Enter to save"'}>
              <span class="grade-print" style="display:none;">${raw!=null?parseFloat(raw).toFixed(2):'—'}</span>
              <button class="save-btn" id="sbtn-${sub.id}"
@@ -4136,26 +4182,43 @@ rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.y
      Blocks additional input after 3 digits, allows backspace
     ═══════════════════════════════════════════════════════════ */
   function formatGradeInput(val) {
-    if (val === '' || val === null || val === undefined) return val;
+    if (val === '' || val === null || val === undefined) return '';
     let s = String(val).replace(/[^0-9.]/g, '');
     if (s === '' || s === '.') return '';
-    let digits = s.replace(/\./g, '');
-    if (digits.length > 3) digits = digits.slice(0, 3);
-    if (digits.length === 0) return '';
-    if (digits.length === 1) return digits;
-    if (digits.length === 2) return digits[0] + '.' + digits[1];
-    if (digits.length === 3) return digits[0] + '.' + digits[1] + digits[2];
-    return val;
+    const digits = s.replace(/\./g, '');
+    if (!s.includes('.')) {
+      if (digits.length === 1) return digits;
+      if (digits.length === 2) return digits[0] + '.' + digits[1];
+      if (digits.length >= 3) return digits[0] + '.' + digits[1] + digits[2];
+      return '';
+    }
+
+    const parts = s.split('.');
+    const intPart = parts[0] || '0';
+    const decPart = parts.slice(1).join('').slice(0, 2);
+    if (decPart.length > 0) {
+      return `${intPart}.${decPart}`;
+    }
+    return intPart;
   }
 
   function onGradeInput(sid, evt) {
     const inp = document.getElementById('g-'+sid);
     if (!inp || inp.disabled) return;
     const val = inp.value;
-    let digits = val.replace(/\./g, '').replace(/[^0-9]/g, '');
-    let formatted = formatGradeInput(val);
-    if (formatted && formatted !== val) {
+    const formatted = formatGradeInput(val);
+    if (formatted !== val) {
       inp.value = formatted;
+    }
+  }
+
+  function normalizeGradeInput(sid, evt) {
+    const inp = document.getElementById('g-'+sid);
+    if (!inp || inp.disabled) return;
+    const raw = String(inp.value || '').replace(/,/g, '.').trim();
+    const grade = parseFloat(raw);
+    if (!Number.isNaN(grade)) {
+      inp.value = grade.toFixed(2);
     }
   }
 
@@ -4166,8 +4229,15 @@ rows += `<tr id="row-${sub.id}" class="${rowClass}" data-year-level="${esc(sub.y
     const digits = val.replace(/\./g, '').replace(/[^0-9]/g, '');
     const isDigit = /[0-9]/.test(evt.key);
     const isBackspace = evt.key === 'Backspace';
-    const isArrowKey = ['ArrowLeft', 'ArrowRight', 'Delete'].includes(evt.key);
+    const isArrowKey = ['ArrowLeft', 'ArrowRight', 'Delete', 'Tab'].includes(evt.key);
+    if (evt.key === 'e' || evt.key === 'E' || evt.key === '+' || evt.key === '-') {
+      evt.preventDefault();
+      return;
+    }
     if (digits.length >= 3 && isDigit && !isBackspace) {
+      evt.preventDefault();
+    }
+    if (!isDigit && !isBackspace && !isArrowKey && evt.key !== '.' && evt.key !== 'Home' && evt.key !== 'End') {
       evt.preventDefault();
     }
   }

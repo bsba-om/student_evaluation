@@ -3,11 +3,11 @@ require_once __DIR__ . '/../../../data/config.php';
 
 // Fetch current admin data (session already started in dashboard)
 $admin_name = "Administrator";
-$admin_email = "admin@cjcm.edu";
+$admin_email = "";
 
 if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin' && isset($_SESSION['user_id'])) {
     $admin_name = $_SESSION['user_name'] ?? "Administrator";
-    $admin_email = $_SESSION['user_email'] ?? "admin@cjcm.edu";
+    $admin_email = $_SESSION['user_email'] ?? "";
 }
 
 // Fetch system settings from database

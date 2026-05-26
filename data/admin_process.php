@@ -229,19 +229,8 @@ if ($action === 'add_instructor') {
 } elseif ($action === 'quick_add') {
     $type = $_GET['type'] ?? '';
     if ($type === 'demo' && $pdo) {
-        $demo_instructors = [
-            ['John', 'Harris', 'john.harris@cjcm.edu'],
-            ['Sarah', 'Miller', 'sarah.miller@cjcm.edu'],
-            ['Robert', 'Wilson', 'robert.wilson@cjcm.edu']
-        ];
-        $hashed_password = password_hash('password123', PASSWORD_DEFAULT);
-        foreach ($demo_instructors as $instructor) {
-            try {
-                $stmt = $pdo->prepare("INSERT INTO instructors (first_name, last_name, email, password) VALUES (?, ?, ?, ?)");
-                $stmt->execute([$instructor[0], $instructor[1], $instructor[2], $hashed_password]);
-            } catch (PDOException $e) {}
-        }
-        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Demo instructors added successfully!'));
+        // Demo onboarding paths are disabled for production.
+        header('Location: ../Door/admin/dashboard.php?page=manage_program_heads');
     } else {
         header('Location: ../Door/admin/dashboard.php?page=manage_program_heads');
     }
@@ -428,7 +417,7 @@ if ($action === 'add_instructor') {
                     exit;
                 }
             }
-            $default_password = 'password123';
+            $default_password = bin2hex(random_bytes(5));
             $hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
             if ($promote_to === 'program_head') {
                 $stmt = $pdo->prepare("SELECT id FROM program_heads WHERE email = ?");
@@ -442,7 +431,7 @@ if ($action === 'add_instructor') {
                 $promoted_by = $_SESSION['user_id'] ?? 1;
                 $stmt = $pdo->prepare("INSERT INTO admin_promotions (instructor_id, promoted_to, promoted_by) VALUES (?, ?, ?)");
                 $stmt->execute([$instructor_id, 'program_head', $promoted_by]);
-                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully! Default password: password123'));
+                header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&success=' . urlencode('Instructor promoted to Program Head successfully.'));
             }
         } catch (PDOException $e) {
             header('Location: ../Door/admin/dashboard.php?page=manage_program_heads&error=' . urlencode('Promotion failed: ' . $e->getMessage()));
