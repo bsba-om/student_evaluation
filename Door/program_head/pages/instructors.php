@@ -747,7 +747,26 @@ if (!$show_role_modal) {
                                   <tr data-instructor-id="<?php echo $inst['id']; ?>" data-status="<?php echo htmlspecialchars($status); ?>">
                                       <td>
                                           <div class="instructor-cell">
-                                              <span class="avatar" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($inst['avatar_gradient_from'] ?? '#B8860B'); ?>, <?php echo htmlspecialchars($inst['avatar_gradient_to'] ?? '#D4A843'); ?>);"><?php echo $initials; ?></span>
+                                               <?php
+                                                $avatar_src = '';
+                                                $image_dir = __DIR__ . '/../../../media/instructors/';
+                                                $id = $inst['id'];
+                                                $extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                                                foreach ($extensions as $ext) {
+                                                    $file = $image_dir . "instructor_{$id}.{$ext}";
+                                                    if (file_exists($file)) {
+                                                        $avatar_src = '/media/instructors/instructor_{$id}.{$ext}';
+                                                        break;
+                                                    }
+                                                }
+                                                if ($avatar_src) {
+                                                    echo '<img src="' . $avatar_src . '" alt="' . htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']) . '" style="width:40px;height:40px;border-radius:10px;object-fit:cover;">';
+                                                } else {
+                                                    ?>
+                                                    <span class="avatar" style="background: linear-gradient(135deg, <?php echo htmlspecialchars($inst['avatar_gradient_from'] ?? '#B8860B'); ?>, <?php echo htmlspecialchars($inst['avatar_gradient_to'] ?? '#D4A843'); ?>);"><?php echo $initials; ?></span>
+                                                    <?php
+                                                }
+                                               ?>
                                               <span class="instructor-name"><?php echo htmlspecialchars($inst['first_name'] . ' ' . $inst['last_name']); ?></span>
                                               <?php if (in_array($inst['id'], $instructors_today_birthday ?? [])): ?>
                                               <span class="bd-badge" title="🎂 Birthday today!"><i class="fas fa-birthday-cake"></i> Birthday!</span>

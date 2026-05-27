@@ -33,13 +33,20 @@ if (!$show_role_modal) {
             $all_students = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $total_students = count($all_students);
             
-            // Group students by year level
-            foreach ($all_students as $student) {
-                $year_level = $student['year_level'] ?? '';
-                if (isset($students_by_year[$year_level])) {
-                    $students_by_year[$year_level][] = $student;
-                }
-            }
+             // Group students by year level
+             foreach ($all_students as $student) {
+                 $year_level = $student['year_level'] ?? '';
+                 // Extract year part if semester is included (e.g., "1st Year - 2nd Semester" -> "1st Year")
+                 if (strpos($year_level, ' - ') !== false) {
+                     $parts = explode(' - ', $year_level, 2);
+                     $year_level = trim($parts[0]);
+                 }
+                 // Ensure the year_level is one of the expected values
+                 if (isset($students_by_year[$year_level])) {
+                     $students_by_year[$year_level][] = $student;
+                 }
+                 // Optionally, handle unexpected year_level values (log or ignore)
+             }
         } catch (PDOException $e) {
             $majors = [];
             $students_by_year = [

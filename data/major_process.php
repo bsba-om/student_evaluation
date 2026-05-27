@@ -379,10 +379,16 @@ function addSubject() {
     
     try {
         // Check for duplicate subject code first
-        $check = $pdo->prepare("SELECT id FROM subjects WHERE subject_code = ?");
+        $check = $pdo->prepare("SELECT * FROM subjects WHERE subject_code = ?");
         $check->execute([$subject_code]);
         if ($check->rowCount() > 0) {
-            echo json_encode(['success' => false, 'message' => 'Error: Subject code already exists. Please use a different subject code.']);
+            $existing = $check->fetch(PDO::FETCH_ASSOC);
+            echo json_encode([
+                'success'          => false,
+                'duplicate'        => true,
+                'message'          => 'Subject code already exists. Please use a different subject code.',
+                'existing_subject' => $existing
+            ]);
             return;
         }
 
@@ -392,7 +398,20 @@ function addSubject() {
         echo json_encode(['success' => true, 'message' => 'Subject added successfully', 'subject_id' => $subject_id]);
     } catch (PDOException $e) {
         if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
-            echo json_encode(['success' => false, 'message' => 'Error: Subject code already exists. Please use a different subject code.']);
+            // Fallback: fetch the existing subject and return it
+            try {
+                $check2 = $pdo->prepare("SELECT * FROM subjects WHERE subject_code = ?");
+                $check2->execute([$subject_code]);
+                $existing = $check2->fetch(PDO::FETCH_ASSOC);
+                echo json_encode([
+                    'success'          => false,
+                    'duplicate'        => true,
+                    'message'          => 'Subject code already exists. Please use a different subject code.',
+                    'existing_subject' => $existing ?: null
+                ]);
+            } catch (PDOException $e2) {
+                echo json_encode(['success' => false, 'message' => 'Subject code already exists. Please use a different subject code.']);
+            }
         } else {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
@@ -401,26 +420,38 @@ function addSubject() {
 
 function updateSubject() {
     global $pdo;
-    $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
-    $subject_code = isset($_POST['subject_code']) ? trim($_POST['subject_code']) : '';
-    $subject_name = isset($_POST['subject_name']) ? trim($_POST['subject_name']) : '';
-    $units = isset($_POST['units']) ? floatval($_POST['units']) : 3.0;
-    $year_level = isset($_POST['default_year_level']) ? trim($_POST['default_year_level']) : '1st Year';
-    $semester = isset($_POST['default_semester']) ? trim($_POST['default_semester']) : '1st Semester';
-    $prerequisite = isset($_POST['prerequisite']) ? trim($_POST['prerequisite']) : '';
-    $bridging_for = isset($_POST['bridging_for']) ? trim($_POST['bridging_for']) : '';
-    
+    $id           = isset($_POST['id'])               ? intval($_POST['id'])                          : 0;
+    $subject_code = isset($_POST['subject_code'])     ? trim($_POST['subject_code'])                  : '';
+    $subject_name = isset($_POST['subject_name'])     ? trim($_POST['subject_name'])                  : '';
+    $units        = isset($_POST['units'])            ? floatval($_POST['units'])                     : 3.0;
+    $year_level   = isset($_POST['default_year_level']) ? trim($_POST['default_year_level'])          : '1st Year';
+    $semester     = isset($_POST['default_semester']) ? trim($_POST['default_semester'])              : '1st Semester';
+    $prerequisite = isset($_POST['prerequisite'])     ? trim($_POST['prerequisite'])                  : '';
+    $bridging_for = isset($_POST['bridging_for'])     ? trim($_POST['bridging_for'])                  : '';
+
     if ($id <= 0 || empty($subject_code) || empty($subject_name)) {
         echo json_encode(['success' => false, 'message' => 'Invalid subject ID or missing required fields']);
         return;
     }
-    
+
     try {
+        // Check if another subject already uses this code (exclude self)
+        $check = $pdo->prepare("SELECT id FROM subjects WHERE subject_code = ? AND id != ?");
+        $check->execute([$subject_code, $id]);
+        if ($check->rowCount() > 0) {
+            echo json_encode(['success' => false, 'duplicate' => true, 'message' => 'Subject code already exists. Please use a different subject code.']);
+            return;
+        }
+
         $stmt = $pdo->prepare("UPDATE subjects SET subject_code = ?, subject_name = ?, units = ?, default_year_level = ?, semester = ?, prerequisite = ?, bridging_for = ? WHERE id = ?");
         $stmt->execute([$subject_code, $subject_name, $units, $year_level, $semester, $prerequisite, $bridging_for, $id]);
         echo json_encode(['success' => true, 'message' => 'Subject updated successfully']);
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            echo json_encode(['success' => false, 'duplicate' => true, 'message' => 'Subject code already exists. Please use a different subject code.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 }
 
@@ -610,37 +641,58 @@ function deleteSubjectPermanently() {
 
 function updateMajorSubjectPlacement() {
     global $pdo;
-    $major_id = isset($_POST['major_id']) ? intval($_POST['major_id']) : 0;
-    $subject_id = isset($_POST['subject_id']) ? intval($_POST['subject_id']) : 0;
-    $year_level = isset($_POST['year_level']) ? trim($_POST['year_level']) : '1st Year';
-    $semester = isset($_POST['semester']) ? trim($_POST['semester']) : '1st Semester';
-    $units = isset($_POST['units']) ? floatval($_POST['units']) : 0;
-    
-    if ($major_id <= 0 || $subject_id <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Invalid major or subject ID']);
+    $major_id      = isset($_POST['major_id'])      ? intval($_POST['major_id'])      : 0;
+    $subject_id    = isset($_POST['subject_id'])    ? intval($_POST['subject_id'])    : 0;
+    $db_subject_id = isset($_POST['db_subject_id']) ? intval($_POST['db_subject_id']) : 0;
+    $year_level    = isset($_POST['year_level'])    ? trim($_POST['year_level'])       : '1st Year';
+    $semester      = isset($_POST['semester'])      ? trim($_POST['semester'])         : '1st Semester';
+    $units         = isset($_POST['units'])         ? floatval($_POST['units'])        : 0;
+    $subject_code  = isset($_POST['subject_code'])  ? trim($_POST['subject_code'])     : '';
+    $subject_name  = isset($_POST['subject_name'])  ? trim($_POST['subject_name'])     : '';
+
+    if ($subject_id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid subject ID']);
         return;
     }
-    
+
     try {
-        // Update major_subjects placement
-        $stmt = $pdo->prepare("UPDATE major_subjects SET year_level = ?, semester = ? WHERE major_id = ? AND id = ?");
-        $stmt->execute([$year_level, $semester, $major_id, $subject_id]);
-        
-        // If units changed, update the subject's units value
-        if ($units > 0) {
-            // First get the subject_id from major_subjects to update the subjects table
+        // Update major_subjects placement (only if major_id is provided)
+        if ($major_id > 0) {
+            $stmt = $pdo->prepare("UPDATE major_subjects SET year_level = ?, semester = ? WHERE major_id = ? AND id = ?");
+            $stmt->execute([$year_level, $semester, $major_id, $subject_id]);
+        }
+
+        // Resolve the actual subjects.id
+        $real_subject_id = $db_subject_id;
+        if ($real_subject_id <= 0) {
+            // Fall back: look it up from major_subjects
             $stmt = $pdo->prepare("SELECT subject_id FROM major_subjects WHERE id = ?");
             $stmt->execute([$subject_id]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) {
-                $stmt = $pdo->prepare("UPDATE subjects SET units = ? WHERE id = ?");
-                $stmt->execute([$units, $row['subject_id']]);
+            if ($row) $real_subject_id = intval($row['subject_id']);
+        }
+
+        if ($real_subject_id > 0) {
+            // Build UPDATE dynamically based on what was provided
+            $fields = [];
+            $params = [];
+            if ($units > 0)              { $fields[] = 'units = ?';        $params[] = $units; }
+            if ($subject_code !== '')    { $fields[] = 'subject_code = ?'; $params[] = $subject_code; }
+            if ($subject_name !== '')    { $fields[] = 'subject_name = ?'; $params[] = $subject_name; }
+            if (!empty($fields)) {
+                $params[] = $real_subject_id;
+                $stmt = $pdo->prepare("UPDATE subjects SET " . implode(', ', $fields) . " WHERE id = ?");
+                $stmt->execute($params);
             }
         }
-        
-        echo json_encode(['success' => true, 'message' => 'Subject placement updated successfully']);
+
+        echo json_encode(['success' => true, 'message' => 'Subject updated successfully']);
     } catch (PDOException $e) {
-        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        if (strpos($e->getMessage(), 'Duplicate entry') !== false) {
+            echo json_encode(['success' => false, 'message' => 'Subject code already exists. Please use a different code.']);
+        } else {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
     }
 }
 

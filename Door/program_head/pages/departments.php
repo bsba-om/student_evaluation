@@ -275,12 +275,12 @@ if (!$show_role_modal) {
             border: 2px dashed #f59e0b !important;
         }
         .pro-table tbody.drag-over-empty td.pro-empty::after {
-            content: ' � Drop here to move subject';
+            content: ' – Drop here to move subject';
             font-weight: 600;
         }
         .pro-bridging-block { margin-bottom: 16px; }
 
-        /* -- PRINT STYLES � SINGLE-PAGE PROSPECTUS ---------------------- */
+        /* -- PRINT STYLES – SINGLE-PAGE PROSPECTUS ---------------------- */
 @media print {
 
     /* -- Paper size config (change these to switch paper types) -- */
@@ -288,9 +288,9 @@ if (!$show_role_modal) {
         --print-paper: A4;           /* A4, Letter, Legal */
     }
 
-    /* A4 ? 210 � 297 mm */
-    /* Short Bond (Letter) ? 216 � 279 mm */
-    /* Long Bond (Legal) ? 216 � 356 mm */
+    /* A4 ? 210 – 297 mm */
+    /* Short Bond (Letter) ? 216 – 279 mm */
+    /* Long Bond (Legal) ? 216 – 356 mm */
 
     /* -- Page setup -- */
     @page {
@@ -963,11 +963,11 @@ if (!$show_role_modal) {
                         <div class="prospectus-controls">
                             <div class="prospectus-controls-left">
                                 <h3><i class="fas fa-scroll" style="color:var(--gold-dark);margin-right:8px;"></i>Subject Prospectus</h3>
-                                <p>Official curriculum layout � view and print by major</p>
+                                <p>Official curriculum layout – view and print by major</p>
                             </div>
                             <div class="prospectus-controls-right">
                                 <select id="prospectusMajorSelect" class="form-select" style="min-width:240px;" onchange="loadProspectus()">
-                                    <option value="">� Select Major �</option>
+                                    <option value="">– Select Major –</option>
                                     <?php foreach ($majors as $major): ?>
                                     <option value="<?php echo $major['id']; ?>"><?php echo htmlspecialchars($major['display_name']); ?></option>
                                     <?php endforeach; ?>
@@ -1053,16 +1053,16 @@ if (!$show_role_modal) {
                         <div class="form-group">
                             <label class="form-label">Icon</label>
                             <select class="form-select" id="majorIcon" name="icon_class">
-                                <option value="fas fa-graduation-cap">?? Graduation Cap</option>
-                                <option value="fas fa-cogs">?? Cogs</option>
-                                <option value="fas fa-dollar-sign">?? Finance</option>
-                                <option value="fas fa-chart-line">?? Analytics</option>
-                                <option value="fas fa-briefcase">?? Business</option>
-                                <option value="fas fa-users">?? Management</option>
-                                <option value="fas fa-book">?? Academic</option>
-                                <option value="fas fa-laptop">?? Technology</option>
-                                <option value="fas fa-handshake">?? Relations</option>
-                                <option value="fas fa-globe">?? International</option>
+                                <option value="fas fa-graduation-cap">🎓 Graduation Cap</option>
+                                <option value="fas fa-cogs">⚙️ Cogs</option>
+                                <option value="fas fa-dollar-sign">💲 Finance</option>
+                                <option value="fas fa-chart-line">📈 Analytics</option>
+                                <option value="fas fa-briefcase">💼 Business</option>
+                                <option value="fas fa-users">👥 Management</option>
+                                <option value="fas fa-book">📚 Academic</option>
+                                <option value="fas fa-laptop">💻 Technology</option>
+                                <option value="fas fa-handshake">🤝 Relations</option>
+                                <option value="fas fa-globe">🌐 International</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -1187,7 +1187,7 @@ if (!$show_role_modal) {
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Subject *</label>
                         <select class="form-select" id="prereqTargetSubject" name="target_subject_id" required onchange="updatePrereqOptions2()">
-                            <option value="">� Choose subject �</option>
+                            <option value="">– Choose subject –</option>
                         </select>
                     </div>
                 </div>
@@ -1196,16 +1196,16 @@ if (!$show_role_modal) {
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">Prerequisite *</label>
                         <select class="form-select" id="prereqSourceSubject" name="prerequisite_subject_id" required>
-                            <option value="">� Choose prerequisite �</option>
+                            <option value="">– Choose prerequisite –</option>
                         </select>
                     </div>
                 </div>
                 <div id="prereqPreview" style="display:none;" class="form-section">
                     <div class="form-section-title"><i class="fas fa-eye"></i> Preview</div>
                     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <div style="background:white;border:1px solid var(--border-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevPrereq">�</div>
+                        <div style="background:white;border:1px solid var(--border-light);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevPrereq">–</div>
                         <div style="color:var(--gold-dark);font-weight:700;font-size:12px;">must pass first ?</div>
-                        <div style="background:var(--gold-dark);color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevTarget">�</div>
+                        <div style="background:var(--gold-dark);color:white;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;" id="prevTarget">–</div>
                     </div>
                 </div>
                 <div class="form-actions">
@@ -1233,7 +1233,7 @@ if (!$show_role_modal) {
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">Select Major *</label>
                     <select class="form-select" id="prereqMajorSelect" onchange="loadPrereqSubjectsForSelection()">
-                        <option value="">� Select Major �</option>
+                        <option value="">– Select Major –</option>
                     </select>
                 </div>
             </div>
@@ -1241,7 +1241,7 @@ if (!$show_role_modal) {
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">Target Subject (needs this prerequisite)</label>
                     <select class="form-select" id="prereqTargetSubjectSelect">
-                        <option value="">� Optional: Select target subject �</option>
+                        <option value="">– Optional: Select target subject –</option>
                     </select>
                 </div>
             </div>
@@ -1321,6 +1321,24 @@ if (!$show_role_modal) {
         </div>
     </div>
 
+
+    <!-- -- DUPLICATE SUBJECT MODAL ------------------------------------ -->
+    <div class="modal-overlay" id="duplicateSubjectModal">
+        <div class="modal" style="max-width:380px;text-align:center;">
+            <div style="width:64px;height:64px;border-radius:50%;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i class="fas fa-exclamation-triangle" style="font-size:28px;color:#dc2626;"></i>
+            </div>
+            <h3 style="font-size:17px;font-weight:700;color:#1f1f1f;margin-bottom:8px;">Subject Code Already Exists</h3>
+            <p id="duplicateSubjectMsg" style="font-size:13px;color:#6b7280;margin-bottom:20px;line-height:1.6;"></p>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button type="button" class="btn-cancel" onclick="closeDuplicateSubjectModal()" style="flex:1;">Cancel</button>
+                <button type="button" id="duplicateSubjectEditBtn" class="btn-submit" style="flex:1;background:linear-gradient(135deg,#dc2626,#b91c1c);">
+                    <i class="fas fa-edit"></i> View Existing
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- -- EDIT SUBJECT IN PROSPECTUS MODAL -------------------------- -->
     <div class="modal-overlay" id="editProspectusSubjectModal">
         <div class="modal" style="max-width:520px;">
@@ -1331,10 +1349,17 @@ if (!$show_role_modal) {
             <form id="editProspectusForm" onsubmit="saveProspectusEdit(event)">
                 <input type="hidden" id="editProspectusMajorId" name="major_id">
                 <input type="hidden" id="editProspectusSubjectId" name="subject_id">
+                <input type="hidden" id="editProspectusDbSubjectId" name="db_subject_id">
                 <div class="form-section">
-                    <div class="form-group">
-                        <label class="form-label">Subject</label>
-                        <input type="text" class="form-input" id="editProspectusSubjectName" readonly style="background:var(--cream);">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Subject Code</label>
+                            <input type="text" class="form-input" id="editProspectusSubjectCode" name="subject_code" placeholder="e.g. NSTP 1" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject Name</label>
+                            <input type="text" class="form-input" id="editProspectusSubjectName" name="subject_name" placeholder="e.g. Nat'l Serv. Trng. Program" required>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Credit Units</label>
@@ -1495,7 +1520,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
     /* -- DETAIL / MAJOR SUBJECTS MODAL --------------------------- */
     function viewMajorSubjects(majorId, majorName) {
         currentMajorId = majorId;
-        document.getElementById('detailModalTitle').textContent = majorName + ' � Subjects';
+        document.getElementById('detailModalTitle').textContent = majorName + ' – Subjects';
         document.getElementById('detailModal').classList.add('active');
         loadMajorSubjects(majorId);
     }
@@ -1544,8 +1569,8 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <div class="subject-row ${isPrereq?'prerequisite':''}">
                         <div class="subject-icon"><i class="${s.icon_class||'fas fa-book'}"></i></div>
                         <div class="subject-info">
-                            <div class="subject-name">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</div>
-                            <div class="subject-meta"><i class="fas fa-layer-group" style="font-size:10px;"></i> ${escHtml(s.semester||'')} &nbsp;�&nbsp; ${parseFloat(s.units)||0} Units</div>
+                            <div class="subject-name">${escHtml(s.subject_code)} – ${escHtml(s.subject_name)}</div>
+                            <div class="subject-meta"><i class="fas fa-layer-group" style="font-size:10px;"></i> ${escHtml(s.semester||'')} &nbsp;–&nbsp; ${parseFloat(s.units)||0} Units</div>
                         </div>
                         <span class="subject-badge ${isPrereq?'badge-prereq':'badge-required'}">
                             ${isPrereq?'<i class="fas fa-star"></i> Prerequisite':'<i class="fas fa-check"></i> Required'}
@@ -1580,7 +1605,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             if (item.prerequisites && item.prerequisites.length > 0) {
                                 pHtml += `<div style="margin-top:6px;font-size:11px;color:var(--light-text);">Must pass first:</div>`;
                                 item.prerequisites.forEach(p => {
-                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(p.subject_code)}</strong> � ${escHtml(p.subject_name)}</div>`;
+                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(p.subject_code)}</strong> – ${escHtml(p.subject_name)}</div>`;
                                 });
                             }
                             pHtml += `</div>`;
@@ -1590,7 +1615,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             if (item.subjects && item.subjects.length > 0) {
                                 pHtml += `<div style="margin-top:6px;font-size:11px;color:var(--light-text);">Prerequisite subjects:</div>`;
                                 item.subjects.forEach(s => {
-                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(s.subject_code)}</strong> � ${escHtml(s.subject_name)} <span style="color:#6b7280;font-size:10px;">${s.units} units</span></div>`;
+                                    pHtml += `<div style="font-size:12px;margin-top:4px;padding-left:8px;border-left:2px solid var(--gold-primary);"><strong>${escHtml(s.subject_code)}</strong> – ${escHtml(s.subject_name)} <span style="color:#6b7280;font-size:10px;">${s.units} units</span></div>`;
                                 });
                             }
                             pHtml += `</div>`;
@@ -1613,7 +1638,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         document.getElementById('addMajorId').value = currentMajorId;
         const sel = document.getElementById('addSubjectId');
         sel.innerHTML = '<option value="">Choose a subject...</option>';
-        subjectsData.forEach(s => sel.innerHTML += `<option value="${s.id}" data-year="${s.default_year_level||''}" data-sem="${s.default_semester||''}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`);
+        subjectsData.forEach(s => sel.innerHTML += `<option value="${s.id}" data-year="${s.default_year_level||''}" data-sem="${s.default_semester||''}">${escHtml(s.subject_code)} – ${escHtml(s.subject_name)}</option>`);
         document.getElementById('addSubjectModal').classList.add('active');
     }
     function closeAddSubjectModal() { document.getElementById('addSubjectModal').classList.remove('active'); }
@@ -1678,17 +1703,63 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
 
     function saveProspectusEdit(e) {
         e.preventDefault();
-        const fd = new FormData(document.getElementById('editProspectusForm'));
-        fd.append('action','update_major_subject_placement');
-        fetch('../../../data/major_process.php', { method:'POST', body:fd })
-            .then(r => r.json()).then(d => {
-                toast(d.message, d.success ? 'success' : 'error');
-                if (d.success) {
+
+        const dbSubjectId  = document.getElementById('editProspectusDbSubjectId').value;
+        const subjectCode  = document.getElementById('editProspectusSubjectCode').value.trim();
+        const subjectName  = document.getElementById('editProspectusSubjectName').value.trim();
+        const units        = document.getElementById('editProspectusUnits').value;
+        const yearLevel    = document.getElementById('editProspectusYearLevel').value;
+        const semester     = document.getElementById('editProspectusSemester').value;
+        const majorSubjectId = document.getElementById('editProspectusSubjectId').value;
+        const majorId      = document.getElementById('editProspectusMajorId').value;
+
+        if (!subjectCode || !subjectName) {
+            toast('Subject code and title are required.', 'error');
+            return;
+        }
+
+        // Step 1: always update subject_code, subject_name, units in subjects table
+        const fdSubject = new FormData();
+        fdSubject.append('action', 'update_subject');
+        fdSubject.append('id', dbSubjectId);
+        fdSubject.append('subject_code', subjectCode);
+        fdSubject.append('subject_name', subjectName);
+        fdSubject.append('units', units);
+        fdSubject.append('default_year_level', yearLevel);
+        fdSubject.append('default_semester', semester);
+
+        // Step 2: update placement in major_subjects (only when we have a real major_subject row)
+        const updatePlacement = majorSubjectId > 0 && majorId > 0;
+
+        const requests = [fetch('../../../data/major_process.php', { method: 'POST', body: fdSubject })];
+
+        if (updatePlacement) {
+            const fdPlace = new FormData();
+            fdPlace.append('action', 'update_major_subject_placement');
+            fdPlace.append('subject_id', majorSubjectId);
+            fdPlace.append('major_id', majorId);
+            fdPlace.append('db_subject_id', dbSubjectId);
+            fdPlace.append('year_level', yearLevel);
+            fdPlace.append('semester', semester);
+            fdPlace.append('units', units);
+            requests.push(fetch('../../../data/major_process.php', { method: 'POST', body: fdPlace }));
+        }
+
+        Promise.all(requests)
+            .then(responses => Promise.all(responses.map(r => r.json())))
+            .then(results => {
+                const failed = results.find(d => !d.success);
+                if (failed) {
+                    toast(failed.message, 'error');
+                } else {
+                    toast('Subject updated successfully.', 'success');
+                    refreshSubjectsData();
                     closeEditProspectusModal();
                     loadMajorSubjects(currentMajorId);
-                    if (document.getElementById('prospectusMajorSelect').value == currentMajorId) loadProspectus();
+                    if (document.getElementById('prospectusMajorSelect').value == currentMajorId) loadProspectusWithCRUD(false);
                 }
-            });
+            })
+            .catch(() => toast('Failed to save changes.', 'error'));
     }
 
     /* -- SUBJECT MODAL -------------------------------------------- */
@@ -1728,6 +1799,33 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             document.querySelectorAll('.prospectus-major-check').forEach(cb => cb.checked = false);
         }
     }
+
+    function showDuplicateSubjectModal(message, existing) {
+        document.getElementById('duplicateSubjectMsg').textContent =
+            message + ' You can view and edit the existing subject below.';
+        const btn = document.getElementById('duplicateSubjectEditBtn');
+        // Clone to remove any old event listener
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', function() {
+            closeDuplicateSubjectModal();
+            closeSubjectModal();
+            editProspectusSubject(
+                0,
+                existing.subject_code      || '',
+                existing.subject_name      || '',
+                existing.default_year_level || existing.year_level || '1st Year',
+                existing.default_semester   || existing.semester   || '1st Semester',
+                existing.units              || '3',
+                existing.id
+            );
+        });
+        document.getElementById('duplicateSubjectModal').classList.add('active');
+    }
+    function closeDuplicateSubjectModal() {
+        document.getElementById('duplicateSubjectModal').classList.remove('active');
+    }
+
     function closeSubjectModal() { document.getElementById('subjectModal').classList.remove('active'); }
 
     function saveSubject(e) {
@@ -1751,8 +1849,8 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
 
         fetch('../../../data/major_process.php', { method:'POST', body:fd })
         .then(r => r.json()).then(d => {
-            toast(d.message, d.success ? 'success' : 'error');
             if (d.success) {
+                toast(d.message, 'success');
                 closeSubjectModal();
                 refreshSubjectsData();
                 if (selectedMajors.length > 0 && d.subject_id) {
@@ -1769,11 +1867,22 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     });
                 }
                 if (document.getElementById('prerequisitesTab').style.display !== 'none') loadPrereqSets();
-                
-                // Reload bridging modal if open (to show newly added bridging subjects)
                 if (document.getElementById('bridgingModal').classList.contains('active')) {
                     showBridgingModal();
                 }
+            } else {
+                // Duplicate subject code — find existing subject and open its edit modal
+                const isDuplicate = d.duplicate === true || (d.message && d.message.toLowerCase().includes('already exists'));
+                if (isDuplicate) {
+                    // Prefer server-returned existing subject; fall back to local subjectsData
+                    const existing = d.existing_subject
+                        || subjectsData.find(s => (s.subject_code || '').toUpperCase() === (document.getElementById('subjectCode').value || '').trim().toUpperCase());
+                    if (existing) {
+                        showDuplicateSubjectModal(d.message, existing);
+                        return;
+                    }
+                }
+                toast(d.message, 'error');
             }
         });
     }
@@ -1784,10 +1893,10 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
     function showCreatePrereqModal() {
         document.getElementById('prereqSetCode').value = '';
         document.getElementById('prereqMajorSelect').value = '';
-        document.getElementById('prereqTargetSubjectSelect').innerHTML = '<option value="">� Optional: Select target subject �</option>';
+        document.getElementById('prereqTargetSubjectSelect').innerHTML = '<option value="">– Optional: Select target subject –</option>';
         document.getElementById('prereqSubjectsContainer').innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
         const majorSel = document.getElementById('prereqMajorSelect');
-        majorSel.innerHTML = '<option value="">� Select Major �</option>';
+        majorSel.innerHTML = '<option value="">– Select Major –</option>';
         majorsData.forEach(m => {
             majorSel.innerHTML += `<option value="${m.id}">${escHtml(m.display_name)}</option>`;
         });
@@ -1802,7 +1911,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         const container = document.getElementById('prereqSubjectsContainer');
         const majorId = document.getElementById('prereqMajorSelect').value;
         const targetSel = document.getElementById('prereqTargetSubjectSelect');
-        targetSel.innerHTML = '<option value="">� Optional: Select target subject �</option>';
+        targetSel.innerHTML = '<option value="">– Optional: Select target subject –</option>';
         if (!majorId) {
             container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--light-text);">Select a major first...</div>';
             return;
@@ -1834,7 +1943,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             if (subjectData && subjectData.success && Array.isArray(subjectData.subjects)) {
                 const allSubjects = subjectData.subjects;
                 allSubjects.forEach(s => {
-                    targetSel.innerHTML += `<option value="${s.id}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`;
+                    targetSel.innerHTML += `<option value="${s.id}">${escHtml(s.subject_code)} – ${escHtml(s.subject_name)}</option>`;
                 });
             }
             
@@ -2079,9 +2188,9 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                 subjectsData = d.subjects;
                 const prereqSel = document.getElementById('subjectPrerequisite');
                 if (prereqSel) {
-                    prereqSel.innerHTML = '<option value="">� None �</option>';
+                    prereqSel.innerHTML = '<option value="">– None –</option>';
                     d.subjects.forEach(s => {
-                        prereqSel.innerHTML += `<option value="${escHtml(s.subject_code)}">${escHtml(s.subject_code)} � ${escHtml(s.subject_name)}</option>`;
+                        prereqSel.innerHTML += `<option value="${escHtml(s.subject_code)}">${escHtml(s.subject_code)} – ${escHtml(s.subject_name)}</option>`;
                     });
                 }
             }
@@ -2127,7 +2236,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <td class="pro-grade-cell"></td>
                     <td class="pro-code">${escHtml(s.subject_code||'')}</td>
                     <td>${escHtml(s.subject_name||'')}</td>
-                    <td class="pro-prereq-col pro-prereq-screen">${prereqCode ? '<span class="pro-star">?</span> '+escHtml(prereqCode) : '�'}</td>
+                    <td class="pro-prereq-col pro-prereq-screen">${prereqCode ? '<span class="pro-star">★</span> '+escHtml(prereqCode) : '–'}</td>
                     <td class="pro-units">${u%1===0?u:u.toFixed(1)}</td>
                 </tr>`;
             });
@@ -2201,7 +2310,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                             </tr></thead>
                             <tbody>
                                 ${bridging.map(s=>{
-                                    const bridgeFor = escHtml(s.bridging_for || '�');
+                                    const bridgeFor = escHtml(s.bridging_for || '–');
                                     return `<tr><td class="pro-grade-cell"></td><td class="pro-code">${escHtml(s.subject_code||'')}</td><td>${escHtml(s.subject_name||'')}</td><td class="pro-units">${parseFloat(s.units)||0}</td><td class="pro-prereq-col" style="font-size:9pt;">${bridgeFor}</td></tr>`;
                                 }).join('')}
                                 <tr class="pro-total-row"><td colspan="3" style="text-align:right;padding-right:8px;">Total Units</td><td class="pro-units">${bt%1===0?bt:bt.toFixed(1)}</td><td></td></tr>
@@ -2225,7 +2334,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Program Head's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                 </div>
-                <div class="pro-legend"><span class="pro-star">?</span> = Prerequisite subject &nbsp;�&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
+                <div class="pro-legend"><span class="pro-star">★</span> = Prerequisite subject &nbsp;–&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
             </div>
         </div>`;
     }
@@ -2279,7 +2388,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
             return;
         }
 
-        container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus�</p></div>';
+        container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus–</p></div>';
 
         const fd = new FormData();
         fd.append('action','get_major_subjects'); fd.append('major_id',majorId);
@@ -2380,7 +2489,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
                     <tbody>`;
             
             bridging.forEach(s => {
-                const bridgingFor = escHtml(s.bridging_for || '�');
+                const bridgingFor = escHtml(s.bridging_for || '–');
                 html += `
                 <tr>
                     <td class="pro-grade-cell"></td>
@@ -2446,7 +2555,7 @@ let subjectsData = <?php echo json_encode($all_subjects, JSON_HEX_TAG|JSON_HEX_A
         // Only show the loading spinner when explicitly requested (initial load, major switch, etc.)
         // Skip spinner for background refreshes like after drag-and-drop reorder
         if (showSpinner) {
-            document.getElementById('prospectusContent').innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus�</p></div>';
+            document.getElementById('prospectusContent').innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-spinner fa-spin" style="font-size:32px;color:var(--gold-dark);"></i><p style="margin-top:12px;color:var(--light-text);">Loading prospectus–</p></div>';
         }
 
         const fd = new FormData();
@@ -2477,8 +2586,8 @@ const majorName = document.getElementById('prospectusMajorSelect').selectedOptio
             subjects.forEach(s => {
                 const u = parseFloat(s.units) || 0;
                 total += u;
-                const prereqCode = s.prerequisite || '�';
-                const prereqDisplay = prereqCode !== '�' ? '<span style="color:#dc2626;font-weight:600;">? ' + escHtml(prereqCode) + '</span>' : '�';
+                const prereqCode = s.prerequisite || '–';
+                const prereqDisplay = prereqCode !== '–' ? '<span style="color:#dc2626;font-weight:600;">★ ' + escHtml(prereqCode) + '</span>' : '–';
                 rows += `<tr draggable="true" data-major-subject-id="${s.major_subject_id}" data-sort-order="${s.sort_order || 0}" data-year-level="${escHtml(s.year_level||'')}" data-semester="${escHtml(s.semester||'')}">
                     <td class="pro-grade-cell"><span class="drag-handle"><i class="fas fa-grip-vertical"></i></span></td>
                     <td class="pro-code">${escHtml(s.subject_code||'')}</td>
@@ -2486,8 +2595,8 @@ const majorName = document.getElementById('prospectusMajorSelect').selectedOptio
                     <td class="pro-units">${u%1===0?u:u.toFixed(1)}</td>
                     <td class="pro-prereq-col">${prereqDisplay}</td>
                     <td class="pro-crud-col">
-                        <button class="btn-crud btn-crud-edit" onclick="editProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', '${escHtml(s.subject_name||'')}', '${escHtml(s.year_level||'')}', '${escHtml(s.semester||'')}', '${escHtml(s.units||'')}', ${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="btn-crud btn-crud-delete" onclick="deleteProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', ${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                        <button class="btn-crud btn-crud-edit" onclick="editProspectusSubject(${s.major_subject_id}, '${escJs(s.subject_code||'')}', '${escJs(s.subject_name||'')}', '${escJs(s.year_level||'')}', '${escJs(s.semester||'')}', '${escJs(s.units||'')}', ${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                        <button class="btn-crud btn-crud-delete" onclick="deleteProspectusSubject(${s.major_subject_id}, '${escJs(s.subject_code||'')}', ${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
             });
@@ -2563,16 +2672,16 @@ if (bridging.length > 0) {
                             </tr></thead>
                             <tbody>
                                 ${bridging.map(s=>{
-                                    const prereqCode = s.prerequisite || '�';
+                                    const prereqCode = s.prerequisite || '–';
                                     return `<tr draggable="true" data-major-subject-id="${s.major_subject_id}" data-sort-order="${s.sort_order || 0}" data-year-level="${escHtml(s.year_level||'')}" data-semester="${escHtml(s.semester||'')}">
                                         <td class="pro-grade-cell"><span class="drag-handle"><i class="fas fa-grip-vertical"></i></span></td>
                                         <td class="pro-code">${escHtml(s.subject_code||'')}</td>
                                         <td>${escHtml(s.subject_name||'')}</td>
                                         <td class="pro-units">${parseFloat(s.units)||0}</td>
-                                        <td class="pro-prereq-col">${prereqCode !== '�' ? '<span style="color:#dc2626;font-weight:600;">? ' + prereqCode + '</span>' : '�'}</td>
+                                        <td class="pro-prereq-col">${prereqCode !== '–' ? '<span style="color:#dc2626;font-weight:600;">★ ' + prereqCode + '</span>' : '–'}</td>
                                         <td class="pro-crud-col">
-                                            <button class="btn-crud btn-crud-edit" onclick="editProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', '${escHtml(s.subject_name||'')}', '${escHtml(s.year_level||'')}', '${escHtml(s.semester||'')}', '${escHtml(s.units||'')}', ${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
-                                            <button class="btn-crud btn-crud-delete" onclick="deleteProspectusSubject(${s.major_subject_id}, '${escHtml(s.subject_code||'')}', ${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
+                                            <button class="btn-crud btn-crud-edit" onclick="editProspectusSubject(${s.major_subject_id}, '${escJs(s.subject_code||'')}', '${escJs(s.subject_name||'')}', '${escJs(s.year_level||'')}', '${escJs(s.semester||'')}', '${escJs(s.units||'')}', ${s.id})" title="Edit"><i class="fas fa-edit"></i></button>
+                                            <button class="btn-crud btn-crud-delete" onclick="deleteProspectusSubject(${s.major_subject_id}, '${escJs(s.subject_code||'')}', ${s.id})" title="Delete"><i class="fas fa-trash"></i></button>
                                         </td>
                                     </tr>`;
                                 }).join('')}
@@ -2597,7 +2706,7 @@ if (bridging.length > 0) {
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Adviser's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                     <div class="pro-sig-col"><div class="pro-sig-line"></div><div class="pro-sig-label">Program Head's Signature over Printed Name</div><div class="pro-sig-sub">Date: ___________________</div></div>
                 </div>
-                <div class="pro-legend"><span class="pro-star">?</span> = Prerequisite subject &nbsp;�&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
+                <div class="pro-legend"><span class="pro-star">★</span> = Prerequisite subject &nbsp;–&nbsp; <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#fef2f2;border-left:3px solid #dc2626;vertical-align:middle;"></span> = prerequisite row</div>
             </div>
         </div>`;
     }
@@ -2628,16 +2737,18 @@ if (bridging.length > 0) {
     }
 
     function editProspectusSubject(majorSubjectId, subjectCode, subjectName, yearLevel, semester, units, subjectId) {
-        document.getElementById('editProspectusMajorId').value = currentEditMajorId;
-        document.getElementById('editProspectusSubjectId').value = majorSubjectId;
-        document.getElementById('editProspectusSubjectName').value = subjectCode + ' � ' + subjectName;
-        document.getElementById('editProspectusUnits').value = units || '3';
-        document.getElementById('editProspectusYearLevel').value = yearLevel || '1st Year';
-        document.getElementById('editProspectusSemester').value = semester || '1st Semester';
-        
+        document.getElementById('editProspectusMajorId').value    = currentEditMajorId;
+        document.getElementById('editProspectusSubjectId').value  = majorSubjectId;
+        document.getElementById('editProspectusDbSubjectId').value = subjectId || '';
+        document.getElementById('editProspectusSubjectCode').value = subjectCode || '';
+        document.getElementById('editProspectusSubjectName').value = subjectName || '';
+        document.getElementById('editProspectusUnits').value      = units || '3';
+        document.getElementById('editProspectusYearLevel').value  = yearLevel || '1st Year';
+        document.getElementById('editProspectusSemester').value   = semester  || '1st Semester';
+
         // Load majors that have this subject
         loadSubjectMajors(subjectId || subjectCode);
-        
+
         document.getElementById('editProspectusSubjectModal').classList.add('active');
     }
 
@@ -2659,7 +2770,7 @@ if (bridging.length > 0) {
                     html += `<label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background='transparent'">
                         <input type="checkbox" class="prospectus-major-toggle" data-major-id="${m.id}" ${isChecked} style="width:16px;height:16px;accent-color:var(--gold-dark);" onchange="toggleSubjectMajor(this, ${m.id})">
                         <span style="font-size:13px;">${m.display_name}</span>
-                        <span style="font-size:11px;color:${m.has_subject ? '#22c55e' : '#9ca3af'};">${m.has_subject ? '? In prospectus' : '� Not in prospectus'}</span>
+                        <span style="font-size:11px;color:${m.has_subject ? '#22c55e' : '#9ca3af'};">${m.has_subject ? '✓ In prospectus' : '– Not in prospectus'}</span>
                     </label>`;
                 });
                 container.innerHTML = html || '<p style="font-size:12px;color:var(--light-text);padding:8px;font-style:italic;">No majors available.</p>';
@@ -2673,7 +2784,7 @@ if (bridging.length > 0) {
     }
 
     function toggleSubjectMajor(checkbox, majorId) {
-        const subjectCode = document.getElementById('editProspectusSubjectName').value.split(' � ')[0];
+        const subjectCode = document.getElementById('editProspectusSubjectCode').value.trim();
         
         const fd = new FormData();
         if (checkbox.checked) {
@@ -3005,6 +3116,10 @@ if (bridging.length > 0) {
     function escHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escJs(str) {
+        if (!str) return '';
+        return String(str).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     }
     </script>
 
